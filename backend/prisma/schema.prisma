@@ -31,7 +31,12 @@ model User {
   kpiLogs       KpiLog[]
   rankHistory   RankHistory[]
   ownedAgency   Agency?        @relation("AgencyOwner")
+  notifications Notification[]
 
+  @@index([parentId])
+  @@index([rank])
+  @@index([role])
+  @@index([role, isActive])
   @@map("users")
 }
 
@@ -116,6 +121,13 @@ model Transaction {
   agency          Agency?    @relation("AgencyTransactions", fields: [agencyId], references: [id])
   items           TransactionItem[]
 
+  @@index([ctvId])
+  @@index([agencyId])
+  @@index([channel])
+  @@index([createdAt])
+  @@index([ctvId, createdAt])
+  @@index([agencyId, createdAt])
+  @@index([channel, createdAt])
   @@map("transactions")
 }
 
@@ -130,6 +142,8 @@ model TransactionItem {
   transaction   Transaction @relation(fields: [transactionId], references: [id])
   product       Product     @relation(fields: [productId], references: [id])
 
+  @@index([transactionId])
+  @@index([productId])
   @@map("transaction_items")
 }
 
@@ -160,6 +174,8 @@ model KpiLog {
 
   ctv           User   @relation(fields: [ctvId], references: [id])
 
+  @@unique([ctvId, month])
+  @@index([month])
   @@map("kpi_logs")
 }
 
@@ -200,4 +216,22 @@ model SyncLog {
   status        String
 
   @@map("sync_logs")
+}
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  type      String   // RANK_CHANGE, TRANSACTION_CONFIRMED, SALARY_WARNING, INVENTORY_WARNING
+  title     String
+  content   String
+  metadata  String?  // JSON string
+  isRead    Boolean  @default(false) @map("is_read")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([userId, isRead])
+  @@index([createdAt])
+  @@map("notifications")
 }

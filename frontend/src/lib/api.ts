@@ -25,6 +25,17 @@ async function fetchAPI(path: string, options: RequestInit = {}) {
   return res.json();
 }
 
+async function fetchBlob(path: string) {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+  const res = await fetch(`${API_BASE}${path}`, {
+    headers: {
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res;
+}
+
 export const api = {
   login: (email: string, password: string) =>
     fetchAPI('/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) }),
@@ -52,11 +63,38 @@ export const api = {
     fetchAPI(`/admin/config/commission/${tier}`, { method: 'PUT', body: JSON.stringify(data) }),
   adminReports: (months = 6) => fetchAPI(`/admin/reports/financial?months=${months}`),
   adminKpiLogs: () => fetchAPI('/admin/kpi-logs'),
-  adminReassignCtv: (id: number, newParentId: number) =>
+  adminReassignCtv: (id: number, newParentId: number | null) =>
     fetchAPI(`/admin/ctv/${id}/reassign`, { method: 'POST', body: JSON.stringify({ newParentId }) }),
   adminChangeRank: (id: number, newRank: string, reason: string) =>
     fetchAPI(`/admin/ctv/${id}/rank`, { method: 'POST', body: JSON.stringify({ newRank, reason }) }),
   adminSync: () => fetchAPI('/admin/sync', { method: 'POST' }),
+  adminRunRankEvaluation: () => fetchAPI('/admin/rank-evaluation', { method: 'POST' }),
+
+  // Export
+  adminExportExcel: async (months = 6) => {
+    const res = await fetchBlob(`/admin/reports/export/excel?months=${months}`);
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `ccbmart-report-${new Date().toISOString().slice(0, 10)}.xlsx`;
+    a.click();
+    URL.revokeObjectURL(url);
+  },
+  adminExportPdf: async (months = 6) => {
+    const res = await fetchBlob(`/admin/reports/export/pdf?months=${months}`);
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    window.open(url, '_blank');
+  },
+
+  // Notifications
+  notifications: (page = 1, unreadOnly = false) =>
+    fetchAPI(`/notifications?page=${page}&unreadOnly=${unreadOnly}`),
+  markNotificationRead: (id: number) =>
+    fetchAPI(`/notifications/${id}/read`, { method: 'POST' }),
+  markAllNotificationsRead: () =>
+    fetchAPI('/notifications/read-all', { method: 'POST' }),
 };
 
 export function formatVND(amount: number): string {
