@@ -1,31 +1,43 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Sidebar from './Sidebar';
 
 export default function DashboardLayout({ role, children }: { role: string; children: React.ReactNode }) {
   const router = useRouter();
-  const [user, setUser] = useState<{ name: string; role: string; rank?: string } | null>(null);
-  const [sidebarExpanded, setSidebarExpanded] = useState(false);
+  const checkedRef = useRef(false);
+
+  // Read user synchronously from localStorage on first render (no flash)
+  const [user] = useState<{ name: string; role: string; rank?: string } | null>(() => {
+    if (typeof window === 'undefined') return null;
+    try {
+      const userData = localStorage.getItem('user');
+      const token = localStorage.getItem('token');
+      if (!token || !userData) return null;
+      return JSON.parse(userData);
+    } catch { return null; }
+  });
+
+  const [sidebarExpanded, setSidebarExpanded] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return localStorage.getItem('sidebar-expanded') === 'true';
+  });
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    const userData = localStorage.getItem('user');
-    if (!token || !userData) { router.push('/login'); return; }
-    const parsed = JSON.parse(userData);
-    if (parsed.role !== role) { router.push(`/${parsed.role}/dashboard`); return; }
-    setUser(parsed);
+    if (checkedRef.current) return;
+    checkedRef.current = true;
+    if (!user) { router.push('/login'); return; }
+    if (user.role !== role) { router.push(`/${user.role}/dashboard`); return; }
+  }, [user, role, router]);
 
-    const saved = localStorage.getItem('sidebar-expanded');
-    if (saved === 'true') setSidebarExpanded(true);
-
+  useEffect(() => {
     const handler = (e: Event) => setSidebarExpanded((e as CustomEvent).detail.expanded);
     window.addEventListener('sidebar-toggle', handler);
     return () => window.removeEventListener('sidebar-toggle', handler);
-  }, [role, router]);
+  }, []);
 
-  if (!user) {
+  if (!user || user.role !== role) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-background">
         <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
@@ -33,13 +45,12 @@ export default function DashboardLayout({ role, children }: { role: string; chil
     );
   }
 
-  // Desktop: ml based on sidebar width. Mobile: no ml (sidebar is overlay)
   const desktopMl = sidebarExpanded ? '14rem' : '4rem';
 
   return (
-    <div className="min-h-screen bg-background text-foreground transition-colors duration-300">
+    <div className="min-h-screen bg-background text-foreground">
       <Sidebar role={role} />
-      <main className="min-h-screen p-4 sm:p-6 pt-16 lg:pt-6 transition-all duration-300" style={{ marginLeft: typeof window !== 'undefined' && window.innerWidth >= 1024 ? desktopMl : undefined }}>
+      <main className="min-h-screen p-4 sm:p-6 pt-16 lg:pt-6" style={{}}>
         <style>{`@media (min-width: 1024px) { main { margin-left: ${desktopMl} !important; } }`}</style>
         <div className="mb-6 flex items-center justify-between">
           <div>
