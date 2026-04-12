@@ -12,26 +12,15 @@ export default function DashboardLayout({ role, children }: { role: string; chil
   useEffect(() => {
     const token = localStorage.getItem('token');
     const userData = localStorage.getItem('user');
-    if (!token || !userData) {
-      router.push('/login');
-      return;
-    }
+    if (!token || !userData) { router.push('/login'); return; }
     const parsed = JSON.parse(userData);
-    if (parsed.role !== role) {
-      router.push(`/${parsed.role}/dashboard`);
-      return;
-    }
+    if (parsed.role !== role) { router.push(`/${parsed.role}/dashboard`); return; }
     setUser(parsed);
 
-    // Check saved sidebar state
     const saved = localStorage.getItem('sidebar-expanded');
     if (saved === 'true') setSidebarExpanded(true);
 
-    // Listen for sidebar toggle events
-    const handler = (e: Event) => {
-      const detail = (e as CustomEvent).detail;
-      setSidebarExpanded(detail.expanded);
-    };
+    const handler = (e: Event) => setSidebarExpanded((e as CustomEvent).detail.expanded);
     window.addEventListener('sidebar-toggle', handler);
     return () => window.removeEventListener('sidebar-toggle', handler);
   }, [role, router]);
@@ -44,13 +33,14 @@ export default function DashboardLayout({ role, children }: { role: string; chil
     );
   }
 
+  // Desktop: ml based on sidebar width. Mobile: no ml (sidebar is overlay)
+  const desktopMl = sidebarExpanded ? '14rem' : '4rem';
+
   return (
-    <div className="min-h-screen bg-background transition-colors duration-300">
+    <div className="min-h-screen bg-background text-foreground transition-colors duration-300">
       <Sidebar role={role} />
-      <main
-        className="p-6 min-h-screen transition-all duration-300"
-        style={{ marginLeft: sidebarExpanded ? '14rem' : '4rem' }}
-      >
+      <main className="min-h-screen p-4 sm:p-6 pt-16 lg:pt-6 transition-all duration-300" style={{ marginLeft: typeof window !== 'undefined' && window.innerWidth >= 1024 ? desktopMl : undefined }}>
+        <style>{`@media (min-width: 1024px) { main { margin-left: ${desktopMl} !important; } }`}</style>
         <div className="mb-6 flex items-center justify-between">
           <div>
             <p className="text-sm text-muted-foreground">Xin chao,</p>
