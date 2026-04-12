@@ -23,16 +23,23 @@ export default function DashboardLayout({ role, children }: { role: string; chil
     setUser(parsed);
   }, [role, router]);
 
-  if (!user) return <div className="flex items-center justify-center min-h-screen"><p>Loading...</p></div>;
+  if (!user) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-surface">
+        <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   return (
-    <div className="flex min-h-screen bg-slate-50">
+    <div className="min-h-screen" style={{ background: '#f8fafc' }}>
       <Sidebar role={role} />
-      <main className="flex-1 p-6 overflow-auto">
+      <main className="ml-16 p-4 sm:p-6 lg:p-8 min-h-screen">
+        {/* Header bar */}
         <div className="mb-6 flex items-center justify-between">
           <div>
-            <p className="text-sm text-slate-500">Xin chào,</p>
-            <p className="text-lg font-semibold text-slate-800">{user.name} {user.rank ? `(${user.rank})` : ''}</p>
+            <p className="text-sm text-gray-400">Xin chao,</p>
+            <p className="text-lg font-semibold text-gray-800">{user.name} {user.rank ? `(${user.rank})` : ''}</p>
           </div>
         </div>
         {children}

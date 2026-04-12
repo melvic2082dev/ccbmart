@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard, Users, ShoppingCart, Package, Warehouse,
-  Settings, FileText, LogOut, Building2, ChevronLeft, ChevronRight, Bell,
+  Settings, FileText, LogOut, Building2, Bell,
   PlusCircle, Banknote, ClipboardCheck, Wallet, Award, CreditCard
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
@@ -12,67 +12,50 @@ import { api } from '@/lib/api';
 
 type NavItem = { label: string; href: string; icon: React.ReactNode };
 
-const navByRole: Record<string, { title: string; items: NavItem[] }> = {
-  ctv: {
-    title: 'CTV Panel',
-    items: [
-      { label: 'Dashboard', href: '/ctv/dashboard', icon: <LayoutDashboard size={20} /> },
-      { label: 'Tao don', href: '/ctv/sales/create', icon: <PlusCircle size={20} /> },
-      { label: 'Giao dich', href: '/ctv/transactions', icon: <ShoppingCart size={20} /> },
-      { label: 'Nop tien mat', href: '/ctv/cash', icon: <Banknote size={20} /> },
-      { label: 'Khach hang', href: '/ctv/customers', icon: <Users size={20} /> },
-      { label: 'San pham', href: '/ctv/products', icon: <Package size={20} /> },
-    ],
-  },
-  agency: {
-    title: 'Dai ly',
-    items: [
-      { label: 'Dashboard', href: '/agency/dashboard', icon: <LayoutDashboard size={20} /> },
-      { label: 'Ton kho', href: '/agency/inventory', icon: <Warehouse size={20} /> },
-      { label: 'Giao dich', href: '/agency/transactions', icon: <ShoppingCart size={20} /> },
-    ],
-  },
-  admin: {
-    title: 'Admin',
-    items: [
-      { label: 'Dashboard', href: '/admin/dashboard', icon: <LayoutDashboard size={20} /> },
-      { label: 'Doi soat', href: '/admin/reconciliation', icon: <ClipboardCheck size={20} /> },
-      { label: 'Quan ly CTV', href: '/admin/ctv', icon: <Users size={20} /> },
-      { label: 'Dai ly', href: '/admin/agencies', icon: <Building2 size={20} /> },
-      { label: 'Thanh vien', href: '/admin/membership/wallets', icon: <Award size={20} /> },
-      { label: 'Nap tien TV', href: '/admin/membership/deposits', icon: <CreditCard size={20} /> },
-      { label: 'Referral', href: '/admin/membership/referrals', icon: <Users size={20} /> },
-      { label: 'Hang the', href: '/admin/membership/tiers', icon: <Wallet size={20} /> },
-      { label: 'Cau hinh', href: '/admin/config', icon: <Settings size={20} /> },
-      { label: 'Bao cao', href: '/admin/reports', icon: <FileText size={20} /> },
-    ],
-  },
-  member: {
-    title: 'Thanh vien',
-    items: [
-      { label: 'Dashboard', href: '/member/dashboard', icon: <LayoutDashboard size={20} /> },
-      { label: 'Nap tien', href: '/member/topup', icon: <Banknote size={20} /> },
-      { label: 'Lich su', href: '/member/transactions', icon: <ShoppingCart size={20} /> },
-      { label: 'Gioi thieu', href: '/member/referral', icon: <Users size={20} /> },
-    ],
-  },
+const navByRole: Record<string, NavItem[]> = {
+  ctv: [
+    { label: 'Dashboard', href: '/ctv/dashboard', icon: <LayoutDashboard size={20} /> },
+    { label: 'Tao don', href: '/ctv/sales/create', icon: <PlusCircle size={20} /> },
+    { label: 'Giao dich', href: '/ctv/transactions', icon: <ShoppingCart size={20} /> },
+    { label: 'Nop tien', href: '/ctv/cash', icon: <Banknote size={20} /> },
+    { label: 'Khach hang', href: '/ctv/customers', icon: <Users size={20} /> },
+    { label: 'San pham', href: '/ctv/products', icon: <Package size={20} /> },
+  ],
+  agency: [
+    { label: 'Dashboard', href: '/agency/dashboard', icon: <LayoutDashboard size={20} /> },
+    { label: 'Ton kho', href: '/agency/inventory', icon: <Warehouse size={20} /> },
+    { label: 'Giao dich', href: '/agency/transactions', icon: <ShoppingCart size={20} /> },
+  ],
+  admin: [
+    { label: 'Dashboard', href: '/admin/dashboard', icon: <LayoutDashboard size={20} /> },
+    { label: 'Doi soat', href: '/admin/reconciliation', icon: <ClipboardCheck size={20} /> },
+    { label: 'CTV', href: '/admin/ctv', icon: <Users size={20} /> },
+    { label: 'Dai ly', href: '/admin/agencies', icon: <Building2 size={20} /> },
+    { label: 'Thanh vien', href: '/admin/membership/wallets', icon: <Award size={20} /> },
+    { label: 'Nap tien', href: '/admin/membership/deposits', icon: <CreditCard size={20} /> },
+    { label: 'Hang the', href: '/admin/membership/tiers', icon: <Wallet size={20} /> },
+    { label: 'Cau hinh', href: '/admin/config', icon: <Settings size={20} /> },
+    { label: 'Bao cao', href: '/admin/reports', icon: <FileText size={20} /> },
+  ],
+  member: [
+    { label: 'Dashboard', href: '/member/dashboard', icon: <LayoutDashboard size={20} /> },
+    { label: 'Nap tien', href: '/member/topup', icon: <Banknote size={20} /> },
+    { label: 'Lich su', href: '/member/transactions', icon: <ShoppingCart size={20} /> },
+    { label: 'Gioi thieu', href: '/member/referral', icon: <Users size={20} /> },
+  ],
 };
 
 export default function Sidebar({ role }: { role: string }) {
   const pathname = usePathname();
-  const [collapsed, setCollapsed] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
-  const nav = navByRole[role] || navByRole.admin;
+  const items = navByRole[role] || navByRole.admin;
 
   useEffect(() => {
-    const fetchNotifications = async () => {
-      try {
-        const data = await api.notifications(1, true);
-        setUnreadCount(data.unreadCount || 0);
-      } catch { /* ignore */ }
+    const fetch = async () => {
+      try { const d = await api.notifications(1, true); setUnreadCount(d.unreadCount || 0); } catch {}
     };
-    fetchNotifications();
-    const interval = setInterval(fetchNotifications, 60000);
+    fetch();
+    const interval = setInterval(fetch, 60000);
     return () => clearInterval(interval);
   }, []);
 
@@ -83,66 +66,64 @@ export default function Sidebar({ role }: { role: string }) {
   };
 
   return (
-    <aside className={`${collapsed ? 'w-16' : 'w-64'} min-h-screen bg-white border-r border-gray-100 text-gray-700 flex flex-col transition-all duration-200`}>
-      <div className="p-4 border-b border-gray-100 flex items-center justify-between">
-        {!collapsed && (
-          <div>
-            <h1 className="text-lg font-bold text-blue-600">CCB Mart</h1>
-            <p className="text-xs text-gray-400">{nav.title}</p>
-          </div>
-        )}
-        <button onClick={() => setCollapsed(!collapsed)} className="text-gray-400 hover:text-gray-700">
-          {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
-        </button>
+    <aside className="fixed left-0 top-0 h-full w-16 bg-white border-r border-gray-100 flex flex-col items-center z-40">
+      {/* Logo */}
+      <div className="h-16 flex items-center justify-center">
+        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/25">
+          <span className="text-white font-bold text-sm">C</span>
+        </div>
       </div>
 
-      <nav className="flex-1 p-2 space-y-1">
-        {nav.items.map((item) => {
+      {/* Nav icons */}
+      <nav className="flex-1 flex flex-col items-center gap-1 py-2">
+        {items.map((item) => {
           const active = pathname === item.href || pathname?.startsWith(item.href + '/');
           return (
             <Link
               key={item.href}
               href={item.href}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
+              className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors duration-150 ${
                 active
-                  ? 'bg-blue-50 text-blue-600 font-medium'
-                  : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                  ? 'bg-indigo-50 text-indigo-600'
+                  : 'text-gray-400 hover:text-gray-600 hover:bg-gray-50'
               }`}
-              title={collapsed ? item.label : undefined}
+              title={item.label}
             >
               {item.icon}
-              {!collapsed && item.label}
             </Link>
           );
         })}
 
-        {/* Notifications */}
+        {/* Notification bell */}
         <Link
           href={`/${role}/notifications`}
-          className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
-            pathname?.includes('/notifications') ? 'bg-blue-50 text-blue-600 font-medium' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+          className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors duration-150 relative ${
+            pathname?.includes('/notifications')
+              ? 'bg-indigo-50 text-indigo-600'
+              : 'text-gray-400 hover:text-gray-600 hover:bg-gray-50'
           }`}
-          title={collapsed ? 'Thong bao' : undefined}
+          title="Thong bao"
         >
-          <div className="relative">
-            <Bell size={20} />
-            {unreadCount > 0 && (
-              <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center">
-                {unreadCount > 9 ? '9+' : unreadCount}
-              </span>
-            )}
-          </div>
-          {!collapsed && 'Thong bao'}
+          <Bell size={20} />
+          {unreadCount > 0 && (
+            <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 text-white text-[9px] rounded-full flex items-center justify-center font-medium">
+              {unreadCount > 9 ? '9+' : unreadCount}
+            </span>
+          )}
         </Link>
       </nav>
 
-      <div className="p-2 border-t border-gray-100">
+      {/* Bottom: logout */}
+      <div className="py-4 flex flex-col items-center gap-2">
+        <div className="w-10 h-10 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-sm font-semibold">
+          {role[0]?.toUpperCase()}
+        </div>
         <button
           onClick={handleLogout}
-          className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-gray-500 hover:bg-red-50 hover:text-red-600 w-full transition-colors"
+          className="w-10 h-10 rounded-xl flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors duration-150"
+          title="Dang xuat"
         >
-          <LogOut size={20} />
-          {!collapsed && 'Dang xuat'}
+          <LogOut size={18} />
         </button>
       </div>
     </aside>
