@@ -51,11 +51,11 @@ export default function Sidebar({ role }: { role: string }) {
   const items = navByRole[role] || navByRole.admin;
 
   useEffect(() => {
-    const fetch = async () => {
+    const fn = async () => {
       try { const d = await api.notifications(1, true); setUnreadCount(d.unreadCount || 0); } catch {}
     };
-    fetch();
-    const interval = setInterval(fetch, 60000);
+    fn();
+    const interval = setInterval(fn, 60000);
     return () => clearInterval(interval);
   }, []);
 
@@ -66,27 +66,31 @@ export default function Sidebar({ role }: { role: string }) {
   };
 
   return (
-    <aside className="fixed left-0 top-0 h-full w-16 bg-white border-r border-gray-100 flex flex-col items-center z-40">
+    <aside
+      className="fixed left-0 top-0 h-full w-16 flex flex-col items-center py-4 z-50"
+      style={{ background: '#0f172a' }}
+    >
       {/* Logo */}
-      <div className="h-16 flex items-center justify-center">
-        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/25">
-          <span className="text-white font-bold text-sm">C</span>
-        </div>
+      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center mb-8 shadow-lg">
+        <span className="text-white font-bold text-sm">C</span>
       </div>
 
       {/* Nav icons */}
-      <nav className="flex-1 flex flex-col items-center gap-1 py-2">
+      <nav className="flex-1 flex flex-col items-center gap-1">
         {items.map((item) => {
           const active = pathname === item.href || pathname?.startsWith(item.href + '/');
           return (
             <Link
               key={item.href}
               href={item.href}
-              className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors duration-150 ${
+              className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-200 ${
                 active
-                  ? 'bg-indigo-50 text-indigo-600'
-                  : 'text-gray-400 hover:text-gray-600 hover:bg-gray-50'
+                  ? 'text-white'
+                  : 'text-gray-400 hover:text-white'
               }`}
+              style={active ? { background: '#334155' } : undefined}
+              onMouseEnter={(e) => { if (!active) e.currentTarget.style.background = '#1e293b'; }}
+              onMouseLeave={(e) => { if (!active) e.currentTarget.style.background = 'transparent'; }}
               title={item.label}
             >
               {item.icon}
@@ -94,33 +98,36 @@ export default function Sidebar({ role }: { role: string }) {
           );
         })}
 
-        {/* Notification bell */}
+        {/* Bell */}
         <Link
           href={`/${role}/notifications`}
-          className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors duration-150 relative ${
-            pathname?.includes('/notifications')
-              ? 'bg-indigo-50 text-indigo-600'
-              : 'text-gray-400 hover:text-gray-600 hover:bg-gray-50'
+          className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-200 relative ${
+            pathname?.includes('/notifications') ? 'text-white' : 'text-gray-400 hover:text-white'
           }`}
+          style={pathname?.includes('/notifications') ? { background: '#334155' } : undefined}
+          onMouseEnter={(e) => { if (!pathname?.includes('/notifications')) e.currentTarget.style.background = '#1e293b'; }}
+          onMouseLeave={(e) => { if (!pathname?.includes('/notifications')) e.currentTarget.style.background = 'transparent'; }}
           title="Thong bao"
         >
           <Bell size={20} />
           {unreadCount > 0 && (
-            <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 text-white text-[9px] rounded-full flex items-center justify-center font-medium">
+            <span className="absolute top-1 right-1 w-4 h-4 bg-red-500 text-white text-[9px] rounded-full flex items-center justify-center font-medium">
               {unreadCount > 9 ? '9+' : unreadCount}
             </span>
           )}
         </Link>
       </nav>
 
-      {/* Bottom: logout */}
-      <div className="py-4 flex flex-col items-center gap-2">
-        <div className="w-10 h-10 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-sm font-semibold">
+      {/* Bottom: avatar + logout */}
+      <div className="mt-auto flex flex-col items-center gap-2">
+        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-cyan-400 flex items-center justify-center text-white text-sm font-semibold">
           {role[0]?.toUpperCase()}
         </div>
         <button
           onClick={handleLogout}
-          className="w-10 h-10 rounded-xl flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors duration-150"
+          className="w-12 h-12 rounded-xl flex items-center justify-center text-gray-400 hover:text-red-400 transition-all duration-200"
+          onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(239,68,68,0.15)'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
           title="Dang xuat"
         >
           <LogOut size={18} />
