@@ -32,6 +32,9 @@ model User {
   rankHistory   RankHistory[]
   ownedAgency   Agency?        @relation("AgencyOwner")
   notifications Notification[]
+  cashDeposits        CashDeposit[] @relation("CtvDeposits")
+  confirmedDeposits   CashDeposit[] @relation("AdminConfirmedDeposits")
+  memberWallet        MemberWallet? @relation("MemberWallet")
 
   @@index([parentId])
   @@index([rank])
@@ -58,7 +61,7 @@ model Agency {
   userId          Int      @unique @map("user_id")
   name            String
   depositAmount   Float    @map("deposit_amount")
-  depositTier     String   @map("deposit_tier") // 50tr, 100tr, 300tr
+  depositTier     String   @map("deposit_tier")
   address         String?
 
   user            User     @relation("AgencyOwner", fields: [userId], references: [id])
@@ -72,7 +75,7 @@ model Agency {
 
 model CommissionConfig {
   id          Int    @id @default(autoincrement())
-  tier        String @unique // CTV, PP, TP, GDV, GDKD
+  tier        String @unique
   selfSalePct Float  @map("self_sale_pct")
   f1Pct       Float  @map("f1_pct")
   f2Pct       Float  @map("f2_pct")
@@ -84,7 +87,7 @@ model CommissionConfig {
 
 model AgencyCommissionConfig {
   id            Int    @id @default(autoincrement())
-  group         String @unique // A, B, C
+  group         String @unique
   commissionPct Float  @map("commission_pct")
   bonusPct      Float  @map("bonus_pct")
 
@@ -94,7 +97,7 @@ model AgencyCommissionConfig {
 model Product {
   id       Int    @id @default(autoincrement())
   name     String
-  category String // NS, TPCN, FMCG, GiaVi, CheBien, TienLoi
+  category String
   price    Float
   cogsPct  Float  @map("cogs_pct")
   unit     String
@@ -114,17 +117,31 @@ model Transaction {
   channel         String   // ctv, agency, showroom
   totalAmount     Float    @map("total_amount")
   cogsAmount      Float    @map("cogs_amount")
+  status          String   @default("CONFIRMED") // PENDING, CONFIRMED, REJECTED
+  paymentMethod   String?  @map("payment_method") // bank_transfer, cash
+  bankCode        String?  @map("bank_code") // last 4 digits
+  qrCodeData      String?  @map("qr_code_data")
+  bankReference   String?  @map("bank_reference")
+  ctvSubmittedAt  DateTime? @map("ctv_submitted_at")
+  confirmedBy     Int?     @map("confirmed_by")
+  confirmedAt     DateTime? @map("confirmed_at")
+  rejectedReason  String?  @map("rejected_reason")
+  cashDepositId   Int?     @map("cash_deposit_id")
   createdAt       DateTime @default(now()) @map("created_at")
 
-  customer        Customer?  @relation(fields: [customerId], references: [id])
-  ctv             User?      @relation("CtvTransactions", fields: [ctvId], references: [id])
-  agency          Agency?    @relation("AgencyTransactions", fields: [agencyId], references: [id])
+  customer        Customer?    @relation(fields: [customerId], references: [id])
+  ctv             User?        @relation("CtvTransactions", fields: [ctvId], references: [id])
+  agency          Agency?      @relation("AgencyTransactions", fields: [agencyId], references: [id])
   items           TransactionItem[]
+  paymentProof    PaymentProof?
+  cashDeposit     CashDeposit? @relation(fields: [cashDepositId], references: [id])
 
   @@index([ctvId])
   @@index([agencyId])
   @@index([channel])
   @@index([createdAt])
+  @@index([status])
+  @@index([ctvId, status])
   @@index([ctvId, createdAt])
   @@index([agencyId, createdAt])
   @@index([channel, createdAt])
@@ -159,6 +176,7 @@ model Customer {
   ctv           User?    @relation("CtvCustomers", fields: [ctvId], references: [id])
   agency        Agency?  @relation("AgencyCustomers", fields: [agencyId], references: [id])
   transactions  Transaction[]
+  memberWallet  MemberWallet?
 
   @@map("customers")
 }
@@ -166,8 +184,8 @@ model Customer {
 model KpiLog {
   id            Int    @id @default(autoincrement())
   ctvId         Int    @map("ctv_id")
-  month         String // YYYY-MM
-  selfSales     Int    @map("self_sales") // number of combos
+  month         String
+  selfSales     Int    @map("self_sales")
   portfolioSize Int    @map("portfolio_size")
   rankBefore    String @map("rank_before")
   rankAfter     String @map("rank_after")
@@ -199,7 +217,7 @@ model InventoryWarning {
   agencyId    Int?     @map("agency_id")
   quantity    Int
   expiryDate  DateTime @map("expiry_date")
-  warningType String   @map("warning_type") // low_stock, expiring_soon, expired
+  warningType String   @map("warning_type")
   createdAt   DateTime @default(now()) @map("created_at")
 
   product     Product  @relation(fields: [productId], references: [id])
@@ -221,10 +239,10 @@ model SyncLog {
 model Notification {
   id        Int      @id @default(autoincrement())
   userId    Int      @map("user_id")
-  type      String   // RANK_CHANGE, TRANSACTION_CONFIRMED, SALARY_WARNING, INVENTORY_WARNING
+  type      String
   title     String
   content   String
-  metadata  String?  // JSON string
+  metadata  String?
   isRead    Boolean  @default(false) @map("is_read")
   createdAt DateTime @default(now()) @map("created_at")
 
@@ -234,4 +252,114 @@ model Notification {
   @@index([userId, isRead])
   @@index([createdAt])
   @@map("notifications")
+}
+
+model PaymentProof {
+  id            Int      @id @default(autoincrement())
+  transactionId Int      @unique @map("transaction_id")
+  imageUrl      String   @map("image_url")
+  uploadedBy    Int      @map("uploaded_by")
+  uploadedAt    DateTime @default(now()) @map("uploaded_at")
+  notes         String?
+
+  transaction   Transaction @relation(fields: [transactionId], references: [id])
+
+  @@map("payment_proofs")
+}
+
+model CashDeposit {
+  id             Int       @id @default(autoincrement())
+  ctvId          Int       @map("ctv_id")
+  amount         Float
+  transactionIds String    @map("transaction_ids") // JSON array
+  depositedAt    DateTime  @default(now()) @map("deposited_at")
+  confirmedBy    Int?      @map("confirmed_by")
+  confirmedAt    DateTime? @map("confirmed_at")
+  status         String    @default("PENDING") // PENDING, CONFIRMED, REJECTED
+  notes          String?
+
+  ctv            User      @relation("CtvDeposits", fields: [ctvId], references: [id])
+  confirmAdmin   User?     @relation("AdminConfirmedDeposits", fields: [confirmedBy], references: [id])
+  transactions   Transaction[]
+
+  @@index([ctvId])
+  @@index([status])
+  @@map("cash_deposits")
+}
+
+model MembershipTier {
+  id                 Int      @id @default(autoincrement())
+  name               String   @unique
+  minDeposit         Float    @map("min_deposit")
+  discountPct        Float    @map("discount_pct")
+  referralPct        Float    @map("referral_pct")
+  monthlyReferralCap Float    @map("monthly_referral_cap")
+  color              String   @default("gray")
+  createdAt          DateTime @default(now()) @map("created_at")
+
+  wallets            MemberWallet[]
+
+  @@map("membership_tiers")
+}
+
+model MemberWallet {
+  id                    Int      @id @default(autoincrement())
+  userId                Int      @unique @map("user_id")
+  customerId            Int?     @unique @map("customer_id")
+  tierId                Int      @map("tier_id")
+  balance               Float    @default(0)
+  totalDeposit          Float    @default(0) @map("total_deposit")
+  referralCode          String   @unique @map("referral_code")
+  referredById          Int?     @map("referred_by_id")
+  referralEarned        Float    @default(0) @map("referral_earned")
+  monthlyReferralEarned Float    @default(0) @map("monthly_referral_earned")
+  createdAt             DateTime @default(now()) @map("created_at")
+
+  user                  User              @relation("MemberWallet", fields: [userId], references: [id])
+  customer              Customer?         @relation(fields: [customerId], references: [id])
+  tier                  MembershipTier    @relation(fields: [tierId], references: [id])
+  referredBy            MemberWallet?     @relation("Referrals", fields: [referredById], references: [id])
+  referrals             MemberWallet[]    @relation("Referrals")
+  deposits              DepositHistory[]
+  commissionsEarned     ReferralCommission[] @relation("CommissionEarner")
+  commissionsGenerated  ReferralCommission[] @relation("CommissionGenerator")
+
+  @@index([referralCode])
+  @@index([tierId])
+  @@map("member_wallets")
+}
+
+model DepositHistory {
+  id          Int       @id @default(autoincrement())
+  walletId    Int       @map("wallet_id")
+  amount      Float
+  method      String    // bank_transfer, cash
+  status      String    @default("PENDING")
+  confirmedBy Int?      @map("confirmed_by")
+  confirmedAt DateTime? @map("confirmed_at")
+  notes       String?
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  wallet      MemberWallet @relation(fields: [walletId], references: [id])
+
+  @@index([walletId])
+  @@index([status])
+  @@map("deposit_history")
+}
+
+model ReferralCommission {
+  id              Int      @id @default(autoincrement())
+  earnerWalletId  Int      @map("earner_wallet_id")
+  sourceWalletId  Int      @map("source_wallet_id")
+  amount          Float
+  ratePct         Float    @map("rate_pct")
+  month           String
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  earnerWallet    MemberWallet @relation("CommissionEarner", fields: [earnerWalletId], references: [id])
+  sourceWallet    MemberWallet @relation("CommissionGenerator", fields: [sourceWalletId], references: [id])
+
+  @@index([earnerWalletId])
+  @@index([month])
+  @@map("referral_commissions")
 }

@@ -30,6 +30,8 @@ export default function LoginPage() {
         router.push('/agency/dashboard');
       } else if (role === 'admin') {
         router.push('/admin/dashboard');
+      } else if (role === 'member') {
+        router.push('/member/dashboard');
       } else {
         setError('Vai trò không hợp lệ.');
       }
@@ -42,18 +44,18 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-emerald-100 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Logo / Branding */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-emerald-600 shadow-lg mb-4">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-blue-600 shadow-lg mb-4">
             <span className="text-white text-2xl font-bold">C</span>
           </div>
-          <h1 className="text-3xl font-extrabold text-emerald-700 tracking-tight">CCB Mart</h1>
-          <p className="text-sm text-emerald-500 mt-1">Hệ thống quản lý nội bộ</p>
+          <h1 className="text-3xl font-extrabold text-blue-700 tracking-tight">CCB Mart</h1>
+          <p className="text-sm text-blue-500 mt-1">Hệ thống quản lý nội bộ</p>
         </div>
 
-        <Card className="shadow-xl border-0 ring-1 ring-emerald-200">
+        <Card className="shadow-xl border-0 ring-1 ring-blue-200">
           <CardHeader className="pb-4">
             <CardTitle className="text-xl text-gray-800">Đăng nhập</CardTitle>
             <CardDescription className="text-gray-500">
@@ -74,7 +76,7 @@ export default function LoginPage() {
                   onChange={(e) => setEmail(e.target.value)}
                   required
                   disabled={loading}
-                  className="focus-visible:ring-emerald-500 border-gray-300"
+                  className="focus-visible:ring-blue-500 border-gray-300"
                 />
               </div>
 
@@ -90,7 +92,7 @@ export default function LoginPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   disabled={loading}
-                  className="focus-visible:ring-emerald-500 border-gray-300"
+                  className="focus-visible:ring-blue-500 border-gray-300"
                 />
               </div>
 
@@ -103,7 +105,7 @@ export default function LoginPage() {
               <Button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-semibold py-2.5 rounded-md transition-colors"
+                className="w-full bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold py-2.5 rounded-md transition-colors"
               >
                 {loading ? 'Đang đăng nhập...' : 'Đăng nhập'}
               </Button>
@@ -111,7 +113,7 @@ export default function LoginPage() {
           </CardContent>
         </Card>
 
-        <p className="text-center text-xs text-emerald-400 mt-6">
+        <p className="text-center text-xs text-blue-400 mt-6">
           &copy; {new Date().getFullYear()} CCB Mart. All rights reserved.
         </p>
       </div>

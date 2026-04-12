@@ -78,10 +78,11 @@ async function calculateCtvCommission(ctvId, month) {
   const endDate = new Date(startDate);
   endDate.setMonth(endDate.getMonth() + 1);
 
-  // Query 1: Get ALL CTV channel transactions for the month in one query
+  // Query 1: Get ALL CONFIRMED CTV channel transactions for the month
   const allTransactions = await prisma.transaction.findMany({
     where: {
       channel: 'ctv',
+      status: 'CONFIRMED',
       createdAt: { gte: startDate, lt: endDate },
     },
     select: {
@@ -178,11 +179,12 @@ async function calculateAllCtvCommissions(month) {
   const endDate = new Date(startDate);
   endDate.setMonth(endDate.getMonth() + 1);
 
-  // Only 2 queries for ALL CTVs
+  // Only 2 queries for ALL CTVs (CONFIRMED only)
   const [allTransactions, allCtv] = await Promise.all([
     prisma.transaction.findMany({
       where: {
         channel: 'ctv',
+        status: 'CONFIRMED',
         createdAt: { gte: startDate, lt: endDate },
       },
       select: { id: true, totalAmount: true, ctvId: true },
@@ -258,10 +260,11 @@ async function calculateSalaryFundStatus(month) {
   const endDate = new Date(startDate);
   endDate.setMonth(endDate.getMonth() + 1);
 
-  // Single aggregation query instead of fetching all transactions
+  // Single aggregation query - CONFIRMED only
   const ctvRevenueResult = await prisma.transaction.aggregate({
     where: {
       channel: 'ctv',
+      status: 'CONFIRMED',
       createdAt: { gte: startDate, lt: endDate },
     },
     _sum: { totalAmount: true },

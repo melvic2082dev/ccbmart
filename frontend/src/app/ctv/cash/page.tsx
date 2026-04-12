@@ -1,0 +1,159 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import DashboardLayout from '@/components/DashboardLayout';
+import { api, formatVND } from '@/lib/api';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Banknote, CheckCircle } from 'lucide-react';
+
+interface CashTx {
+  id: number;
+  totalAmount: number;
+  createdAt: string;
+  customer: { name: string; phone: string } | null;
+}
+
+export default function CtvCashDeposit() {
+  const [transactions, setTransactions] = useState<CashTx[]>([]);
+  const [totalAmount, setTotalAmount] = useState(0);
+  const [selected, setSelected] = useState<Set<number>>(new Set());
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [success, setSuccess] = useState<any>(null);
+  const [error, setError] = useState('');
+
+  const fetchData = async () => {
+    try {
+      const data = await api.ctvPendingCash();
+      setTransactions(data.transactions || []);
+      setTotalAmount(data.totalAmount || 0);
+    } catch { /* ignore */ }
+    setLoading(false);
+  };
+
+  useEffect(() => { fetchData(); }, []);
+
+  const toggleSelect = (id: number) => {
+    const next = new Set(selected);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    setSelected(next);
+  };
+
+  const selectAll = () => {
+    if (selected.size === transactions.length) setSelected(new Set());
+    else setSelected(new Set(transactions.map(t => t.id)));
+  };
+
+  const selectedAmount = transactions.filter(t => selected.has(t.id)).reduce((s, t) => s + t.totalAmount, 0);
+
+  const handleSubmit = async () => {
+    if (selected.size === 0) return;
+    setSubmitting(true);
+    setError('');
+    try {
+      const result = await api.ctvCreateCashDeposit(Array.from(selected));
+      setSuccess(result);
+    } catch (err: any) {
+      setError(err.message);
+    }
+    setSubmitting(false);
+  };
+
+  return (
+    <DashboardLayout role="ctv">
+      <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
+        <Banknote size={24} /> Nop tien mat
+      </h2>
+
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4">{error}</div>
+      )}
+
+      {success ? (
+        <Card>
+          <CardContent className="py-12 text-center">
+            <CheckCircle size={48} className="mx-auto text-emerald-500 mb-4" />
+            <h3 className="text-xl font-bold mb-2">Phieu nop tien da tao!</h3>
+            <p className="text-slate-500">Ma phieu: #{success.depositId}</p>
+            <p className="text-slate-500">Tong: {formatVND(success.totalAmount)} ({success.transactionCount} giao dich)</p>
+            <p className="text-slate-500 mt-2">Admin se xac nhan khi nhan duoc tien.</p>
+            <Button onClick={() => { setSuccess(null); setSelected(new Set()); fetchData(); }} className="mt-6">
+              Quay lai
+            </Button>
+          </CardContent>
+        </Card>
+      ) : loading ? (
+        <div className="space-y-3">
+          {[1, 2, 3].map(i => <div key={i} className="h-16 bg-slate-200 animate-pulse rounded-xl" />)}
+        </div>
+      ) : transactions.length === 0 ? (
+        <Card>
+          <CardContent className="py-12 text-center text-slate-500">
+            Khong co giao dich tien mat can nop
+          </CardContent>
+        </Card>
+      ) : (
+        <>
+          {/* Summary */}
+          <Card className="mb-4">
+            <CardContent className="pt-6 flex items-center justify-between">
+              <div>
+                <p className="text-sm text-slate-500">Tong tien mat chua nop</p>
+                <p className="text-2xl font-bold text-yellow-600">{formatVND(totalAmount)}</p>
+                <p className="text-sm text-slate-400">{transactions.length} giao dich</p>
+              </div>
+              <Button variant="outline" onClick={selectAll}>
+                {selected.size === transactions.length ? 'Bo chon tat ca' : 'Chon tat ca'}
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Transaction list */}
+          <div className="space-y-2 mb-4">
+            {transactions.map(tx => (
+              <Card
+                key={tx.id}
+                className={`cursor-pointer transition-all ${selected.has(tx.id) ? 'border-emerald-500 bg-emerald-50/50' : 'hover:border-slate-300'}`}
+                onClick={() => toggleSelect(tx.id)}
+              >
+                <CardContent className="py-3 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="checkbox"
+                      checked={selected.has(tx.id)}
+                      onChange={() => toggleSelect(tx.id)}
+                      className="w-5 h-5 rounded"
+                    />
+                    <div>
+                      <p className="font-semibold">#{tx.id} - {tx.customer?.name || 'Khach hang'}</p>
+                      <p className="text-xs text-slate-400">{new Date(tx.createdAt).toLocaleString('vi-VN')}</p>
+                    </div>
+                  </div>
+                  <p className="font-bold">{formatVND(tx.totalAmount)}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {/* Submit */}
+          {selected.size > 0 && (
+            <Card className="sticky bottom-4">
+              <CardContent className="py-4 flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-slate-500">Da chon: {selected.size} giao dich</p>
+                  <p className="text-xl font-bold text-emerald-600">{formatVND(selectedAmount)}</p>
+                </div>
+                <Button onClick={handleSubmit} disabled={submitting} size="lg">
+                  {submitting ? 'Dang gui...' : 'Xac nhan nop tien'}
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+        </>
+      )}
+    </DashboardLayout>
+  );
+}

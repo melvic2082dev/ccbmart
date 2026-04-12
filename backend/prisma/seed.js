@@ -23,7 +23,14 @@ async function main() {
   console.log('🌱 Seeding database...');
 
   // Clean existing data
+  await prisma.referralCommission.deleteMany();
+  await prisma.depositHistory.deleteMany();
+  await prisma.memberWallet.deleteMany();
+  await prisma.membershipTier.deleteMany();
+  await prisma.paymentProof.deleteMany();
+  await prisma.notification.deleteMany();
   await prisma.transactionItem.deleteMany();
+  await prisma.cashDeposit.deleteMany();
   await prisma.transaction.deleteMany();
   await prisma.customer.deleteMany();
   await prisma.inventoryWarning.deleteMany();
@@ -460,7 +467,49 @@ async function main() {
   }
   console.log('✅ Inventory warnings created');
 
-  // 12. Sync Logs
+  // 12. Pending CTV transactions (for payment confirmation demo)
+  const pendingTxns = [];
+  for (let i = 0; i < 10; i++) {
+    const ctv = allCtvUsers[i % allCtvUsers.length];
+    const customer = customers[i % 60];
+    const isBankTransfer = i < 6;
+    const hoursAgo = i < 3 ? 2 : i < 6 ? 12 : i < 8 ? 30 : 50; // varied ages
+    const txnDate = new Date(Date.now() - hoursAgo * 60 * 60 * 1000);
+
+    const txn = await prisma.transaction.create({
+      data: {
+        customerId: customer.id,
+        ctvId: ctv.id,
+        channel: 'ctv',
+        totalAmount: 2000000,
+        cogsAmount: 1000000,
+        status: 'PENDING',
+        paymentMethod: isBankTransfer ? 'bank_transfer' : 'cash',
+        bankCode: isBankTransfer ? String(1000 + i) : null,
+        ctvSubmittedAt: txnDate,
+        createdAt: txnDate,
+        items: {
+          create: [{ productId: products[0].id, quantity: 1, unitPrice: 2000000, totalPrice: 2000000 }],
+        },
+      },
+    });
+    pendingTxns.push(txn);
+  }
+
+  // Payment proofs for bank transfer transactions
+  for (let i = 0; i < 4; i++) {
+    await prisma.paymentProof.create({
+      data: {
+        transactionId: pendingTxns[i].id,
+        imageUrl: `/uploads/demo_proof_${i + 1}.png`,
+        uploadedBy: pendingTxns[i].ctvId,
+        notes: `Khach chuyen khoan luc ${8 + i}:${30 + i * 5}`,
+      },
+    });
+  }
+  console.log('✅ 10 pending CTV transactions + 4 payment proofs created');
+
+  // 13. Sync Logs
   for (let i = 0; i < 10; i++) {
     await prisma.syncLog.create({
       data: {
@@ -473,12 +522,103 @@ async function main() {
   }
   console.log('✅ Sync logs created');
 
+  // 14. Membership Tiers
+  const memberHash = await bcrypt.hash('member123', 10);
+  const tierGreen = await prisma.membershipTier.create({
+    data: { name: 'Green', minDeposit: 0, discountPct: 0, referralPct: 0, monthlyReferralCap: 0, color: 'gray' },
+  });
+  const tierBasic = await prisma.membershipTier.create({
+    data: { name: 'Basic', minDeposit: 200000, discountPct: 0.03, referralPct: 0, monthlyReferralCap: 0, color: 'blue' },
+  });
+  const tierStandard = await prisma.membershipTier.create({
+    data: { name: 'Standard', minDeposit: 500000, discountPct: 0.07, referralPct: 0.02, monthlyReferralCap: 500000, color: 'purple' },
+  });
+  const tierVip = await prisma.membershipTier.create({
+    data: { name: 'VIP Gold', minDeposit: 2000000, discountPct: 0.12, referralPct: 0.05, monthlyReferralCap: 500000, color: 'amber' },
+  });
+  console.log('✅ 4 membership tiers created');
+
+  // 15. Member users + wallets
+  const memberUsers = [];
+  const memberWallets = [];
+  const tiers = [tierGreen, tierBasic, tierStandard, tierVip];
+
+  for (let i = 0; i < 20; i++) {
+    const tier = tiers[i % 4];
+    const user = await prisma.user.create({
+      data: {
+        email: `member${i + 1}@ccbmart.vn`,
+        passwordHash: memberHash,
+        role: 'member',
+        name: randomName(),
+        phone: randomPhone(),
+      },
+    });
+    memberUsers.push(user);
+
+    const code = `CCB_${String(100000 + i).slice(-6).toUpperCase()}`;
+    const wallet = await prisma.memberWallet.create({
+      data: {
+        userId: user.id,
+        tierId: tier.id,
+        balance: tier.minDeposit + Math.floor(Math.random() * 500000),
+        totalDeposit: tier.minDeposit + Math.floor(Math.random() * 1000000),
+        referralCode: code,
+        referredById: i >= 5 ? memberWallets[i % 5].id : null, // first 5 have no referrer, rest refer to first 5
+      },
+    });
+    memberWallets.push(wallet);
+  }
+  console.log('✅ 20 member users + wallets created');
+
+  // 16. Deposit history for members
+  for (let i = 0; i < 30; i++) {
+    const wallet = memberWallets[i % memberWallets.length];
+    await prisma.depositHistory.create({
+      data: {
+        walletId: wallet.id,
+        amount: [200000, 500000, 1000000, 2000000][Math.floor(Math.random() * 4)],
+        method: Math.random() > 0.3 ? 'bank_transfer' : 'cash',
+        status: i < 5 ? 'PENDING' : 'CONFIRMED',
+        confirmedBy: i >= 5 ? admin.id : null,
+        confirmedAt: i >= 5 ? randomDate(threeMonthsAgo, now) : null,
+        createdAt: randomDate(threeMonthsAgo, now),
+      },
+    });
+  }
+  console.log('✅ 30 deposit history records created');
+
+  // 17. Referral commissions
+  const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  for (let i = 5; i < 15; i++) {
+    const earner = memberWallets[i % 5]; // first 5 wallets are referrers
+    const source = memberWallets[i];
+    const rate = tiers[i % 4].referralPct;
+    if (rate > 0) {
+      await prisma.referralCommission.create({
+        data: {
+          earnerWalletId: earner.id,
+          sourceWalletId: source.id,
+          amount: Math.floor(Math.random() * 50000) + 10000,
+          ratePct: rate,
+          month: currentMonth,
+          createdAt: randomDate(threeMonthsAgo, now),
+        },
+      });
+    }
+  }
+  console.log('✅ Referral commissions created');
+
   console.log('\n🎉 Seed complete!');
   console.log('📧 Login credentials:');
   console.log('   admin@ccbmart.vn / admin123');
-  console.log('   ctv1@ccbmart.vn / ctv123 (GĐKD)');
-  console.log('   ctv2@ccbmart.vn / ctv123 (GĐV)');
+  console.log('   ctv1@ccbmart.vn / ctv123 (GDKD)');
+  console.log('   ctv2@ccbmart.vn / ctv123 (GDV)');
   console.log('   agency1@ccbmart.vn / agency123');
+  console.log('   member1@ccbmart.vn / member123 (Green)');
+  console.log('   member2@ccbmart.vn / member123 (Basic)');
+  console.log('   member3@ccbmart.vn / member123 (Standard)');
+  console.log('   member4@ccbmart.vn / member123 (VIP Gold)');
 }
 
 main()

@@ -71,6 +71,20 @@ const schemas = {
     cogsAmount: Joi.number().min(0).optional(),
     paymentMethod: Joi.string().optional(),
   }),
+
+  memberRegister: Joi.object({
+    email: Joi.string().email().required(),
+    password: Joi.string().min(6).max(100).required(),
+    name: Joi.string().min(2).max(100).required(),
+    phone: Joi.string().min(9).max(15).required(),
+    depositAmount: Joi.number().min(0).default(0),
+    referralCode: Joi.string().pattern(/^CCB_[A-Z0-9]{6}$/).optional(),
+  }),
+
+  memberDeposit: Joi.object({
+    amount: Joi.number().min(10000).required(),
+    method: Joi.string().valid('bank_transfer', 'cash').default('bank_transfer'),
+  }),
 };
 
 module.exports = { validate, schemas };

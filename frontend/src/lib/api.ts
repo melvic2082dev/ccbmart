@@ -28,12 +28,24 @@ async function fetchAPI(path: string, options: RequestInit = {}) {
 async function fetchBlob(path: string) {
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
   const res = await fetch(`${API_BASE}${path}`, {
-    headers: {
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
+    headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
   });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return res;
+}
+
+async function fetchMultipart(path: string, formData: FormData) {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+  const res = await fetch(`${API_BASE}${path}`, {
+    method: 'POST',
+    headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+    body: formData,
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || `HTTP ${res.status}`);
+  }
+  return res.json();
 }
 
 export const api = {
@@ -47,6 +59,19 @@ export const api = {
   ctvCustomers: () => fetchAPI('/ctv/customers'),
   ctvTransactions: (page = 1) => fetchAPI(`/ctv/transactions?page=${page}`),
   ctvProducts: () => fetchAPI('/ctv/products'),
+
+  // CTV Transactions (new)
+  ctvCreateTransaction: (data: { customerId?: number; customerName?: string; customerPhone?: string; paymentMethod: string; bankCode?: string }) =>
+    fetchAPI('/ctv/transactions/create', { method: 'POST', body: JSON.stringify(data) }),
+  ctvPendingTransactions: (page = 1) => fetchAPI(`/ctv/transactions/pending?page=${page}`),
+  ctvTransactionHistory: (page = 1, status?: string) =>
+    fetchAPI(`/ctv/transactions/history?page=${page}${status ? `&status=${status}` : ''}`),
+  ctvUploadProof: (txId: number, formData: FormData) =>
+    fetchMultipart(`/ctv/transactions/${txId}/upload-proof`, formData),
+  ctvPendingCash: () => fetchAPI('/ctv/transactions/pending-cash'),
+  ctvCreateCashDeposit: (transactionIds: number[], notes?: string) =>
+    fetchAPI('/ctv/transactions/cash-deposit', { method: 'POST', body: JSON.stringify({ transactionIds, notes }) }),
+  ctvPendingCount: () => fetchAPI('/ctv/transactions/pending-count'),
 
   // Agency
   agencyDashboard: () => fetchAPI('/agency/dashboard'),
@@ -70,6 +95,20 @@ export const api = {
   adminSync: () => fetchAPI('/admin/sync', { method: 'POST' }),
   adminRunRankEvaluation: () => fetchAPI('/admin/rank-evaluation', { method: 'POST' }),
 
+  // Admin Reconciliation (new)
+  adminReconciliationPending: (page = 1, paymentMethod?: string) =>
+    fetchAPI(`/admin/reconciliation/pending?page=${page}${paymentMethod ? `&paymentMethod=${paymentMethod}` : ''}`),
+  adminReconciliationConfirm: (id: number, notes?: string) =>
+    fetchAPI(`/admin/reconciliation/${id}/confirm`, { method: 'POST', body: JSON.stringify({ notes }) }),
+  adminReconciliationReject: (id: number, reason: string) =>
+    fetchAPI(`/admin/reconciliation/${id}/reject`, { method: 'POST', body: JSON.stringify({ reason }) }),
+  adminReconciliationStats: () => fetchAPI('/admin/reconciliation/stats'),
+  adminCashDepositsPending: () => fetchAPI('/admin/reconciliation/cash-deposits/pending'),
+  adminCashDepositConfirm: (id: number, notes?: string) =>
+    fetchAPI(`/admin/reconciliation/cash-deposits/${id}/confirm`, { method: 'POST', body: JSON.stringify({ notes }) }),
+  adminCashDepositReject: (id: number, reason: string) =>
+    fetchAPI(`/admin/reconciliation/cash-deposits/${id}/reject`, { method: 'POST', body: JSON.stringify({ reason }) }),
+
   // Export
   adminExportExcel: async (months = 6) => {
     const res = await fetchBlob(`/admin/reports/export/excel?months=${months}`);
@@ -87,6 +126,31 @@ export const api = {
     const url = URL.createObjectURL(blob);
     window.open(url, '_blank');
   },
+
+  // Member
+  memberRegister: (data: { email: string; password: string; name: string; phone: string; depositAmount?: number; referralCode?: string }) =>
+    fetchAPI('/members/register', { method: 'POST', body: JSON.stringify(data) }),
+  memberWallet: () => fetchAPI('/members/wallet'),
+  memberDeposit: (data: { amount: number; method: string }) =>
+    fetchAPI('/members/deposit', { method: 'POST', body: JSON.stringify(data) }),
+  memberTransactions: (page = 1) => fetchAPI(`/members/transactions?page=${page}`),
+  memberReferralStats: () => fetchAPI('/members/referral-stats'),
+  memberRedeemCode: (code: string) =>
+    fetchAPI('/members/redeem-code', { method: 'POST', body: JSON.stringify({ code }) }),
+
+  // Admin Membership
+  adminMembershipTiers: () => fetchAPI('/admin/membership/tiers'),
+  adminUpdateTier: (id: number, data: Record<string, unknown>) =>
+    fetchAPI(`/admin/membership/tiers/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  adminMemberDeposits: (page = 1, status?: string) =>
+    fetchAPI(`/admin/membership/deposits?page=${page}${status ? `&status=${status}` : ''}`),
+  adminConfirmMemberDeposit: (id: number) =>
+    fetchAPI(`/admin/membership/deposits/${id}/confirm`, { method: 'POST' }),
+  adminRejectMemberDeposit: (id: number, reason: string) =>
+    fetchAPI(`/admin/membership/deposits/${id}/reject`, { method: 'POST', body: JSON.stringify({ reason }) }),
+  adminReferralReport: (month?: string) =>
+    fetchAPI(`/admin/membership/referral-report${month ? `?month=${month}` : ''}`),
+  adminMemberWallets: (page = 1) => fetchAPI(`/admin/membership/wallets?page=${page}`),
 
   // Notifications
   notifications: (page = 1, unreadOnly = false) =>

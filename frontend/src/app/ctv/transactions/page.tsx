@@ -1,131 +1,118 @@
-'use client'
+'use client';
 
-import { useEffect, useState } from 'react'
-import DashboardLayout from '@/components/DashboardLayout'
-import { api, formatVND } from '@/lib/api'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
-import { Button } from '@/components/ui/button'
+import { useEffect, useState } from 'react';
+import DashboardLayout from '@/components/DashboardLayout';
+import { api, formatVND } from '@/lib/api';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { ShoppingCart, Clock, CheckCircle, XCircle } from 'lucide-react';
 
-interface Transaction {
-  id: string | number
-  kiotvietOrderId: string
-  customer?: { name: string }
-  totalAmount: number
-  createdAt: string
-}
+const statusConfig: Record<string, { label: string; color: string }> = {
+  PENDING: { label: 'Cho duyet', color: 'bg-yellow-100 text-yellow-700' },
+  CONFIRMED: { label: 'Da duyet', color: 'bg-emerald-100 text-emerald-700' },
+  REJECTED: { label: 'Tu choi', color: 'bg-red-100 text-red-700' },
+};
 
-interface TransactionsResponse {
-  data: Transaction[]
-  total: number
-  page: number
-  totalPages: number
-}
+export default function CtvTransactions() {
+  const [tab, setTab] = useState('');
+  const [transactions, setTransactions] = useState<any[]>([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [loading, setLoading] = useState(true);
 
-export default function CtvTransactionsPage() {
-  const [transactions, setTransactions] = useState<Transaction[]>([])
-  const [page, setPage] = useState(1)
-  const [totalPages, setTotalPages] = useState(1)
-  const [loading, setLoading] = useState(true)
+  const fetchData = async (p = 1, status = tab) => {
+    setLoading(true);
+    try {
+      const data = await api.ctvTransactionHistory(p, status || undefined);
+      setTransactions(data.transactions || []);
+      setTotal(data.total || 0);
+      setTotalPages(data.totalPages || 1);
+      setPage(p);
+    } catch { /* ignore */ }
+    setLoading(false);
+  };
 
-  useEffect(() => {
-    async function fetchData() {
-      setLoading(true)
-      try {
-        const res = await api.ctvTransactions(page)
-        setTransactions(res.transactions || res.data || [])
-        setTotalPages(res.totalPages || 1)
-      } finally {
-        setLoading(false)
-      }
-    }
-    fetchData()
-  }, [page])
+  useEffect(() => { fetchData(1, tab); }, [tab]);
 
   return (
     <DashboardLayout role="ctv">
-      <div className="p-6">
-        <h1 className="text-2xl font-bold mb-6">Đơn hàng của tôi</h1>
-        <Card>
-          <CardHeader>
-            <CardTitle>Lịch sử giao dịch</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {loading ? (
-              <p className="text-muted-foreground text-sm">Đang tải...</p>
-            ) : (
-              <>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Mã đơn</TableHead>
-                      <TableHead>Khách hàng</TableHead>
-                      <TableHead>Tổng tiền</TableHead>
-                      <TableHead>Ngày</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {transactions.map((tx) => (
-                      <TableRow key={tx.id}>
-                        <TableCell className="font-mono text-sm">
-                          {tx.kiotvietOrderId}
-                        </TableCell>
-                        <TableCell>{tx.customer?.name ?? '—'}</TableCell>
-                        <TableCell>{formatVND(tx.totalAmount)}</TableCell>
-                        <TableCell>
-                          {tx.createdAt
-                            ? new Date(tx.createdAt).toLocaleDateString('vi-VN')
-                            : '—'}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                    {transactions.length === 0 && (
-                      <TableRow>
-                        <TableCell colSpan={4} className="text-center text-muted-foreground">
-                          Chưa có giao dịch nào
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
+      <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
+        <ShoppingCart size={24} /> Giao dich ({total})
+      </h2>
 
-                {totalPages > 1 && (
-                  <div className="flex items-center justify-between mt-4">
-                    <p className="text-sm text-muted-foreground">
-                      Trang {page} / {totalPages}
-                    </p>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setPage((p) => Math.max(1, p - 1))}
-                        disabled={page <= 1}
-                      >
-                        Trước
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                        disabled={page >= totalPages}
-                      >
-                        Sau
-                      </Button>
-                    </div>
-                  </div>
-                )}
-              </>
-            )}
+      <div className="flex gap-2 mb-4">
+        <Button variant={tab === '' ? 'default' : 'outline'} size="sm" onClick={() => setTab('')}>Tat ca</Button>
+        <Button variant={tab === 'PENDING' ? 'default' : 'outline'} size="sm" onClick={() => setTab('PENDING')}>
+          <Clock size={14} className="mr-1" /> Cho duyet
+        </Button>
+        <Button variant={tab === 'CONFIRMED' ? 'default' : 'outline'} size="sm" onClick={() => setTab('CONFIRMED')}>
+          <CheckCircle size={14} className="mr-1" /> Da duyet
+        </Button>
+        <Button variant={tab === 'REJECTED' ? 'default' : 'outline'} size="sm" onClick={() => setTab('REJECTED')}>
+          <XCircle size={14} className="mr-1" /> Tu choi
+        </Button>
+      </div>
+
+      {loading ? (
+        <div className="space-y-3">{[1, 2, 3].map(i => <div key={i} className="h-16 bg-slate-200 animate-pulse rounded-xl" />)}</div>
+      ) : transactions.length === 0 ? (
+        <Card><CardContent className="py-12 text-center text-slate-500">Khong co giao dich</CardContent></Card>
+      ) : (
+        <Card>
+          <CardContent className="overflow-x-auto p-0">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>ID</TableHead>
+                  <TableHead>Khach hang</TableHead>
+                  <TableHead className="text-right">So tien</TableHead>
+                  <TableHead>PT thanh toan</TableHead>
+                  <TableHead>Trang thai</TableHead>
+                  <TableHead>Ngay tao</TableHead>
+                  <TableHead>Ghi chu</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {transactions.map((tx: any) => {
+                  const sc = statusConfig[tx.status] || statusConfig.PENDING;
+                  return (
+                    <TableRow key={tx.id}>
+                      <TableCell className="font-mono">#{tx.id}</TableCell>
+                      <TableCell>{tx.customer?.name || '-'}</TableCell>
+                      <TableCell className="text-right font-semibold">{formatVND(tx.totalAmount)}</TableCell>
+                      <TableCell>
+                        {tx.paymentMethod === 'bank_transfer' ? (
+                          <Badge variant="outline">CK {tx.bankCode ? `(${tx.bankCode})` : ''}</Badge>
+                        ) : tx.paymentMethod === 'cash' ? (
+                          <Badge variant="secondary">Tien mat</Badge>
+                        ) : '-'}
+                      </TableCell>
+                      <TableCell>
+                        <Badge className={sc.color} variant="outline">{sc.label}</Badge>
+                      </TableCell>
+                      <TableCell className="text-xs">{new Date(tx.createdAt).toLocaleString('vi-VN')}</TableCell>
+                      <TableCell className="text-xs text-slate-500 max-w-[150px] truncate">
+                        {tx.rejectedReason || (tx.paymentProof ? 'Co bang chung' : '')}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
           </CardContent>
         </Card>
-      </div>
+      )}
+
+      {totalPages > 1 && (
+        <div className="flex justify-center gap-2 mt-4">
+          <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => fetchData(page - 1)}>Truoc</Button>
+          <span className="flex items-center text-sm text-slate-500">Trang {page}/{totalPages}</span>
+          <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => fetchData(page + 1)}>Sau</Button>
+        </div>
+      )}
     </DashboardLayout>
-  )
+  );
 }
