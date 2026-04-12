@@ -287,6 +287,26 @@ model CashDeposit {
   @@map("cash_deposits")
 }
 
+model KpiConfig {
+  id              Int    @id @default(autoincrement())
+  rank            String @unique
+  minSelfCombo    Int    @map("min_self_combo")
+  minPortfolio    Int    @map("min_portfolio")
+  fallbackRank    String @map("fallback_rank")
+
+  @@map("kpi_config")
+}
+
+model CogsConfig {
+  id          Int    @id @default(autoincrement())
+  phase       String @unique
+  name        String
+  cogsPct     Float  @map("cogs_pct")
+  description String?
+
+  @@map("cogs_config")
+}
+
 model MembershipTier {
   id                 Int      @id @default(autoincrement())
   name               String   @unique

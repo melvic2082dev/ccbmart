@@ -86,6 +86,20 @@ export const api = {
   adminCommissionConfig: () => fetchAPI('/admin/config/commission'),
   adminUpdateCommission: (tier: string, data: Record<string, number>) =>
     fetchAPI(`/admin/config/commission/${tier}`, { method: 'PUT', body: JSON.stringify(data) }),
+  adminCreateCommission: (data: Record<string, unknown>) =>
+    fetchAPI('/admin/config/commission', { method: 'POST', body: JSON.stringify(data) }),
+  adminDeleteCommission: (tier: string) =>
+    fetchAPI(`/admin/config/commission/${tier}`, { method: 'DELETE' }),
+  adminKpiConfig: () => fetchAPI('/admin/config/kpi'),
+  adminUpdateKpi: (rank: string, data: Record<string, unknown>) =>
+    fetchAPI(`/admin/config/kpi/${rank}`, { method: 'PUT', body: JSON.stringify(data) }),
+  adminAgencyConfig: () => fetchAPI('/admin/config/agency'),
+  adminUpdateAgency: (group: string, data: Record<string, number>) =>
+    fetchAPI(`/admin/config/agency/${group}`, { method: 'PUT', body: JSON.stringify(data) }),
+  adminCogsConfig: () => fetchAPI('/admin/config/cogs'),
+  adminUpdateCogs: (phase: string, data: Record<string, unknown>) =>
+    fetchAPI(`/admin/config/cogs/${phase}`, { method: 'PUT', body: JSON.stringify(data) }),
+  adminResetConfig: () => fetchAPI('/admin/config/reset-default', { method: 'POST' }),
   adminReports: (months = 6) => fetchAPI(`/admin/reports/financial?months=${months}`),
   adminKpiLogs: () => fetchAPI('/admin/kpi-logs'),
   adminReassignCtv: (id: number, newParentId: number | null) =>

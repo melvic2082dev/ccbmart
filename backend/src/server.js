@@ -11,6 +11,7 @@ const ctvTransactionRoutes = require('./routes/ctvTransactions');
 const reconciliationRoutes = require('./routes/reconciliation');
 const memberRoutes = require('./routes/members');
 const adminMembershipRoutes = require('./routes/adminMembership');
+const configRoutes = require('./routes/config');
 const { globalLimiter } = require('./middleware/rateLimiter');
 const { validate, schemas } = require('./middleware/validate');
 const { initRedis } = require('./services/cache');
@@ -46,6 +47,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/admin/reconciliation', reconciliationRoutes);
 app.use('/api/members', memberRoutes);
 app.use('/api/admin/membership', adminMembershipRoutes);
+app.use('/api/admin/config', configRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/admin/reports', reportRoutes);
 

@@ -23,6 +23,8 @@ async function main() {
   console.log('🌱 Seeding database...');
 
   // Clean existing data
+  await prisma.cogsConfig.deleteMany();
+  await prisma.kpiConfig.deleteMany();
   await prisma.referralCommission.deleteMany();
   await prisma.depositHistory.deleteMany();
   await prisma.memberWallet.deleteMany();
@@ -522,7 +524,27 @@ async function main() {
   }
   console.log('✅ Sync logs created');
 
-  // 14. Membership Tiers
+  // 14. KPI Config + COGS Config
+  await prisma.kpiConfig.createMany({
+    data: [
+      { rank: 'CTV',  minSelfCombo: 0,  minPortfolio: 0,    fallbackRank: 'LOCK' },
+      { rank: 'PP',   minSelfCombo: 50, minPortfolio: 0,    fallbackRank: 'CTV' },
+      { rank: 'TP',   minSelfCombo: 50, minPortfolio: 150,  fallbackRank: 'PP' },
+      { rank: 'GDV',  minSelfCombo: 50, minPortfolio: 550,  fallbackRank: 'TP' },
+      { rank: 'GDKD', minSelfCombo: 50, minPortfolio: 1000, fallbackRank: 'GDV' },
+    ],
+  });
+  await prisma.cogsConfig.createMany({
+    data: [
+      { phase: 'GD1', name: 'GD1 (0-6 thang)',  cogsPct: 0.50, description: 'Blended NS 65% + TPCN 35%' },
+      { phase: 'GD2', name: 'GD2 (6-18 thang)',  cogsPct: 0.63, description: 'Mo rong FMCG, gia vi' },
+      { phase: 'GD3', name: 'GD3 (18-36 thang)', cogsPct: 0.58, description: 'Danh muc toi uu' },
+      { phase: 'GD4', name: 'GD4 (3-5 nam)',     cogsPct: 0.55, description: 'Mature stores' },
+    ],
+  });
+  console.log('✅ KPI + COGS config created');
+
+  // 15. Membership Tiers
   const memberHash = await bcrypt.hash('member123', 10);
   const tierGreen = await prisma.membershipTier.create({
     data: { name: 'Green', minDeposit: 0, discountPct: 0, referralPct: 0, monthlyReferralCap: 0, color: 'gray' },
