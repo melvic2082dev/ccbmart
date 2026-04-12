@@ -35,6 +35,8 @@ model User {
   cashDeposits        CashDeposit[] @relation("CtvDeposits")
   confirmedDeposits   CashDeposit[] @relation("AdminConfirmedDeposits")
   memberWallet        MemberWallet? @relation("MemberWallet")
+  pushSubscriptions   PushSubscription[]
+  importLogs          ImportLog[]
 
   @@index([parentId])
   @@index([rank])
@@ -353,8 +355,10 @@ model DepositHistory {
   id          Int       @id @default(autoincrement())
   walletId    Int       @map("wallet_id")
   amount      Float
-  method      String    // bank_transfer, cash
+  method      String    // bank_transfer, cash, momo, zalopay
   status      String    @default("PENDING")
+  provider    String?   // momo, zalopay
+  providerTxId String?  @map("provider_tx_id")
   confirmedBy Int?      @map("confirmed_by")
   confirmedAt DateTime? @map("confirmed_at")
   notes       String?
@@ -382,4 +386,35 @@ model ReferralCommission {
   @@index([earnerWalletId])
   @@index([month])
   @@map("referral_commissions")
+}
+
+model PushSubscription {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  userAgent String?  @map("user_agent")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@map("push_subscriptions")
+}
+
+model ImportLog {
+  id          Int      @id @default(autoincrement())
+  type        String   // ctv, product, agency, member
+  fileName    String   @map("file_name")
+  totalRows   Int      @map("total_rows")
+  successRows Int      @map("success_rows")
+  failedRows  Int      @map("failed_rows")
+  importedBy  Int      @map("imported_by")
+  importedAt  DateTime @default(now()) @map("imported_at")
+  details     String?  // JSON
+
+  importer    User     @relation(fields: [importedBy], references: [id])
+
+  @@map("import_logs")
 }

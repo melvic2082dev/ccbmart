@@ -6,7 +6,7 @@ import {
   LayoutDashboard, Users, ShoppingCart, Package, Warehouse,
   Settings, FileText, LogOut, Building2, Bell,
   PlusCircle, Banknote, ClipboardCheck, Wallet, Award, CreditCard,
-  ChevronLeft, ChevronRight, Sun, Moon, Menu, X
+  ChevronLeft, ChevronRight, Sun, Moon, Menu, X, FileSpreadsheet
 } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react';
 import { api } from '@/lib/api';
@@ -35,6 +35,7 @@ const navByRole: Record<string, NavItem[]> = {
     { label: 'Thanh vien', href: '/admin/membership/wallets', icon: <Award size={20} /> },
     { label: 'Nap tien TV', href: '/admin/membership/deposits', icon: <CreditCard size={20} /> },
     { label: 'Hang the', href: '/admin/membership/tiers', icon: <Wallet size={20} /> },
+    { label: 'Import', href: '/admin/import', icon: <FileSpreadsheet size={20} /> },
     { label: 'Cau hinh', href: '/admin/config', icon: <Settings size={20} /> },
     { label: 'Bao cao', href: '/admin/reports', icon: <FileText size={20} /> },
   ],

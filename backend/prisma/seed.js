@@ -23,6 +23,8 @@ async function main() {
   console.log('🌱 Seeding database...');
 
   // Clean existing data
+  await prisma.importLog.deleteMany();
+  await prisma.pushSubscription.deleteMany();
   await prisma.cogsConfig.deleteMany();
   await prisma.kpiConfig.deleteMany();
   await prisma.referralCommission.deleteMany();

@@ -166,6 +166,32 @@ export const api = {
     fetchAPI(`/admin/membership/referral-report${month ? `?month=${month}` : ''}`),
   adminMemberWallets: (page = 1) => fetchAPI(`/admin/membership/wallets?page=${page}`),
 
+  // Push notifications
+  subscribePush: (subscription: any) =>
+    fetchAPI('/notifications/subscribe', { method: 'POST', body: JSON.stringify({ subscription }) }),
+  unsubscribePush: (endpoint: string) =>
+    fetchAPI('/notifications/unsubscribe', { method: 'POST', body: JSON.stringify({ endpoint }) }),
+
+  // Payment
+  createMomoPayment: (amount: number, depositId: number) =>
+    fetchAPI('/payment/momo/create', { method: 'POST', body: JSON.stringify({ amount, depositId }) }),
+  createZaloPayPayment: (amount: number, depositId: number) =>
+    fetchAPI('/payment/zalopay/create', { method: 'POST', body: JSON.stringify({ amount, depositId }) }),
+
+  // Import
+  adminImportCtv: (formData: FormData) => fetchMultipart('/admin/import/ctv', formData),
+  adminImportProducts: (formData: FormData) => fetchMultipart('/admin/import/products', formData),
+  adminImportMembers: (formData: FormData) => fetchMultipart('/admin/import/members', formData),
+  adminImportLogs: () => fetchAPI('/admin/import/logs'),
+  adminDownloadTemplate: async (type: string) => {
+    const res = await fetchBlob(`/admin/import/templates/${type}`);
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `template_${type}.xlsx`; a.click();
+    URL.revokeObjectURL(url);
+  },
+
   // Notifications
   notifications: (page = 1, unreadOnly = false) =>
     fetchAPI(`/notifications?page=${page}&unreadOnly=${unreadOnly}`),
