@@ -2,6 +2,7 @@ const express = require('express');
 const { PrismaClient } = require('@prisma/client');
 const { authenticate, authorize } = require('../middleware/auth');
 const { calculateCtvCommission } = require('../services/commission');
+const { getCachedOrCompute } = require('../services/cache');
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -9,104 +10,139 @@ const prisma = new PrismaClient();
 router.use(authenticate);
 router.use(authorize('ctv'));
 
-// Dashboard stats
+// Dashboard stats (with caching)
 router.get('/dashboard', async (req, res) => {
   try {
     const userId = req.user.id;
     const now = new Date();
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-
-    // Current month sales
-    const currentMonthTxns = await prisma.transaction.findMany({
-      where: { ctvId: userId, channel: 'ctv', createdAt: { gte: startOfMonth } },
-    });
-    const currentRevenue = currentMonthTxns.reduce((sum, t) => sum + t.totalAmount, 0);
-    const currentCombos = currentMonthTxns.length;
-
-    // Last month sales
-    const lastMonthTxns = await prisma.transaction.findMany({
-      where: {
-        ctvId: userId,
-        channel: 'ctv',
-        createdAt: { gte: startOfLastMonth, lt: startOfMonth },
-      },
-    });
-    const lastRevenue = lastMonthTxns.reduce((sum, t) => sum + t.totalAmount, 0);
-
-    // Total customers
-    const totalCustomers = await prisma.customer.count({ where: { ctvId: userId } });
-
-    // Team size (F1)
-    const teamSize = await prisma.user.count({
-      where: { parentId: userId, role: 'ctv', isActive: true },
-    });
-
-    // Commission for current month
     const monthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-    const commission = await calculateCtvCommission(userId, monthStr);
+    const cacheKey = `ctv:dashboard:${userId}:${monthStr}`;
 
-    // Monthly revenue chart (last 6 months)
-    const chartData = [];
-    for (let i = 5; i >= 0; i--) {
-      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const dEnd = new Date(d.getFullYear(), d.getMonth() + 1, 1);
-      const txns = await prisma.transaction.findMany({
-        where: { ctvId: userId, channel: 'ctv', createdAt: { gte: d, lt: dEnd } },
-      });
-      const revenue = txns.reduce((sum, t) => sum + t.totalAmount, 0);
-      chartData.push({
-        month: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`,
-        revenue,
-        combos: txns.length,
-      });
-    }
+    const dashboard = await getCachedOrCompute(cacheKey, 300, async () => {
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
 
-    res.json({
-      currentRevenue,
-      currentCombos,
-      lastRevenue,
-      revenueGrowth: lastRevenue > 0 ? ((currentRevenue - lastRevenue) / lastRevenue * 100).toFixed(1) : 0,
-      totalCustomers,
-      teamSize,
-      rank: req.user.rank || 'CTV',
-      commission,
-      chartData,
+      // Parallel queries
+      const [currentMonthTxns, lastMonthTxns, totalCustomers, teamSize] = await Promise.all([
+        prisma.transaction.findMany({
+          where: { ctvId: userId, channel: 'ctv', createdAt: { gte: startOfMonth } },
+          select: { totalAmount: true },
+        }),
+        prisma.transaction.findMany({
+          where: {
+            ctvId: userId,
+            channel: 'ctv',
+            createdAt: { gte: startOfLastMonth, lt: startOfMonth },
+          },
+          select: { totalAmount: true },
+        }),
+        prisma.customer.count({ where: { ctvId: userId } }),
+        prisma.user.count({ where: { parentId: userId, role: 'ctv', isActive: true } }),
+      ]);
+
+      const currentRevenue = currentMonthTxns.reduce((sum, t) => sum + t.totalAmount, 0);
+      const currentCombos = currentMonthTxns.length;
+      const lastRevenue = lastMonthTxns.reduce((sum, t) => sum + t.totalAmount, 0);
+
+      const commission = await calculateCtvCommission(userId, monthStr);
+
+      // Monthly chart (6 months)
+      const chartData = [];
+      for (let i = 5; i >= 0; i--) {
+        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        const dEnd = new Date(d.getFullYear(), d.getMonth() + 1, 1);
+        const txns = await prisma.transaction.findMany({
+          where: { ctvId: userId, channel: 'ctv', createdAt: { gte: d, lt: dEnd } },
+          select: { totalAmount: true },
+        });
+        const revenue = txns.reduce((sum, t) => sum + t.totalAmount, 0);
+        chartData.push({
+          month: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`,
+          revenue,
+          combos: txns.length,
+        });
+      }
+
+      return {
+        currentRevenue,
+        currentCombos,
+        lastRevenue,
+        revenueGrowth: lastRevenue > 0 ? ((currentRevenue - lastRevenue) / lastRevenue * 100).toFixed(1) : 0,
+        totalCustomers,
+        teamSize,
+        rank: req.user.rank || 'CTV',
+        commission,
+        chartData,
+      };
     });
+
+    res.json(dashboard);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// Management tree
+// Management tree (optimized - single query + in-memory build)
 router.get('/tree', async (req, res) => {
   try {
     const userId = req.user.id;
+    const cacheKey = `ctv:tree:${userId}`;
 
-    async function buildTree(parentId, depth = 0) {
-      if (depth > 3) return [];
-      const children = await prisma.user.findMany({
-        where: { parentId, role: 'ctv', isActive: true },
-        select: { id: true, name: true, rank: true, email: true, phone: true },
-      });
-      const result = [];
-      for (const child of children) {
-        const subChildren = await buildTree(child.id, depth + 1);
-        const txnCount = await prisma.transaction.count({
-          where: { ctvId: child.id, channel: 'ctv' },
-        });
-        result.push({ ...child, transactions: txnCount, children: subChildren });
+    const tree = await getCachedOrCompute(cacheKey, 300, async () => {
+      // Get all CTVs and transactions in one go
+      const [allCtv, allTxnCounts] = await Promise.all([
+        prisma.user.findMany({
+          where: { role: 'ctv', isActive: true },
+          select: { id: true, name: true, rank: true, email: true, phone: true, parentId: true },
+        }),
+        prisma.transaction.groupBy({
+          by: ['ctvId'],
+          where: { channel: 'ctv' },
+          _count: { id: true },
+        }),
+      ]);
+
+      const txnCountMap = new Map(allTxnCounts.map(t => [t.ctvId, t._count.id]));
+
+      // Build tree in memory
+      const childrenMap = new Map();
+      const nodeMap = new Map();
+      for (const ctv of allCtv) {
+        nodeMap.set(ctv.id, ctv);
+        if (ctv.parentId !== null) {
+          if (!childrenMap.has(ctv.parentId)) childrenMap.set(ctv.parentId, []);
+          childrenMap.get(ctv.parentId).push(ctv.id);
+        }
       }
-      return result;
-    }
 
-    const tree = await buildTree(userId);
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { id: true, name: true, rank: true, email: true },
+      function buildSubtree(id, depth = 0) {
+        if (depth > 3) return [];
+        const childIds = childrenMap.get(id) || [];
+        return childIds.map(childId => {
+          const child = nodeMap.get(childId);
+          return {
+            id: child.id,
+            name: child.name,
+            rank: child.rank,
+            email: child.email,
+            phone: child.phone,
+            transactions: txnCountMap.get(child.id) || 0,
+            children: buildSubtree(child.id, depth + 1),
+          };
+        });
+      }
+
+      const user = nodeMap.get(userId);
+      return {
+        id: user?.id,
+        name: user?.name,
+        rank: user?.rank,
+        email: user?.email,
+        children: buildSubtree(userId),
+      };
     });
 
-    res.json({ ...user, children: tree });
+    res.json(tree);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

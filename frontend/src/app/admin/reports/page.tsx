@@ -7,7 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, Legend } from 'recharts';
-import { FileText, TrendingUp, TrendingDown } from 'lucide-react';
+import { FileText, TrendingUp, TrendingDown, Download } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface Report {
   month: string;
@@ -59,9 +60,29 @@ export default function AdminReports() {
 
   return (
     <DashboardLayout role="admin">
-      <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
-        <FileText size={24} /> Báo cáo Tài chính
-      </h2>
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-2xl font-bold flex items-center gap-2">
+          <FileText size={24} /> Bao cao Tai chinh
+        </h2>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => api.adminExportExcel(6)}
+            className="flex items-center gap-1"
+          >
+            <Download size={16} /> Excel
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => api.adminExportPdf(6)}
+            className="flex items-center gap-1"
+          >
+            <Download size={16} /> PDF
+          </Button>
+        </div>
+      </div>
 
       {loading ? (
         <div className="space-y-4">
