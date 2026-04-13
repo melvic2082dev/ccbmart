@@ -40,9 +40,9 @@ const schemas = {
 
   updateCommission: Joi.object({
     selfSalePct: Joi.number().min(0).max(1).optional(),
-    f1Pct: Joi.number().min(0).max(1).optional(),
-    f2Pct: Joi.number().min(0).max(1).optional(),
-    f3Pct: Joi.number().min(0).max(1).optional(),
+    directPct: Joi.number().min(0).max(1).optional(),
+    indirect2Pct: Joi.number().min(0).max(1).optional(),
+    indirect3Pct: Joi.number().min(0).max(1).optional(),
     fixedSalary: Joi.number().min(0).optional(),
   }),
 

@@ -8,6 +8,9 @@ const { validateReassignment } = require('../services/treeValidator');
 const { validate, schemas } = require('../middleware/validate');
 const { sendRankChangeNotification, sendSalaryWarning } = require('../services/notification');
 const { runRankEvaluation } = require('../jobs/autoRankUpdate');
+const { checkEligibility, activatePromotions } = require('../services/promotion');
+const { calculateSoftSalary } = require('../services/soft-salary');
+const { calculateTeamBonus } = require('../services/team-bonus');
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -315,10 +318,10 @@ router.get('/config/commission', async (req, res) => {
 // Update commission config
 router.put('/config/commission/:tier', validate(schemas.updateCommission), async (req, res) => {
   try {
-    const { selfSalePct, f1Pct, f2Pct, f3Pct, fixedSalary } = req.body;
+    const { selfSalePct, directPct, indirect2Pct, indirect3Pct, fixedSalary } = req.body;
     const config = await prisma.commissionConfig.update({
       where: { tier: req.params.tier },
-      data: { selfSalePct, f1Pct, f2Pct, f3Pct, fixedSalary },
+      data: { selfSalePct, directPct, indirect2Pct, indirect3Pct, fixedSalary },
     });
     invalidateCommissionCache();
     res.json(config);
@@ -411,6 +414,177 @@ router.post('/rank-evaluation', async (req, res) => {
       return res.status(409).json({ error: 'Rank evaluation is already running' });
     }
     res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ===== V10: PROMOTION ENDPOINTS =====
+
+// List pending promotions for current month
+router.get('/promotions/pending', async (req, res) => {
+  try {
+    const now = new Date();
+    const monthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+
+    // Check eligibility for all CTVs
+    const allCtv = await prisma.user.findMany({
+      where: { role: 'ctv', isActive: true, rank: { in: ['CTV', 'PP', 'TP', 'GDV'] } },
+      select: { id: true },
+    });
+
+    const eligible = [];
+    for (const ctv of allCtv) {
+      const result = await checkEligibility(ctv.id, monthStr);
+      if (result && result.eligible) {
+        // Create or find existing record
+        const existing = await prisma.promotionEligibility.findFirst({
+          where: { ctvId: ctv.id, qualifiedMonth: monthStr },
+        });
+        if (!existing) {
+          await prisma.promotionEligibility.create({
+            data: {
+              ctvId: ctv.id,
+              targetRank: result.targetRank,
+              qualifiedMonth: monthStr,
+              effectiveDate: result.effectiveDate,
+            },
+          });
+        }
+        eligible.push(result);
+      }
+    }
+
+    // Get all pending/approved promotions
+    const promotions = await prisma.promotionEligibility.findMany({
+      where: { status: { in: ['PENDING', 'APPROVED'] } },
+      include: { ctv: { select: { id: true, name: true, rank: true, email: true } } },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    // Get history
+    const history = await prisma.promotionEligibility.findMany({
+      where: { status: 'ACTIVATED' },
+      include: { ctv: { select: { id: true, name: true, rank: true, email: true } } },
+      orderBy: { approvedAt: 'desc' },
+      take: 20,
+    });
+
+    res.json({ pending: promotions, history, newEligible: eligible.length });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Approve a promotion
+router.post('/promotions/:id/approve', async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const promo = await prisma.promotionEligibility.findUnique({ where: { id } });
+    if (!promo) return res.status(404).json({ error: 'Promotion not found' });
+    if (promo.status !== 'PENDING') return res.status(400).json({ error: 'Promotion is not pending' });
+
+    await prisma.promotionEligibility.update({
+      where: { id },
+      data: { status: 'APPROVED', approvedBy: req.user.id, approvedAt: new Date() },
+    });
+
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Activate approved promotions (run on 1st of month)
+router.post('/promotions/activate', async (req, res) => {
+  try {
+    const result = await activatePromotions();
+    invalidateCommissionCache();
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ===== V10: SOFT SALARY =====
+router.get('/salary/soft-adjustment', async (req, res) => {
+  try {
+    const now = new Date();
+    const monthStr = req.query.month || `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    const result = await calculateSoftSalary(monthStr);
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ===== V10: TEAM BONUS =====
+router.get('/team-bonus/:month', async (req, res) => {
+  try {
+    const bonuses = await prisma.teamBonus.findMany({
+      where: { month: req.params.month },
+      include: { ctv: { select: { id: true, name: true, rank: true } } },
+      orderBy: { bonusAmount: 'desc' },
+    });
+    res.json(bonuses);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.post('/team-bonus/:month/calculate', async (req, res) => {
+  try {
+    const result = await calculateTeamBonus(req.params.month);
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ===== V10: PROFESSIONAL TITLES =====
+router.get('/titles', async (req, res) => {
+  try {
+    const titles = await prisma.professionalTitle.findMany({
+      include: { user: { select: { id: true, name: true, rank: true, email: true } } },
+      orderBy: { awardedAt: 'desc' },
+    });
+    res.json(titles);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.post('/titles/award', async (req, res) => {
+  try {
+    const { userId, title } = req.body;
+    if (!userId || !title) return res.status(400).json({ error: 'userId and title required' });
+
+    const validTitles = ['EXPERT_LEADER', 'SENIOR_EXPERT', 'STRATEGIC_ADVISOR'];
+    if (!validTitles.includes(title)) return res.status(400).json({ error: 'Invalid title' });
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: { children: { where: { role: 'ctv', isActive: true } } },
+    });
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    const now = new Date();
+    const expiresAt = new Date(now);
+    expiresAt.setFullYear(expiresAt.getFullYear() + 1);
+
+    const existing = await prisma.professionalTitle.findUnique({ where: { userId } });
+    if (existing) {
+      await prisma.professionalTitle.update({
+        where: { userId },
+        data: { title, directCount: user.children.length, renewedAt: now, expiresAt, isActive: true },
+      });
+    } else {
+      await prisma.professionalTitle.create({
+        data: { userId, title, directCount: user.children.length, renewedAt: now, expiresAt },
+      });
+    }
+
+    res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

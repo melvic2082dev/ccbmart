@@ -37,6 +37,10 @@ model User {
   memberWallet        MemberWallet? @relation("MemberWallet")
   pushSubscriptions   PushSubscription[]
   importLogs          ImportLog[]
+  promotionEligibilities PromotionEligibility[] @relation("CtvPromotions")
+  teamBonuses         TeamBonus[]    @relation("CtvTeamBonuses")
+  loyaltyPoints       LoyaltyPoint[] @relation("UserLoyaltyPoints")
+  professionalTitle   ProfessionalTitle?
 
   @@index([parentId])
   @@index([rank])
@@ -49,7 +53,7 @@ model CtvHierarchy {
   id          Int      @id @default(autoincrement())
   ctvId       Int      @map("ctv_id")
   managerId   Int      @map("manager_id")
-  level       String   // F1, F2, F3
+  level       String   // DIRECT, INDIRECT2, INDIRECT3
   appointedAt DateTime @default(now()) @map("appointed_at")
 
   ctv         User     @relation("Ctv", fields: [ctvId], references: [id])
@@ -76,13 +80,13 @@ model Agency {
 }
 
 model CommissionConfig {
-  id          Int    @id @default(autoincrement())
-  tier        String @unique
-  selfSalePct Float  @map("self_sale_pct")
-  f1Pct       Float  @map("f1_pct")
-  f2Pct       Float  @map("f2_pct")
-  f3Pct       Float  @map("f3_pct")
-  fixedSalary Float  @map("fixed_salary")
+  id            Int    @id @default(autoincrement())
+  tier          String @unique
+  selfSalePct   Float  @map("self_sale_pct")
+  directPct     Float  @map("direct_pct")
+  indirect2Pct  Float  @map("indirect2_pct")
+  indirect3Pct  Float  @map("indirect3_pct")
+  fixedSalary   Float  @map("fixed_salary")
 
   @@map("commission_config")
 }
@@ -417,4 +421,67 @@ model ImportLog {
   importer    User     @relation(fields: [importedBy], references: [id])
 
   @@map("import_logs")
+}
+
+// ===== V10 NEW MODELS =====
+
+model PromotionEligibility {
+  id              Int       @id @default(autoincrement())
+  ctvId           Int       @map("ctv_id")
+  targetRank      String    @map("target_rank")
+  qualifiedMonth  String    @map("qualified_month")
+  effectiveDate   DateTime  @map("effective_date")
+  status          String    @default("PENDING") // PENDING, APPROVED, ACTIVATED
+  approvedBy      Int?      @map("approved_by")
+  approvedAt      DateTime? @map("approved_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  ctv             User      @relation("CtvPromotions", fields: [ctvId], references: [id])
+
+  @@map("promotion_eligibility")
+}
+
+model TeamBonus {
+  id                  Int       @id @default(autoincrement())
+  ctvId               Int       @map("ctv_id")
+  month               String
+  directMemberCount   Int       @map("direct_member_count")
+  teamRevenue         Float     @map("team_revenue")
+  bonusRate           Float     @map("bonus_rate")
+  bonusAmount         Float     @map("bonus_amount")
+  cashAmount          Float     @map("cash_amount")
+  pointAmount         Float     @map("point_amount")
+  status              String    @default("PENDING")
+  paidAt              DateTime? @map("paid_at")
+  createdAt           DateTime  @default(now()) @map("created_at")
+  ctv                 User      @relation("CtvTeamBonuses", fields: [ctvId], references: [id])
+
+  @@map("team_bonuses")
+}
+
+model LoyaltyPoint {
+  id          Int       @id @default(autoincrement())
+  userId      Int       @map("user_id")
+  points      Int
+  source      String    // TEAM_BONUS, PERSONAL_PURCHASE, MILESTONE
+  referenceId Int?      @map("reference_id")
+  expiresAt   DateTime  @map("expires_at")
+  usedAt      DateTime? @map("used_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  user        User      @relation("UserLoyaltyPoints", fields: [userId], references: [id])
+
+  @@map("loyalty_points")
+}
+
+model ProfessionalTitle {
+  id          Int       @id @default(autoincrement())
+  userId      Int       @unique @map("user_id")
+  title       String    // EXPERT_LEADER, SENIOR_EXPERT, STRATEGIC_ADVISOR
+  directCount Int       @map("direct_count")
+  awardedAt   DateTime  @default(now()) @map("awarded_at")
+  renewedAt   DateTime  @map("renewed_at")
+  expiresAt   DateTime  @map("expires_at")
+  isActive    Boolean   @default(true) @map("is_active")
+  user        User      @relation(fields: [userId], references: [id])
+
+  @@map("professional_titles")
 }

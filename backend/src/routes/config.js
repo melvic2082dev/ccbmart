@@ -23,10 +23,10 @@ router.get('/commission', async (req, res) => {
 
 router.put('/commission/:tier', async (req, res) => {
   try {
-    const { selfSalePct, f1Pct, f2Pct, f3Pct, fixedSalary } = req.body;
+    const { selfSalePct, directPct, indirect2Pct, indirect3Pct, fixedSalary } = req.body;
     const config = await prisma.commissionConfig.update({
       where: { tier: req.params.tier },
-      data: { selfSalePct, f1Pct, f2Pct, f3Pct, fixedSalary },
+      data: { selfSalePct, directPct, indirect2Pct, indirect3Pct, fixedSalary },
     });
     invalidateCommissionCache();
     res.json(config);
@@ -35,10 +35,10 @@ router.put('/commission/:tier', async (req, res) => {
 
 router.post('/commission', async (req, res) => {
   try {
-    const { tier, selfSalePct, f1Pct, f2Pct, f3Pct, fixedSalary } = req.body;
+    const { tier, selfSalePct, directPct, indirect2Pct, indirect3Pct, fixedSalary } = req.body;
     if (!tier) return res.status(400).json({ error: 'Tier is required' });
     const config = await prisma.commissionConfig.create({
-      data: { tier, selfSalePct: selfSalePct || 0, f1Pct: f1Pct || 0, f2Pct: f2Pct || 0, f3Pct: f3Pct || 0, fixedSalary: fixedSalary || 0 },
+      data: { tier, selfSalePct: selfSalePct || 0, directPct: directPct || 0, indirect2Pct: indirect2Pct || 0, indirect3Pct: indirect3Pct || 0, fixedSalary: fixedSalary || 0 },
     });
     invalidateCommissionCache();
     res.json(config);
@@ -129,11 +129,11 @@ router.post('/reset-default', async (req, res) => {
     await prisma.commissionConfig.deleteMany();
     await prisma.commissionConfig.createMany({
       data: [
-        { tier: 'CTV',  selfSalePct: 0.20, f1Pct: 0,    f2Pct: 0,    f3Pct: 0,    fixedSalary: 0 },
-        { tier: 'PP',   selfSalePct: 0.20, f1Pct: 0,    f2Pct: 0,    f3Pct: 0,    fixedSalary: 5000000 },
-        { tier: 'TP',   selfSalePct: 0.30, f1Pct: 0.10, f2Pct: 0,    f3Pct: 0,    fixedSalary: 10000000 },
-        { tier: 'GDV',  selfSalePct: 0.35, f1Pct: 0.10, f2Pct: 0.05, f3Pct: 0,    fixedSalary: 18000000 },
-        { tier: 'GDKD', selfSalePct: 0.38, f1Pct: 0.10, f2Pct: 0.05, f3Pct: 0.03, fixedSalary: 30000000 },
+        { tier: 'CTV',  selfSalePct: 0.20, directPct: 0,    indirect2Pct: 0,    indirect3Pct: 0,    fixedSalary: 0 },
+        { tier: 'PP',   selfSalePct: 0.20, directPct: 0,    indirect2Pct: 0,    indirect3Pct: 0,    fixedSalary: 5000000 },
+        { tier: 'TP',   selfSalePct: 0.30, directPct: 0.10, indirect2Pct: 0,    indirect3Pct: 0,    fixedSalary: 10000000 },
+        { tier: 'GDV',  selfSalePct: 0.35, directPct: 0.10, indirect2Pct: 0.05, indirect3Pct: 0,    fixedSalary: 18000000 },
+        { tier: 'GDKD', selfSalePct: 0.38, directPct: 0.10, indirect2Pct: 0.05, indirect3Pct: 0.03, fixedSalary: 30000000 },
       ],
     });
 

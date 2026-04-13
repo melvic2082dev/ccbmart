@@ -8,9 +8,9 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Settings, Users, Building2, Package, BarChart3, Pencil, Trash2, Plus, RotateCcw, Save, Check, X } from 'lucide-react';
+import { Settings, Users, Building2, Package, BarChart3, Pencil, Trash2, Plus, RotateCcw, Check, X, Scale, Calculator } from 'lucide-react';
 
-type Tab = 'commission' | 'kpi' | 'agency' | 'cogs';
+type Tab = 'commission' | 'kpi' | 'agency' | 'cogs' | 'promotion' | 'softSalary';
 
 const RANK_LABELS: Record<string, string> = {
   CTV: 'Cong tac vien', PP: 'Pho phong KD', TP: 'Truong phong KD', GDV: 'Giam doc Vung', GDKD: 'Giam doc Kinh doanh'
@@ -27,7 +27,7 @@ export default function AdminConfig() {
   const [editingComm, setEditingComm] = useState<string | null>(null);
   const [commForm, setCommForm] = useState<any>({});
   const [addingComm, setAddingComm] = useState(false);
-  const [newComm, setNewComm] = useState({ tier: '', selfSalePct: 0, f1Pct: 0, f2Pct: 0, f3Pct: 0, fixedSalary: 0 });
+  const [newComm, setNewComm] = useState({ tier: '', selfSalePct: 0, directPct: 0, indirect2Pct: 0, indirect3Pct: 0, fixedSalary: 0 });
 
   // KPI state
   const [kpis, setKpis] = useState<any[]>([]);
@@ -72,7 +72,7 @@ export default function AdminConfig() {
     setSaving(true);
     try {
       await api.adminUpdateCommission(commForm.tier, {
-        selfSalePct: commForm.selfSalePct, f1Pct: commForm.f1Pct, f2Pct: commForm.f2Pct, f3Pct: commForm.f3Pct, fixedSalary: commForm.fixedSalary
+        selfSalePct: commForm.selfSalePct, directPct: commForm.directPct, indirect2Pct: commForm.indirect2Pct, indirect3Pct: commForm.indirect3Pct, fixedSalary: commForm.fixedSalary
       });
       setEditingComm(null);
       await fetchAll();
@@ -87,7 +87,7 @@ export default function AdminConfig() {
   const addComm = async () => {
     if (!newComm.tier) return;
     setSaving(true);
-    try { await api.adminCreateCommission(newComm); setAddingComm(false); setNewComm({ tier: '', selfSalePct: 0, f1Pct: 0, f2Pct: 0, f3Pct: 0, fixedSalary: 0 }); await fetchAll(); showToast('Da them cap bac ' + newComm.tier); } catch (e: any) { showToast('Loi: ' + e.message); }
+    try { await api.adminCreateCommission(newComm); setAddingComm(false); setNewComm({ tier: '', selfSalePct: 0, directPct: 0, indirect2Pct: 0, indirect3Pct: 0, fixedSalary: 0 }); await fetchAll(); showToast('Da them cap bac ' + newComm.tier); } catch (e: any) { showToast('Loi: ' + e.message); }
     setSaving(false);
   };
 
@@ -129,26 +129,25 @@ export default function AdminConfig() {
     { key: 'kpi', label: 'KPI Rules', icon: <BarChart3 size={16} /> },
     { key: 'agency', label: 'Agency Commission', icon: <Building2 size={16} /> },
     { key: 'cogs', label: 'COGS Phases', icon: <Package size={16} /> },
+    { key: 'promotion', label: 'Thang tien', icon: <Scale size={16} /> },
+    { key: 'softSalary', label: 'Soft Salary', icon: <Calculator size={16} /> },
   ];
 
   return (
     <DashboardLayout role="admin">
-      {/* Toast */}
       {toast && (
         <div className="fixed top-4 right-4 z-50 bg-gray-900 text-white px-4 py-3 rounded-xl shadow-xl text-sm animate-in fade-in">
           {toast}
         </div>
       )}
 
-      {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-bold flex items-center gap-2"><Settings size={24} /> Cau hinh he thong</h2>
         <Badge className="bg-indigo-100 text-indigo-700">Admin</Badge>
       </div>
 
-      {/* Tabs */}
       <div className="border-b border-gray-200 mb-6">
-        <div className="flex gap-1">
+        <div className="flex gap-1 flex-wrap">
           {tabs.map(t => (
             <button
               key={t.key}
@@ -172,7 +171,7 @@ export default function AdminConfig() {
             <Card className="rounded-2xl border border-gray-100">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2"><Users size={20} /> Hoa hong CTV theo cap bac</CardTitle>
-                <p className="text-sm text-gray-500">Cascading: Tu ban + F1 + F2 + F3</p>
+                <p className="text-sm text-gray-500">Cascading: Tu ban + Truc tiep + Gian tiep cap 2 + Gian tiep cap 3</p>
               </CardHeader>
               <CardContent className="overflow-x-auto p-0">
                 <Table>
@@ -181,9 +180,9 @@ export default function AdminConfig() {
                       <TableHead>Cap bac</TableHead>
                       <TableHead>Ten</TableHead>
                       <TableHead className="text-right">HH Tu ban</TableHead>
-                      <TableHead className="text-right">F1</TableHead>
-                      <TableHead className="text-right">F2</TableHead>
-                      <TableHead className="text-right">F3</TableHead>
+                      <TableHead className="text-right">Truc tiep</TableHead>
+                      <TableHead className="text-right">GT cap 2</TableHead>
+                      <TableHead className="text-right">GT cap 3</TableHead>
                       <TableHead className="text-right">Luong cung</TableHead>
                       <TableHead className="text-center">Actions</TableHead>
                     </TableRow>
@@ -194,9 +193,9 @@ export default function AdminConfig() {
                         <TableCell><Badge>{c.tier}</Badge></TableCell>
                         <TableCell>{RANK_LABELS[c.tier] || c.tier}</TableCell>
                         <TableCell className="text-right"><Input type="number" min={0} max={1} step={0.01} value={commForm.selfSalePct} onChange={e => setCommForm({ ...commForm, selfSalePct: parseFloat(e.target.value) || 0 })} className="w-20 text-right inline-block" /></TableCell>
-                        <TableCell className="text-right"><Input type="number" min={0} max={1} step={0.01} value={commForm.f1Pct} onChange={e => setCommForm({ ...commForm, f1Pct: parseFloat(e.target.value) || 0 })} className="w-20 text-right inline-block" /></TableCell>
-                        <TableCell className="text-right"><Input type="number" min={0} max={1} step={0.01} value={commForm.f2Pct} onChange={e => setCommForm({ ...commForm, f2Pct: parseFloat(e.target.value) || 0 })} className="w-20 text-right inline-block" /></TableCell>
-                        <TableCell className="text-right"><Input type="number" min={0} max={1} step={0.01} value={commForm.f3Pct} onChange={e => setCommForm({ ...commForm, f3Pct: parseFloat(e.target.value) || 0 })} className="w-20 text-right inline-block" /></TableCell>
+                        <TableCell className="text-right"><Input type="number" min={0} max={1} step={0.01} value={commForm.directPct} onChange={e => setCommForm({ ...commForm, directPct: parseFloat(e.target.value) || 0 })} className="w-20 text-right inline-block" /></TableCell>
+                        <TableCell className="text-right"><Input type="number" min={0} max={1} step={0.01} value={commForm.indirect2Pct} onChange={e => setCommForm({ ...commForm, indirect2Pct: parseFloat(e.target.value) || 0 })} className="w-20 text-right inline-block" /></TableCell>
+                        <TableCell className="text-right"><Input type="number" min={0} max={1} step={0.01} value={commForm.indirect3Pct} onChange={e => setCommForm({ ...commForm, indirect3Pct: parseFloat(e.target.value) || 0 })} className="w-20 text-right inline-block" /></TableCell>
                         <TableCell className="text-right"><Input type="number" min={0} step={1000000} value={commForm.fixedSalary} onChange={e => setCommForm({ ...commForm, fixedSalary: parseInt(e.target.value) || 0 })} className="w-28 text-right inline-block" /></TableCell>
                         <TableCell className="text-center">
                           <div className="flex gap-1 justify-center">
@@ -210,9 +209,9 @@ export default function AdminConfig() {
                         <TableCell><Badge variant={c.tier === 'GDKD' ? 'default' : 'secondary'}>{c.tier}</Badge></TableCell>
                         <TableCell className="font-medium">{RANK_LABELS[c.tier] || c.tier}</TableCell>
                         <TableCell className="text-right font-mono">{pct(c.selfSalePct)}</TableCell>
-                        <TableCell className="text-right font-mono">{c.f1Pct > 0 ? pct(c.f1Pct) : '-'}</TableCell>
-                        <TableCell className="text-right font-mono">{c.f2Pct > 0 ? pct(c.f2Pct) : '-'}</TableCell>
-                        <TableCell className="text-right font-mono">{c.f3Pct > 0 ? pct(c.f3Pct) : '-'}</TableCell>
+                        <TableCell className="text-right font-mono">{c.directPct > 0 ? pct(c.directPct) : '-'}</TableCell>
+                        <TableCell className="text-right font-mono">{c.indirect2Pct > 0 ? pct(c.indirect2Pct) : '-'}</TableCell>
+                        <TableCell className="text-right font-mono">{c.indirect3Pct > 0 ? pct(c.indirect3Pct) : '-'}</TableCell>
                         <TableCell className="text-right font-semibold">{c.fixedSalary > 0 ? formatVND(c.fixedSalary) : '-'}</TableCell>
                         <TableCell className="text-center">
                           <div className="flex gap-1 justify-center">
@@ -229,9 +228,9 @@ export default function AdminConfig() {
                         <TableCell><Input value={newComm.tier} onChange={e => setNewComm({ ...newComm, tier: e.target.value.toUpperCase() })} placeholder="VD: DT" className="w-20" /></TableCell>
                         <TableCell className="text-sm text-gray-400">Cap bac moi</TableCell>
                         <TableCell className="text-right"><Input type="number" min={0} max={1} step={0.01} value={newComm.selfSalePct} onChange={e => setNewComm({ ...newComm, selfSalePct: parseFloat(e.target.value) || 0 })} className="w-20 text-right" /></TableCell>
-                        <TableCell className="text-right"><Input type="number" min={0} max={1} step={0.01} value={newComm.f1Pct} onChange={e => setNewComm({ ...newComm, f1Pct: parseFloat(e.target.value) || 0 })} className="w-20 text-right" /></TableCell>
-                        <TableCell className="text-right"><Input type="number" min={0} max={1} step={0.01} value={newComm.f2Pct} onChange={e => setNewComm({ ...newComm, f2Pct: parseFloat(e.target.value) || 0 })} className="w-20 text-right" /></TableCell>
-                        <TableCell className="text-right"><Input type="number" min={0} max={1} step={0.01} value={newComm.f3Pct} onChange={e => setNewComm({ ...newComm, f3Pct: parseFloat(e.target.value) || 0 })} className="w-20 text-right" /></TableCell>
+                        <TableCell className="text-right"><Input type="number" min={0} max={1} step={0.01} value={newComm.directPct} onChange={e => setNewComm({ ...newComm, directPct: parseFloat(e.target.value) || 0 })} className="w-20 text-right" /></TableCell>
+                        <TableCell className="text-right"><Input type="number" min={0} max={1} step={0.01} value={newComm.indirect2Pct} onChange={e => setNewComm({ ...newComm, indirect2Pct: parseFloat(e.target.value) || 0 })} className="w-20 text-right" /></TableCell>
+                        <TableCell className="text-right"><Input type="number" min={0} max={1} step={0.01} value={newComm.indirect3Pct} onChange={e => setNewComm({ ...newComm, indirect3Pct: parseFloat(e.target.value) || 0 })} className="w-20 text-right" /></TableCell>
                         <TableCell className="text-right"><Input type="number" min={0} step={1000000} value={newComm.fixedSalary} onChange={e => setNewComm({ ...newComm, fixedSalary: parseInt(e.target.value) || 0 })} className="w-28 text-right" /></TableCell>
                         <TableCell className="text-center">
                           <div className="flex gap-1 justify-center">
@@ -403,6 +402,102 @@ export default function AdminConfig() {
                         </TableCell>
                       </TableRow>
                     ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Tab 5: Promotion T+1 conditions */}
+          {tab === 'promotion' && (
+            <Card className="rounded-2xl border border-gray-100">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2"><Scale size={20} /> Dieu kien thang tien T+1</CardTitle>
+                <p className="text-sm text-gray-500">Dat dieu kien thang T, hieu luc ngay 01 thang T+1</p>
+              </CardHeader>
+              <CardContent className="p-0">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Tu</TableHead>
+                      <TableHead>Len</TableHead>
+                      <TableHead>Dieu kien</TableHead>
+                      <TableHead>Ghi chu</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    <TableRow>
+                      <TableCell><Badge variant="outline">CTV</Badge></TableCell>
+                      <TableCell><Badge className="bg-emerald-100 text-emerald-700">PP</Badge></TableCell>
+                      <TableCell>5 thanh vien truc tiep dat &ge;10 combo/nguoi</TableCell>
+                      <TableCell className="text-sm text-gray-500">Bao tro va dan dat doi nhom</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell><Badge variant="outline">PP</Badge></TableCell>
+                      <TableCell><Badge className="bg-emerald-100 text-emerald-700">TP</Badge></TableCell>
+                      <TableCell>3 PP do minh dan dat + doanh so nhom &ge;500 trieu</TableCell>
+                      <TableCell className="text-sm text-gray-500">Xay dung doi ngu quan ly</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell><Badge variant="outline">TP</Badge></TableCell>
+                      <TableCell><Badge className="bg-emerald-100 text-emerald-700">GDV</Badge></TableCell>
+                      <TableCell>5 TP + doanh so nhom &ge;2 ty</TableCell>
+                      <TableCell className="text-sm text-gray-500">Quan ly vung</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell><Badge variant="outline">GDV</Badge></TableCell>
+                      <TableCell><Badge className="bg-emerald-100 text-emerald-700">GDKD</Badge></TableCell>
+                      <TableCell>3 GDV + doanh so nhom &ge;5 ty</TableCell>
+                      <TableCell className="text-sm text-gray-500">Can HDQT duyet</TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Tab 6: Soft Salary thresholds */}
+          {tab === 'softSalary' && (
+            <Card className="rounded-2xl border border-gray-100">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2"><Calculator size={20} /> Nguong Soft Salary</CardTitle>
+                <p className="text-sm text-gray-500">Quy luong = 5% doanh thu kenh CTV</p>
+              </CardHeader>
+              <CardContent className="p-0">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Muc su dung quy</TableHead>
+                      <TableHead>Trang thai</TableHead>
+                      <TableHead>Dieu chinh</TableHead>
+                      <TableHead>Mo ta</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    <TableRow>
+                      <TableCell className="font-mono">&lt; 100%</TableCell>
+                      <TableCell><Badge className="bg-green-100 text-green-700">Binh thuong</Badge></TableCell>
+                      <TableCell>He so 1.0 - tra du luong cung</TableCell>
+                      <TableCell className="text-sm text-gray-500">Khong can dieu chinh</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell className="font-mono">100% - 120%</TableCell>
+                      <TableCell><Badge className="bg-yellow-100 text-yellow-700">Canh bao</Badge></TableCell>
+                      <TableCell>Nguoi moi nhat: 50% cung + 50% bien doi</TableCell>
+                      <TableCell className="text-sm text-gray-500">Luong bien doi = DT ca nhan x 2% x he so</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell className="font-mono">120% - 150%</TableCell>
+                      <TableCell><Badge className="bg-orange-100 text-orange-700">Cao</Badge></TableCell>
+                      <TableCell>Nguoi moi nhat: 30% cung + 70% bien doi</TableCell>
+                      <TableCell className="text-sm text-gray-500">Luong bien doi = DT ca nhan x 2% x he so</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell className="font-mono">&gt; 150%</TableCell>
+                      <TableCell><Badge className="bg-red-100 text-red-700">Dong bang</Badge></TableCell>
+                      <TableCell>Tam dung bo nhiem quan ly moi</TableCell>
+                      <TableCell className="text-sm text-gray-500">Nguoi moi nhat: 30% cung + 70% bien doi</TableCell>
+                    </TableRow>
                   </TableBody>
                 </Table>
               </CardContent>

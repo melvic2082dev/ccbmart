@@ -20,9 +20,13 @@ function randomName() {
 }
 
 async function main() {
-  console.log('🌱 Seeding database...');
+  console.log('Seeding database (V10)...');
 
-  // Clean existing data
+  // Clean existing data (reverse dependency order)
+  await prisma.professionalTitle.deleteMany();
+  await prisma.loyaltyPoint.deleteMany();
+  await prisma.teamBonus.deleteMany();
+  await prisma.promotionEligibility.deleteMany();
   await prisma.importLog.deleteMany();
   await prisma.pushSubscription.deleteMany();
   await prisma.cogsConfig.deleteMany();
@@ -62,7 +66,7 @@ async function main() {
       phone: '0901000000',
     },
   });
-  console.log('✅ Admin created');
+  console.log('Admin created');
 
   // 2. CTV Hierarchy: GDKD -> GDV -> TP -> PP -> CTV
   const gdkd = await prisma.user.create({
@@ -174,31 +178,31 @@ async function main() {
 
   // All CTV users for transaction assignment
   const allCtvUsers = [gdkd, gdv1, gdv2, tp1, tp2, tp3, ...pps, ...ctvs];
-  console.log(`✅ ${allCtvUsers.length} CTV users created (hierarchy: GDKD→GDV→TP→PP→CTV)`);
+  console.log(`${allCtvUsers.length} CTV users created (hierarchy: GDKD->GDV->TP->PP->CTV)`);
 
-  // 3. Build CtvHierarchy records
+  // 3. Build CtvHierarchy records (V10: DIRECT/INDIRECT2/INDIRECT3)
   for (const ctv of allCtvUsers) {
     if (!ctv.parentId) continue;
-    // F1 relationship
+    // Direct relationship (thanh vien truc tiep)
     await prisma.ctvHierarchy.create({
-      data: { ctvId: ctv.id, managerId: ctv.parentId, level: 'F1' },
+      data: { ctvId: ctv.id, managerId: ctv.parentId, level: 'DIRECT' },
     });
-    // F2 - parent's parent
+    // Indirect level 2 - parent's parent (gian tiep cap 2)
     const parent = await prisma.user.findUnique({ where: { id: ctv.parentId } });
     if (parent?.parentId) {
       await prisma.ctvHierarchy.create({
-        data: { ctvId: ctv.id, managerId: parent.parentId, level: 'F2' },
+        data: { ctvId: ctv.id, managerId: parent.parentId, level: 'INDIRECT2' },
       });
-      // F3 - grandparent's parent
+      // Indirect level 3 - grandparent's parent (gian tiep cap 3)
       const grandparent = await prisma.user.findUnique({ where: { id: parent.parentId } });
       if (grandparent?.parentId) {
         await prisma.ctvHierarchy.create({
-          data: { ctvId: ctv.id, managerId: grandparent.parentId, level: 'F3' },
+          data: { ctvId: ctv.id, managerId: grandparent.parentId, level: 'INDIRECT3' },
         });
       }
     }
   }
-  console.log('✅ CTV hierarchy records created');
+  console.log('CTV hierarchy records created');
 
   // 4. Agency users
   const agencyUser1 = await prisma.user.create({
@@ -206,7 +210,7 @@ async function main() {
       email: 'agency1@ccbmart.vn',
       passwordHash: agencyHash,
       role: 'agency',
-      name: 'Đại lý Bình Thạnh',
+      name: 'Dai ly Binh Thanh',
       phone: '0902200001',
     },
   });
@@ -215,7 +219,7 @@ async function main() {
       email: 'agency2@ccbmart.vn',
       passwordHash: agencyHash,
       role: 'agency',
-      name: 'Đại lý Thủ Đức',
+      name: 'Dai ly Thu Duc',
       phone: '0902200002',
     },
   });
@@ -224,31 +228,31 @@ async function main() {
       email: 'agency3@ccbmart.vn',
       passwordHash: agencyHash,
       role: 'agency',
-      name: 'Đại lý Gò Vấp',
+      name: 'Dai ly Go Vap',
       phone: '0902200003',
     },
   });
 
   const agency1 = await prisma.agency.create({
-    data: { userId: agencyUser1.id, name: 'Đại lý Bình Thạnh', depositAmount: 100000000, depositTier: '100tr', address: '123 Điện Biên Phủ, Bình Thạnh, TP.HCM' },
+    data: { userId: agencyUser1.id, name: 'Dai ly Binh Thanh', depositAmount: 100000000, depositTier: '100tr', address: '123 Dien Bien Phu, Binh Thanh, TP.HCM' },
   });
   const agency2 = await prisma.agency.create({
-    data: { userId: agencyUser2.id, name: 'Đại lý Thủ Đức', depositAmount: 300000000, depositTier: '300tr', address: '456 Võ Văn Ngân, Thủ Đức, TP.HCM' },
+    data: { userId: agencyUser2.id, name: 'Dai ly Thu Duc', depositAmount: 300000000, depositTier: '300tr', address: '456 Vo Van Ngan, Thu Duc, TP.HCM' },
   });
   const agency3 = await prisma.agency.create({
-    data: { userId: agencyUser3.id, name: 'Đại lý Gò Vấp', depositAmount: 50000000, depositTier: '50tr', address: '789 Quang Trung, Gò Vấp, TP.HCM' },
+    data: { userId: agencyUser3.id, name: 'Dai ly Go Vap', depositAmount: 50000000, depositTier: '50tr', address: '789 Quang Trung, Go Vap, TP.HCM' },
   });
   const agencies = [agency1, agency2, agency3];
-  console.log('✅ 3 agencies created');
+  console.log('3 agencies created');
 
-  // 5. Commission configs
+  // 5. Commission configs (V10: directPct/indirect2Pct/indirect3Pct)
   await prisma.commissionConfig.createMany({
     data: [
-      { tier: 'CTV',  selfSalePct: 0.20, f1Pct: 0,    f2Pct: 0,    f3Pct: 0,    fixedSalary: 0 },
-      { tier: 'PP',   selfSalePct: 0.20, f1Pct: 0,    f2Pct: 0,    f3Pct: 0,    fixedSalary: 5000000 },
-      { tier: 'TP',   selfSalePct: 0.30, f1Pct: 0.10, f2Pct: 0,    f3Pct: 0,    fixedSalary: 10000000 },
-      { tier: 'GDV',  selfSalePct: 0.35, f1Pct: 0.10, f2Pct: 0.05, f3Pct: 0,    fixedSalary: 18000000 },
-      { tier: 'GDKD', selfSalePct: 0.38, f1Pct: 0.10, f2Pct: 0.05, f3Pct: 0.03, fixedSalary: 30000000 },
+      { tier: 'CTV',  selfSalePct: 0.20, directPct: 0,    indirect2Pct: 0,    indirect3Pct: 0,    fixedSalary: 0 },
+      { tier: 'PP',   selfSalePct: 0.20, directPct: 0,    indirect2Pct: 0,    indirect3Pct: 0,    fixedSalary: 5000000 },
+      { tier: 'TP',   selfSalePct: 0.30, directPct: 0.10, indirect2Pct: 0,    indirect3Pct: 0,    fixedSalary: 10000000 },
+      { tier: 'GDV',  selfSalePct: 0.35, directPct: 0.10, indirect2Pct: 0.05, indirect3Pct: 0,    fixedSalary: 18000000 },
+      { tier: 'GDKD', selfSalePct: 0.38, directPct: 0.10, indirect2Pct: 0.05, indirect3Pct: 0.03, fixedSalary: 30000000 },
     ],
   });
 
@@ -259,27 +263,27 @@ async function main() {
       { group: 'C', commissionPct: 0.20, bonusPct: 0.05 },
     ],
   });
-  console.log('✅ Commission configs created');
+  console.log('Commission configs created');
 
   // 6. Products
   const products = await Promise.all([
-    prisma.product.create({ data: { name: 'Combo Sức khỏe Vàng (TPCN)', category: 'TPCN', price: 2000000, cogsPct: 0.35, unit: 'combo' } }),
-    prisma.product.create({ data: { name: 'Kardi Q10 - Hỗ trợ tim mạch', category: 'TPCN', price: 698000, cogsPct: 0.26, unit: 'hộp' } }),
-    prisma.product.create({ data: { name: 'Canxi Nano K2 - Xương khớp', category: 'TPCN', price: 450000, cogsPct: 0.30, unit: 'hộp' } }),
-    prisma.product.create({ data: { name: 'Trà Sâm Hàn Quốc', category: 'TPCN', price: 380000, cogsPct: 0.32, unit: 'hộp' } }),
-    prisma.product.create({ data: { name: 'Rau củ Hikari (2kg)', category: 'NS', price: 80000, cogsPct: 0.85, unit: 'gói' } }),
-    prisma.product.create({ data: { name: 'Gạo Hikari ST25 (5kg)', category: 'NS', price: 150000, cogsPct: 0.80, unit: 'bao' } }),
-    prisma.product.create({ data: { name: 'Suất ăn Hikari', category: 'NS', price: 35000, cogsPct: 0.86, unit: 'suất' } }),
-    prisma.product.create({ data: { name: 'Trái cây Hikari (1kg)', category: 'NS', price: 65000, cogsPct: 0.82, unit: 'gói' } }),
-    prisma.product.create({ data: { name: 'Viên giặt nhập khẩu', category: 'FMCG', price: 82000, cogsPct: 0.43, unit: 'túi' } }),
-    prisma.product.create({ data: { name: 'Tẩy toilet đa năng', category: 'FMCG', price: 55000, cogsPct: 0.45, unit: 'chai' } }),
-    prisma.product.create({ data: { name: 'Nước lau sàn hữu cơ', category: 'FMCG', price: 68000, cogsPct: 0.42, unit: 'chai' } }),
-    prisma.product.create({ data: { name: 'Sốt ớt Thái Sriracha', category: 'GiaVi', price: 45000, cogsPct: 0.55, unit: 'chai' } }),
-    prisma.product.create({ data: { name: 'Tương ớt Hàn Quốc Gochujang', category: 'GiaVi', price: 89000, cogsPct: 0.50, unit: 'hũ' } }),
-    prisma.product.create({ data: { name: 'Dầu hào Thái Premium', category: 'GiaVi', price: 65000, cogsPct: 0.52, unit: 'chai' } }),
-    prisma.product.create({ data: { name: 'Nước sốt Hikari đặc biệt', category: 'CheBien', price: 120000, cogsPct: 0.45, unit: 'chai' } }),
+    prisma.product.create({ data: { name: 'Combo Suc khoe Vang (TPCN)', category: 'TPCN', price: 2000000, cogsPct: 0.35, unit: 'combo' } }),
+    prisma.product.create({ data: { name: 'Kardi Q10 - Ho tro tim mach', category: 'TPCN', price: 698000, cogsPct: 0.26, unit: 'hop' } }),
+    prisma.product.create({ data: { name: 'Canxi Nano K2 - Xuong khop', category: 'TPCN', price: 450000, cogsPct: 0.30, unit: 'hop' } }),
+    prisma.product.create({ data: { name: 'Tra Sam Han Quoc', category: 'TPCN', price: 380000, cogsPct: 0.32, unit: 'hop' } }),
+    prisma.product.create({ data: { name: 'Rau cu Hikari (2kg)', category: 'NS', price: 80000, cogsPct: 0.85, unit: 'goi' } }),
+    prisma.product.create({ data: { name: 'Gao Hikari ST25 (5kg)', category: 'NS', price: 150000, cogsPct: 0.80, unit: 'bao' } }),
+    prisma.product.create({ data: { name: 'Suat an Hikari', category: 'NS', price: 35000, cogsPct: 0.86, unit: 'suat' } }),
+    prisma.product.create({ data: { name: 'Trai cay Hikari (1kg)', category: 'NS', price: 65000, cogsPct: 0.82, unit: 'goi' } }),
+    prisma.product.create({ data: { name: 'Vien giat nhap khau', category: 'FMCG', price: 82000, cogsPct: 0.43, unit: 'tui' } }),
+    prisma.product.create({ data: { name: 'Tay toilet da nang', category: 'FMCG', price: 55000, cogsPct: 0.45, unit: 'chai' } }),
+    prisma.product.create({ data: { name: 'Nuoc lau san huu co', category: 'FMCG', price: 68000, cogsPct: 0.42, unit: 'chai' } }),
+    prisma.product.create({ data: { name: 'Sot ot Thai Sriracha', category: 'GiaVi', price: 45000, cogsPct: 0.55, unit: 'chai' } }),
+    prisma.product.create({ data: { name: 'Tuong ot Han Quoc Gochujang', category: 'GiaVi', price: 89000, cogsPct: 0.50, unit: 'hu' } }),
+    prisma.product.create({ data: { name: 'Dau hao Thai Premium', category: 'GiaVi', price: 65000, cogsPct: 0.52, unit: 'chai' } }),
+    prisma.product.create({ data: { name: 'Nuoc sot Hikari dac biet', category: 'CheBien', price: 120000, cogsPct: 0.45, unit: 'chai' } }),
   ]);
-  console.log(`✅ ${products.length} products created`);
+  console.log(`${products.length} products created`);
 
   // 7. Customers (100)
   const now = new Date();
@@ -287,9 +291,8 @@ async function main() {
   const customers = [];
 
   for (let i = 0; i < 100; i++) {
-    const isCtvCustomer = i < 60; // 60% CTV customers
-    const isAgencyCustomer = i >= 60 && i < 80; // 20% agency customers
-    // remaining 20% showroom (no ctv/agency)
+    const isCtvCustomer = i < 60;
+    const isAgencyCustomer = i >= 60 && i < 80;
 
     const customer = await prisma.customer.create({
       data: {
@@ -303,12 +306,11 @@ async function main() {
     });
     customers.push(customer);
   }
-  console.log('✅ 100 customers created');
+  console.log('100 customers created');
 
   // 8. Transactions (500, spread across 3 months)
-  // Channel mix: 60% CTV, 20% agency, 20% showroom
   let txnCount = 0;
-  const comboProduct = products[0]; // Combo 2tr
+  const comboProduct = products[0];
 
   for (let i = 0; i < 500; i++) {
     const channel = i < 300 ? 'ctv' : i < 400 ? 'agency' : 'showroom';
@@ -323,16 +325,14 @@ async function main() {
 
     if (channel === 'ctv') {
       ctvId = allCtvUsers[i % allCtvUsers.length].id;
-      customerId = customers[i % 60].id; // CTV customers
+      customerId = customers[i % 60].id;
 
-      // Most CTV sales are combos (2tr each)
       if (Math.random() < 0.7) {
         const qty = Math.floor(Math.random() * 3) + 1;
         totalAmount = comboProduct.price * qty;
         cogsAmount = totalAmount * comboProduct.cogsPct;
         items.push({ productId: comboProduct.id, quantity: qty, unitPrice: comboProduct.price, totalPrice: totalAmount });
       } else {
-        // Mix of other products
         const numProducts = Math.floor(Math.random() * 3) + 1;
         for (let j = 0; j < numProducts; j++) {
           const prod = products[Math.floor(Math.random() * products.length)];
@@ -357,12 +357,10 @@ async function main() {
         items.push({ productId: prod.id, quantity: qty, unitPrice: prod.price, totalPrice: lineTotal });
       }
     } else {
-      // Showroom
       customerId = customers[80 + (i % 20)].id;
 
-      // Showroom sells lots of suất ăn + some retail
       if (Math.random() < 0.5) {
-        const suatAn = products[6]; // Suất ăn 35k
+        const suatAn = products[6];
         const qty = Math.floor(Math.random() * 5) + 1;
         totalAmount = suatAn.price * qty;
         cogsAmount = totalAmount * suatAn.cogsPct;
@@ -380,7 +378,7 @@ async function main() {
       }
     }
 
-    const txn = await prisma.transaction.create({
+    await prisma.transaction.create({
       data: {
         kiotvietOrderId: `KV-${String(txnDate.getFullYear()).slice(2)}${String(txnDate.getMonth() + 1).padStart(2, '0')}-${String(i + 1).padStart(4, '0')}`,
         customerId,
@@ -390,13 +388,10 @@ async function main() {
         totalAmount,
         cogsAmount,
         createdAt: txnDate,
-        items: {
-          create: items,
-        },
+        items: { create: items },
       },
     });
 
-    // Update customer totalSpent
     if (customerId) {
       await prisma.customer.update({
         where: { id: customerId },
@@ -406,9 +401,9 @@ async function main() {
 
     txnCount++;
   }
-  console.log(`✅ ${txnCount} transactions created`);
+  console.log(`${txnCount} transactions created`);
 
-  // 9. KPI Logs (3 months for key CTVs)
+  // 9. KPI Logs
   const keyCtvsForKpi = [gdkd, gdv1, gdv2, tp1, tp2, tp3, ...pps.slice(0, 3)];
   for (let monthOffset = 2; monthOffset >= 0; monthOffset--) {
     const d = new Date(now.getFullYear(), now.getMonth() - monthOffset, 1);
@@ -422,28 +417,21 @@ async function main() {
                             ctv.rank === 'PP' ? 50 + Math.floor(Math.random() * 20) : 0;
 
       await prisma.kpiLog.create({
-        data: {
-          ctvId: ctv.id,
-          month: monthStr,
-          selfSales,
-          portfolioSize,
-          rankBefore: ctv.rank,
-          rankAfter: ctv.rank,
-        },
+        data: { ctvId: ctv.id, month: monthStr, selfSales, portfolioSize, rankBefore: ctv.rank, rankAfter: ctv.rank },
       });
     }
   }
-  console.log('✅ KPI logs created');
+  console.log('KPI logs created');
 
   // 10. Rank History
   await prisma.rankHistory.createMany({
     data: [
-      { ctvId: gdv1.id, oldRank: 'TP', newRank: 'GDV', reason: 'Đạt KPI thăng cấp: 50 combo cá nhân + 550 portfolio', changedBy: 'System', changedAt: new Date(now.getFullYear(), now.getMonth() - 2, 1) },
-      { ctvId: tp1.id, oldRank: 'PP', newRank: 'TP', reason: 'Đạt KPI thăng cấp: 50 combo cá nhân + 150 portfolio', changedBy: 'System', changedAt: new Date(now.getFullYear(), now.getMonth() - 1, 15) },
-      { ctvId: pps[0].id, oldRank: 'CTV', newRank: 'PP', reason: 'Đạt KPI thăng cấp: 50 combo cá nhân', changedBy: 'System', changedAt: new Date(now.getFullYear(), now.getMonth() - 1, 1) },
+      { ctvId: gdv1.id, oldRank: 'TP', newRank: 'GDV', reason: 'Dat dieu kien bo nhiem T+1: du tieu chi thang truoc', changedBy: 'System (T+1)', changedAt: new Date(now.getFullYear(), now.getMonth() - 2, 1) },
+      { ctvId: tp1.id, oldRank: 'PP', newRank: 'TP', reason: 'Dat dieu kien bo nhiem T+1: du tieu chi thang truoc', changedBy: 'System (T+1)', changedAt: new Date(now.getFullYear(), now.getMonth() - 1, 15) },
+      { ctvId: pps[0].id, oldRank: 'CTV', newRank: 'PP', reason: 'Dat dieu kien bo nhiem T+1: 5 thanh vien truc tiep dat >=10 combo', changedBy: 'System (T+1)', changedAt: new Date(now.getFullYear(), now.getMonth() - 1, 1) },
     ],
   });
-  console.log('✅ Rank history created');
+  console.log('Rank history created');
 
   // 11. Inventory Warnings
   const warningData = [
@@ -460,24 +448,18 @@ async function main() {
     const expiryDate = new Date();
     expiryDate.setDate(expiryDate.getDate() + w.daysUntilExpiry);
     await prisma.inventoryWarning.create({
-      data: {
-        productId: w.productId,
-        agencyId: w.agencyId,
-        quantity: w.quantity,
-        expiryDate,
-        warningType: w.warningType,
-      },
+      data: { productId: w.productId, agencyId: w.agencyId, quantity: w.quantity, expiryDate, warningType: w.warningType },
     });
   }
-  console.log('✅ Inventory warnings created');
+  console.log('Inventory warnings created');
 
-  // 12. Pending CTV transactions (for payment confirmation demo)
+  // 12. Pending CTV transactions
   const pendingTxns = [];
   for (let i = 0; i < 10; i++) {
     const ctv = allCtvUsers[i % allCtvUsers.length];
     const customer = customers[i % 60];
     const isBankTransfer = i < 6;
-    const hoursAgo = i < 3 ? 2 : i < 6 ? 12 : i < 8 ? 30 : 50; // varied ages
+    const hoursAgo = i < 3 ? 2 : i < 6 ? 12 : i < 8 ? 30 : 50;
     const txnDate = new Date(Date.now() - hoursAgo * 60 * 60 * 1000);
 
     const txn = await prisma.transaction.create({
@@ -492,15 +474,12 @@ async function main() {
         bankCode: isBankTransfer ? String(1000 + i) : null,
         ctvSubmittedAt: txnDate,
         createdAt: txnDate,
-        items: {
-          create: [{ productId: products[0].id, quantity: 1, unitPrice: 2000000, totalPrice: 2000000 }],
-        },
+        items: { create: [{ productId: products[0].id, quantity: 1, unitPrice: 2000000, totalPrice: 2000000 }] },
       },
     });
     pendingTxns.push(txn);
   }
 
-  // Payment proofs for bank transfer transactions
   for (let i = 0; i < 4; i++) {
     await prisma.paymentProof.create({
       data: {
@@ -511,7 +490,7 @@ async function main() {
       },
     });
   }
-  console.log('✅ 10 pending CTV transactions + 4 payment proofs created');
+  console.log('10 pending CTV transactions + 4 payment proofs created');
 
   // 13. Sync Logs
   for (let i = 0; i < 10; i++) {
@@ -524,7 +503,7 @@ async function main() {
       },
     });
   }
-  console.log('✅ Sync logs created');
+  console.log('Sync logs created');
 
   // 14. KPI Config + COGS Config
   await prisma.kpiConfig.createMany({
@@ -544,7 +523,7 @@ async function main() {
       { phase: 'GD4', name: 'GD4 (3-5 nam)',     cogsPct: 0.55, description: 'Mature stores' },
     ],
   });
-  console.log('✅ KPI + COGS config created');
+  console.log('KPI + COGS config created');
 
   // 15. Membership Tiers
   const memberHash = await bcrypt.hash('member123', 10);
@@ -560,9 +539,9 @@ async function main() {
   const tierVip = await prisma.membershipTier.create({
     data: { name: 'VIP Gold', minDeposit: 2000000, discountPct: 0.12, referralPct: 0.05, monthlyReferralCap: 500000, color: 'amber' },
   });
-  console.log('✅ 4 membership tiers created');
+  console.log('4 membership tiers created');
 
-  // 15. Member users + wallets
+  // 16. Member users + wallets
   const memberUsers = [];
   const memberWallets = [];
   const tiers = [tierGreen, tierBasic, tierStandard, tierVip];
@@ -588,14 +567,14 @@ async function main() {
         balance: tier.minDeposit + Math.floor(Math.random() * 500000),
         totalDeposit: tier.minDeposit + Math.floor(Math.random() * 1000000),
         referralCode: code,
-        referredById: i >= 5 ? memberWallets[i % 5].id : null, // first 5 have no referrer, rest refer to first 5
+        referredById: i >= 5 ? memberWallets[i % 5].id : null,
       },
     });
     memberWallets.push(wallet);
   }
-  console.log('✅ 20 member users + wallets created');
+  console.log('20 member users + wallets created');
 
-  // 16. Deposit history for members
+  // 17. Deposit history
   for (let i = 0; i < 30; i++) {
     const wallet = memberWallets[i % memberWallets.length];
     await prisma.depositHistory.create({
@@ -610,12 +589,12 @@ async function main() {
       },
     });
   }
-  console.log('✅ 30 deposit history records created');
+  console.log('30 deposit history records created');
 
-  // 17. Referral commissions
+  // 18. Referral commissions
   const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   for (let i = 5; i < 15; i++) {
-    const earner = memberWallets[i % 5]; // first 5 wallets are referrers
+    const earner = memberWallets[i % 5];
     const source = memberWallets[i];
     const rate = tiers[i % 4].referralPct;
     if (rate > 0) {
@@ -631,18 +610,113 @@ async function main() {
       });
     }
   }
-  console.log('✅ Referral commissions created');
+  console.log('Referral commissions created');
 
-  console.log('\n🎉 Seed complete!');
-  console.log('📧 Login credentials:');
+  // ===== V10 NEW SEED DATA =====
+
+  // 19. PromotionEligibility (2 PENDING, 1 ACTIVATED)
+  const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const lastMonthStr = `${lastMonth.getFullYear()}-${String(lastMonth.getMonth() + 1).padStart(2, '0')}`;
+  const thisMonthStr = currentMonth;
+
+  await prisma.promotionEligibility.createMany({
+    data: [
+      {
+        ctvId: pps[0].id,
+        targetRank: 'TP',
+        qualifiedMonth: thisMonthStr,
+        effectiveDate: new Date(now.getFullYear(), now.getMonth() + 1, 1),
+        status: 'PENDING',
+      },
+      {
+        ctvId: pps[1].id,
+        targetRank: 'TP',
+        qualifiedMonth: thisMonthStr,
+        effectiveDate: new Date(now.getFullYear(), now.getMonth() + 1, 1),
+        status: 'PENDING',
+      },
+      {
+        ctvId: tp1.id,
+        targetRank: 'GDV',
+        qualifiedMonth: lastMonthStr,
+        effectiveDate: new Date(now.getFullYear(), now.getMonth(), 1),
+        status: 'ACTIVATED',
+        approvedBy: admin.id,
+        approvedAt: new Date(now.getFullYear(), now.getMonth() - 1, 28),
+      },
+    ],
+  });
+  console.log('3 PromotionEligibility records created');
+
+  // 20. TeamBonus (3 PAID, 2 PENDING)
+  const twoMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 2, 1);
+  const twoMonthsAgoStr = `${twoMonthsAgo.getFullYear()}-${String(twoMonthsAgo.getMonth() + 1).padStart(2, '0')}`;
+
+  await prisma.teamBonus.createMany({
+    data: [
+      { ctvId: gdkd.id, month: twoMonthsAgoStr, directMemberCount: 2, teamRevenue: 50000000, bonusRate: 0.005, bonusAmount: 250000, cashAmount: 0, pointAmount: 250000, status: 'PAID', paidAt: twoMonthsAgo },
+      { ctvId: gdv1.id, month: twoMonthsAgoStr, directMemberCount: 2, teamRevenue: 30000000, bonusRate: 0.005, bonusAmount: 150000, cashAmount: 0, pointAmount: 150000, status: 'PAID', paidAt: twoMonthsAgo },
+      { ctvId: tp1.id, month: lastMonthStr, directMemberCount: 2, teamRevenue: 20000000, bonusRate: 0.005, bonusAmount: 100000, cashAmount: 0, pointAmount: 100000, status: 'PAID', paidAt: lastMonth },
+      { ctvId: gdkd.id, month: thisMonthStr, directMemberCount: 2, teamRevenue: 55000000, bonusRate: 0.005, bonusAmount: 275000, cashAmount: 0, pointAmount: 275000, status: 'PENDING' },
+      { ctvId: gdv1.id, month: thisMonthStr, directMemberCount: 2, teamRevenue: 32000000, bonusRate: 0.005, bonusAmount: 160000, cashAmount: 0, pointAmount: 160000, status: 'PENDING' },
+    ],
+  });
+  console.log('5 TeamBonus records created');
+
+  // 21. LoyaltyPoints (20 records)
+  const loyaltyUsers = [gdkd, gdv1, gdv2, tp1, tp2, tp3, ...pps.slice(0, 4)];
+  const loyaltySources = ['TEAM_BONUS', 'PERSONAL_PURCHASE', 'MILESTONE'];
+  for (let i = 0; i < 20; i++) {
+    const user = loyaltyUsers[i % loyaltyUsers.length];
+    const expiresAt = new Date();
+    expiresAt.setFullYear(expiresAt.getFullYear() + 1);
+
+    await prisma.loyaltyPoint.create({
+      data: {
+        userId: user.id,
+        points: Math.floor(Math.random() * 500) + 100,
+        source: loyaltySources[i % loyaltySources.length],
+        expiresAt,
+        usedAt: i < 5 ? randomDate(threeMonthsAgo, now) : null,
+        createdAt: randomDate(threeMonthsAgo, now),
+      },
+    });
+  }
+  console.log('20 LoyaltyPoint records created');
+
+  // 22. ProfessionalTitle (2 records)
+  const titleExpiry = new Date();
+  titleExpiry.setFullYear(titleExpiry.getFullYear() + 1);
+
+  await prisma.professionalTitle.createMany({
+    data: [
+      {
+        userId: gdkd.id,
+        title: 'EXPERT_LEADER',
+        directCount: 2,
+        renewedAt: new Date(now.getFullYear(), now.getMonth() - 1, 1),
+        expiresAt: titleExpiry,
+        isActive: true,
+      },
+      {
+        userId: gdv1.id,
+        title: 'SENIOR_EXPERT',
+        directCount: 2,
+        renewedAt: new Date(now.getFullYear(), now.getMonth() - 2, 1),
+        expiresAt: titleExpiry,
+        isActive: true,
+      },
+    ],
+  });
+  console.log('2 ProfessionalTitle records created');
+
+  console.log('\nSeed complete! (V10)');
+  console.log('Login credentials:');
   console.log('   admin@ccbmart.vn / admin123');
   console.log('   ctv1@ccbmart.vn / ctv123 (GDKD)');
   console.log('   ctv2@ccbmart.vn / ctv123 (GDV)');
   console.log('   agency1@ccbmart.vn / agency123');
   console.log('   member1@ccbmart.vn / member123 (Green)');
-  console.log('   member2@ccbmart.vn / member123 (Basic)');
-  console.log('   member3@ccbmart.vn / member123 (Standard)');
-  console.log('   member4@ccbmart.vn / member123 (VIP Gold)');
 }
 
 main()

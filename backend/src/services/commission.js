@@ -3,11 +3,11 @@ const prisma = new PrismaClient();
 
 // Commission rates by rank
 const COMMISSION_RATES = {
-  CTV:  { selfSale: 0.20, f1: 0,    f2: 0,    f3: 0,    fixedSalary: 0 },
-  PP:   { selfSale: 0.20, f1: 0,    f2: 0,    f3: 0,    fixedSalary: 5000000 },
-  TP:   { selfSale: 0.30, f1: 0.10, f2: 0,    f3: 0,    fixedSalary: 10000000 },
-  GDV:  { selfSale: 0.35, f1: 0.10, f2: 0.05, f3: 0,    fixedSalary: 18000000 },
-  GDKD: { selfSale: 0.38, f1: 0.10, f2: 0.05, f3: 0.03, fixedSalary: 30000000 },
+  CTV:  { selfSale: 0.20, direct: 0,    indirect2: 0,    indirect3: 0,    fixedSalary: 0 },
+  PP:   { selfSale: 0.20, direct: 0,    indirect2: 0,    indirect3: 0,    fixedSalary: 5000000 },
+  TP:   { selfSale: 0.30, direct: 0.10, indirect2: 0,    indirect3: 0,    fixedSalary: 10000000 },
+  GDV:  { selfSale: 0.35, direct: 0.10, indirect2: 0.05, indirect3: 0,    fixedSalary: 18000000 },
+  GDKD: { selfSale: 0.38, direct: 0.10, indirect2: 0.05, indirect3: 0.03, fixedSalary: 30000000 },
 };
 
 // Agency commission by product group
@@ -27,7 +27,6 @@ class LRUCache {
   get(key) {
     if (!this.cache.has(key)) return undefined;
     const value = this.cache.get(key);
-    // Move to end (most recently used)
     this.cache.delete(key);
     this.cache.set(key, value);
     return value;
@@ -36,7 +35,6 @@ class LRUCache {
   set(key, value) {
     if (this.cache.has(key)) this.cache.delete(key);
     if (this.cache.size >= this.maxSize) {
-      // Delete oldest (first) entry
       const firstKey = this.cache.keys().next().value;
       this.cache.delete(firstKey);
     }
@@ -62,7 +60,6 @@ const commissionCache = new LRUCache(1000);
  * Optimized commission calculator - uses only 2-3 queries instead of N+1
  */
 async function calculateCtvCommission(ctvId, month) {
-  // Check LRU cache first
   const cacheKey = `commission:${ctvId}:${month}`;
   const cached = commissionCache.get(cacheKey);
   if (cached) return cached;
@@ -117,30 +114,30 @@ async function calculateCtvCommission(ctvId, month) {
   const selfSalesAmount = revenueMap.get(ctvId) || 0;
   const selfCommission = selfSalesAmount * rates.selfSale;
 
-  let f1Commission = 0;
-  let f2Commission = 0;
-  let f3Commission = 0;
+  let directCommission = 0;
+  let indirect2Commission = 0;
+  let indirect3Commission = 0;
 
-  // F1: direct children
-  const f1Ids = childrenMap.get(ctvId) || [];
-  if (rates.f1 > 0) {
-    for (const f1Id of f1Ids) {
-      const f1Revenue = revenueMap.get(f1Id) || 0;
-      f1Commission += f1Revenue * rates.f1;
+  // Direct: direct children (thanh vien truc tiep)
+  const directIds = childrenMap.get(ctvId) || [];
+  if (rates.direct > 0) {
+    for (const directId of directIds) {
+      const directRevenue = revenueMap.get(directId) || 0;
+      directCommission += directRevenue * rates.direct;
 
-      // F2: children of F1
-      if (rates.f2 > 0) {
-        const f2Ids = childrenMap.get(f1Id) || [];
-        for (const f2Id of f2Ids) {
-          const f2Revenue = revenueMap.get(f2Id) || 0;
-          f2Commission += f2Revenue * rates.f2;
+      // Indirect level 2: children of direct members (gian tiep cap 2)
+      if (rates.indirect2 > 0) {
+        const indirect2Ids = childrenMap.get(directId) || [];
+        for (const ind2Id of indirect2Ids) {
+          const ind2Revenue = revenueMap.get(ind2Id) || 0;
+          indirect2Commission += ind2Revenue * rates.indirect2;
 
-          // F3: children of F2
-          if (rates.f3 > 0) {
-            const f3Ids = childrenMap.get(f2Id) || [];
-            for (const f3Id of f3Ids) {
-              const f3Revenue = revenueMap.get(f3Id) || 0;
-              f3Commission += f3Revenue * rates.f3;
+          // Indirect level 3: children of indirect2 (gian tiep cap 3)
+          if (rates.indirect3 > 0) {
+            const indirect3Ids = childrenMap.get(ind2Id) || [];
+            for (const ind3Id of indirect3Ids) {
+              const ind3Revenue = revenueMap.get(ind3Id) || 0;
+              indirect3Commission += ind3Revenue * rates.indirect3;
             }
           }
         }
@@ -154,14 +151,13 @@ async function calculateCtvCommission(ctvId, month) {
     month,
     selfSalesAmount,
     selfCommission,
-    f1Commission,
-    f2Commission,
-    f3Commission,
+    directCommission,
+    indirect2Commission,
+    indirect3Commission,
     fixedSalary: rates.fixedSalary,
-    totalIncome: selfCommission + f1Commission + f2Commission + f3Commission + rates.fixedSalary,
+    totalIncome: selfCommission + directCommission + indirect2Commission + indirect3Commission + rates.fixedSalary,
   };
 
-  // Store in LRU cache
   commissionCache.set(cacheKey, result);
 
   return result;
@@ -215,20 +211,20 @@ async function calculateAllCtvCommissions(month) {
 
     const selfSalesAmount = revenueMap.get(ctv.id) || 0;
     const selfCommission = selfSalesAmount * rates.selfSale;
-    let f1Commission = 0, f2Commission = 0, f3Commission = 0;
+    let directCommission = 0, indirect2Commission = 0, indirect3Commission = 0;
 
-    const f1Ids = childrenMap.get(ctv.id) || [];
-    if (rates.f1 > 0) {
-      for (const f1Id of f1Ids) {
-        f1Commission += (revenueMap.get(f1Id) || 0) * rates.f1;
-        if (rates.f2 > 0) {
-          const f2Ids = childrenMap.get(f1Id) || [];
-          for (const f2Id of f2Ids) {
-            f2Commission += (revenueMap.get(f2Id) || 0) * rates.f2;
-            if (rates.f3 > 0) {
-              const f3Ids = childrenMap.get(f2Id) || [];
-              for (const f3Id of f3Ids) {
-                f3Commission += (revenueMap.get(f3Id) || 0) * rates.f3;
+    const directIds = childrenMap.get(ctv.id) || [];
+    if (rates.direct > 0) {
+      for (const directId of directIds) {
+        directCommission += (revenueMap.get(directId) || 0) * rates.direct;
+        if (rates.indirect2 > 0) {
+          const ind2Ids = childrenMap.get(directId) || [];
+          for (const ind2Id of ind2Ids) {
+            indirect2Commission += (revenueMap.get(ind2Id) || 0) * rates.indirect2;
+            if (rates.indirect3 > 0) {
+              const ind3Ids = childrenMap.get(ind2Id) || [];
+              for (const ind3Id of ind3Ids) {
+                indirect3Commission += (revenueMap.get(ind3Id) || 0) * rates.indirect3;
               }
             }
           }
@@ -243,11 +239,11 @@ async function calculateAllCtvCommissions(month) {
       month,
       selfSalesAmount,
       selfCommission,
-      f1Commission,
-      f2Commission,
-      f3Commission,
+      directCommission,
+      indirect2Commission,
+      indirect3Commission,
       fixedSalary: rates.fixedSalary,
-      totalIncome: selfCommission + f1Commission + f2Commission + f3Commission + rates.fixedSalary,
+      totalIncome: selfCommission + directCommission + indirect2Commission + indirect3Commission + rates.fixedSalary,
     });
   }
 

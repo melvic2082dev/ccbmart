@@ -46,6 +46,28 @@ router.get('/dashboard', async (req, res) => {
 
       const commission = await calculateCtvCommission(userId, monthStr);
 
+      // Loyalty points balance
+      const loyaltyPoints = await prisma.loyaltyPoint.aggregate({
+        where: { userId, usedAt: null, expiresAt: { gt: new Date() } },
+        _sum: { points: true },
+      });
+
+      // Professional title
+      const professionalTitle = await prisma.professionalTitle.findUnique({
+        where: { userId },
+      });
+
+      // Promotion eligibility
+      const promotionStatus = await prisma.promotionEligibility.findFirst({
+        where: { ctvId: userId, status: { in: ['PENDING', 'APPROVED'] } },
+        orderBy: { createdAt: 'desc' },
+      });
+
+      // Team bonus for current month
+      const teamBonus = await prisma.teamBonus.findFirst({
+        where: { ctvId: userId, month: monthStr },
+      });
+
       // Monthly chart (6 months)
       const chartData = [];
       for (let i = 5; i >= 0; i--) {
@@ -73,6 +95,10 @@ router.get('/dashboard', async (req, res) => {
         rank: req.user.rank || 'CTV',
         commission,
         chartData,
+        loyaltyPoints: loyaltyPoints._sum.points || 0,
+        professionalTitle: professionalTitle ? { title: professionalTitle.title, isActive: professionalTitle.isActive } : null,
+        promotionStatus: promotionStatus ? { targetRank: promotionStatus.targetRank, status: promotionStatus.status } : null,
+        teamBonus: teamBonus ? { bonusAmount: teamBonus.bonusAmount, status: teamBonus.status } : null,
       };
     });
 
@@ -189,6 +215,48 @@ router.get('/products', async (req, res) => {
   try {
     const products = await prisma.product.findMany({ orderBy: { category: 'asc' } });
     res.json(products);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ===== V10: CTV LOYALTY POINTS =====
+router.get('/loyalty-points', async (req, res) => {
+  try {
+    const points = await prisma.loyaltyPoint.findMany({
+      where: { userId: req.user.id },
+      orderBy: { createdAt: 'desc' },
+    });
+    const balance = points
+      .filter(p => !p.usedAt && p.expiresAt > new Date())
+      .reduce((sum, p) => sum + p.points, 0);
+    res.json({ balance, history: points });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ===== V10: CTV PROMOTION STATUS =====
+router.get('/promotion-status', async (req, res) => {
+  try {
+    const promotions = await prisma.promotionEligibility.findMany({
+      where: { ctvId: req.user.id },
+      orderBy: { createdAt: 'desc' },
+    });
+    res.json(promotions);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ===== V10: CTV TEAM BONUS =====
+router.get('/team-bonus', async (req, res) => {
+  try {
+    const bonuses = await prisma.teamBonus.findMany({
+      where: { ctvId: req.user.id },
+      orderBy: { month: 'desc' },
+    });
+    res.json(bonuses);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

@@ -6,7 +6,8 @@ import {
   LayoutDashboard, Users, ShoppingCart, Package, Warehouse,
   Settings, FileText, LogOut, Building2, Bell,
   PlusCircle, Banknote, ClipboardCheck, Wallet, Award, CreditCard,
-  ChevronLeft, ChevronRight, Sun, Moon, Menu, X, FileSpreadsheet
+  ChevronLeft, ChevronRight, Sun, Moon, Menu, X, FileSpreadsheet,
+  Scale, Calculator, Gift
 } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react';
 import { api } from '@/lib/api';
@@ -32,7 +33,11 @@ const navByRole: Record<string, NavItem[]> = {
     { label: 'Doi soat', href: '/admin/reconciliation', icon: <ClipboardCheck size={20} /> },
     { label: 'CTV', href: '/admin/ctv', icon: <Users size={20} /> },
     { label: 'Dai ly', href: '/admin/agencies', icon: <Building2 size={20} /> },
-    { label: 'Thanh vien', href: '/admin/membership/wallets', icon: <Award size={20} /> },
+    { label: 'Bo nhiem', href: '/admin/promotions', icon: <Scale size={20} /> },
+    { label: 'Luong linh hoat', href: '/admin/soft-salary', icon: <Calculator size={20} /> },
+    { label: 'Thuong dan dat', href: '/admin/team-bonus', icon: <Gift size={20} /> },
+    { label: 'Danh hieu', href: '/admin/titles', icon: <Award size={20} /> },
+    { label: 'Thanh vien', href: '/admin/membership/wallets', icon: <Users size={20} /> },
     { label: 'Nap tien TV', href: '/admin/membership/deposits', icon: <CreditCard size={20} /> },
     { label: 'Hang the', href: '/admin/membership/tiers', icon: <Wallet size={20} /> },
     { label: 'Import', href: '/admin/import', icon: <FileSpreadsheet size={20} /> },
@@ -51,7 +56,6 @@ const ROLE_LABELS: Record<string, string> = {
   ctv: 'CTV Panel', agency: 'Dai ly', admin: 'Admin', member: 'Thanh vien',
 };
 
-// Read from localStorage synchronously to prevent flash
 function readLS(key: string, fallback: string): string {
   if (typeof window === 'undefined') return fallback;
   return localStorage.getItem(key) || fallback;
@@ -61,22 +65,18 @@ export default function Sidebar({ role }: { role: string }) {
   const pathname = usePathname();
   const items = navByRole[role] || navByRole.admin;
 
-  // Initialize synchronously from localStorage - NO useEffect flash
   const [expanded, setExpanded] = useState(() => readLS('sidebar-expanded', 'false') === 'true');
   const [dark, setDark] = useState(() => readLS('theme', 'light') === 'dark');
   const [mobileOpen, setMobileOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
 
-  // Apply dark class on mount (synchronous read already done above)
   useEffect(() => {
     if (dark) document.documentElement.classList.add('dark');
     else document.documentElement.classList.remove('dark');
   }, [dark]);
 
-  // Close mobile drawer on route change
   useEffect(() => { setMobileOpen(false); }, [pathname]);
 
-  // Poll notifications
   useEffect(() => {
     let mounted = true;
     const fn = async () => {
