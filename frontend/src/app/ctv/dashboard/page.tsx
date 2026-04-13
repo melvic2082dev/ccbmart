@@ -165,7 +165,7 @@ export default function CTVDashboardPage() {
               <CardContent className="p-4">
                 <div className="flex items-center gap-2 text-emerald-600 mb-1">
                   <Award className="w-4 h-4" />
-                  <span className="text-xs font-medium uppercase tracking-wide">Đội ngũ F1</span>
+                  <span className="text-xs font-medium uppercase tracking-wide">Đội ngũ trực tiếp</span>
                 </div>
                 <p className="text-xl font-bold text-gray-900">{data.teamSize}</p>
               </CardContent>
@@ -211,15 +211,15 @@ export default function CTVDashboardPage() {
                   <p className="text-base font-bold text-gray-900">{formatVND(data.commission.selfCommission)}</p>
                 </div>
                 <div className="bg-emerald-50 rounded-lg p-3">
-                  <p className="text-xs text-emerald-600 font-medium mb-1">Hoa hồng F1</p>
+                  <p className="text-xs text-emerald-600 font-medium mb-1">Hoa hồng trực tiếp</p>
                   <p className="text-base font-bold text-gray-900">{formatVND(data.commission.f1Commission)}</p>
                 </div>
                 <div className="bg-emerald-50 rounded-lg p-3">
-                  <p className="text-xs text-emerald-600 font-medium mb-1">Hoa hồng F2</p>
+                  <p className="text-xs text-emerald-600 font-medium mb-1">Hoa hồng Cấp 2</p>
                   <p className="text-base font-bold text-gray-900">{formatVND(data.commission.f2Commission)}</p>
                 </div>
                 <div className="bg-emerald-50 rounded-lg p-3">
-                  <p className="text-xs text-emerald-600 font-medium mb-1">Hoa hồng F3</p>
+                  <p className="text-xs text-emerald-600 font-medium mb-1">Hoa hồng Cấp 3</p>
                   <p className="text-base font-bold text-gray-900">{formatVND(data.commission.f3Commission)}</p>
                 </div>
                 <div className="bg-emerald-50 rounded-lg p-3">

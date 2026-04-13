@@ -100,7 +100,7 @@ function TreeNode({ node, depth }: { node: CtvTreeNode; depth: number }) {
 
         {hasChildren && (
           <span className="ml-auto text-xs text-gray-400 flex-shrink-0">
-            {node.children.length} F1
+            {node.children.length} trực tiếp
           </span>
         )}
       </div>
@@ -180,7 +180,7 @@ export default function AdminCtvPage() {
                       <TableHead className="text-gray-600 font-semibold">Email</TableHead>
                       <TableHead className="text-gray-600 font-semibold">Rank</TableHead>
                       <TableHead className="text-gray-600 font-semibold">Quản lý</TableHead>
-                      <TableHead className="text-gray-600 font-semibold text-right">Số F1</TableHead>
+                      <TableHead className="text-gray-600 font-semibold text-right">Trực tiếp</TableHead>
                       <TableHead className="text-gray-600 font-semibold text-right">Giao dịch</TableHead>
                       <TableHead className="text-gray-600 font-semibold text-right">Khách hàng</TableHead>
                       <TableHead className="text-gray-600 font-semibold">Trạng thái</TableHead>

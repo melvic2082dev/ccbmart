@@ -77,7 +77,7 @@ export default function AdminConfig() {
               <CardTitle className="flex items-center gap-2">
                 <Users size={20} /> Hoa hồng CTV theo cấp bậc
               </CardTitle>
-              <p className="text-sm text-slate-500">Cascading: Tự bán + F1 (10%) + F2 (5%) + F3 (3%)</p>
+              <p className="text-sm text-slate-500">Cascading: Tự bán + Trực tiếp (10%) + Cấp 2 (5%) + Cấp 3 (3%)</p>
             </CardHeader>
             <CardContent>
               <Table>
@@ -86,9 +86,9 @@ export default function AdminConfig() {
                     <TableHead>Cấp bậc</TableHead>
                     <TableHead>Tên</TableHead>
                     <TableHead className="text-right">HH Tự bán</TableHead>
-                    <TableHead className="text-right">Phụ cấp F1</TableHead>
-                    <TableHead className="text-right">Phụ cấp F2</TableHead>
-                    <TableHead className="text-right">Phụ cấp F3</TableHead>
+                    <TableHead className="text-right">Phụ cấp Trực tiếp</TableHead>
+                    <TableHead className="text-right">Phụ cấp Cấp 2</TableHead>
+                    <TableHead className="text-right">Phụ cấp Cấp 3</TableHead>
                     <TableHead className="text-right">Lương cứng</TableHead>
                   </TableRow>
                 </TableHeader>

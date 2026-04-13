@@ -14,7 +14,7 @@ model User {
   role          String   // ctv, agency, admin
   name          String
   phone         String?
-  rank          String?  // CTV, PP, TP, GDV, GDKD
+  rank          String?  // CTV, PP, TP, GDV, GDKD (chức danh chuyên nghiệp)
   parentId      Int?     @map("parent_id")
   agencyId      Int?     @map("agency_id")
   isActive      Boolean  @default(true) @map("is_active")
@@ -24,13 +24,15 @@ model User {
   children      User[]   @relation("UserHierarchy")
   agency        Agency?  @relation("AgencyUser", fields: [agencyId], references: [id])
 
-  managedCtvs   CtvHierarchy[] @relation("Manager")
-  asCtvEntry    CtvHierarchy[] @relation("Ctv")
-  transactions  Transaction[]  @relation("CtvTransactions")
-  customers     Customer[]     @relation("CtvCustomers")
-  kpiLogs       KpiLog[]
-  rankHistory   RankHistory[]
-  ownedAgency   Agency?        @relation("AgencyOwner")
+  managedCtvs         CtvHierarchy[]       @relation("Manager")
+  asCtvEntry          CtvHierarchy[]       @relation("Ctv")
+  transactions        Transaction[]        @relation("CtvTransactions")
+  customers           Customer[]           @relation("CtvCustomers")
+  kpiLogs             KpiLog[]
+  rankHistory         RankHistory[]
+  ownedAgency         Agency?              @relation("AgencyOwner")
+  promotionEligibility PromotionEligibility[]
+  teamBonuses         TeamBonus[]
 
   @@map("users")
 }
@@ -39,7 +41,7 @@ model CtvHierarchy {
   id          Int      @id @default(autoincrement())
   ctvId       Int      @map("ctv_id")
   managerId   Int      @map("manager_id")
-  level       String   // F1, F2, F3
+  level       String   // direct, level2, level3
   appointedAt DateTime @default(now()) @map("appointed_at")
 
   ctv         User     @relation("Ctv", fields: [ctvId], references: [id])
@@ -66,13 +68,14 @@ model Agency {
 }
 
 model CommissionConfig {
-  id          Int    @id @default(autoincrement())
-  tier        String @unique // CTV, PP, TP, GDV, GDKD
-  selfSalePct Float  @map("self_sale_pct")
-  f1Pct       Float  @map("f1_pct")
-  f2Pct       Float  @map("f2_pct")
-  f3Pct       Float  @map("f3_pct")
-  fixedSalary Float  @map("fixed_salary")
+  id            Int     @id @default(autoincrement())
+  tier          String  @unique // CTV, PP, TP, GDV, GDKD
+  selfSalePct   Float   @map("self_sale_pct")
+  f1Pct         Float   @map("f1_pct")
+  f2Pct         Float   @map("f2_pct")
+  f3Pct         Float   @map("f3_pct")
+  fixedSalary   Float   @map("fixed_salary")
+  isSoftSalary  Boolean @default(true) @map("is_soft_salary") // salary conditional on fund cap
 
   @@map("commission_config")
 }
@@ -175,6 +178,36 @@ model RankHistory {
   ctv       User     @relation(fields: [ctvId], references: [id])
 
   @@map("rank_history")
+}
+
+// T+1 promotion: promotion takes effect next month, not immediately
+model PromotionEligibility {
+  id              Int      @id @default(autoincrement())
+  ctvId           Int      @map("ctv_id")
+  currentRank     String   @map("current_rank")
+  targetRank      String   @map("target_rank")
+  effectiveMonth  String   @map("effective_month") // YYYY-MM (T+1, next month)
+  metAt           DateTime @default(now()) @map("met_at")
+  status          String   @default("pending") // pending, approved, rejected
+
+  ctv             User     @relation(fields: [ctvId], references: [id])
+
+  @@map("promotion_eligibility")
+}
+
+// Team bonus: additional bonus when team revenue exceeds thresholds
+model TeamBonus {
+  id          Int      @id @default(autoincrement())
+  ctvId       Int      @map("ctv_id")
+  month       String   // YYYY-MM
+  teamRevenue Float    @map("team_revenue")
+  bonusAmount Float    @map("bonus_amount")
+  tier        String   // bronze, silver, gold (based on team revenue threshold)
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  ctv         User     @relation(fields: [ctvId], references: [id])
+
+  @@map("team_bonuses")
 }
 
 model InventoryWarning {

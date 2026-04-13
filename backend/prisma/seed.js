@@ -29,6 +29,8 @@ async function main() {
   await prisma.inventoryWarning.deleteMany();
   await prisma.kpiLog.deleteMany();
   await prisma.rankHistory.deleteMany();
+  await prisma.promotionEligibility.deleteMany();
+  await prisma.teamBonus.deleteMany();
   await prisma.ctvHierarchy.deleteMany();
   await prisma.syncLog.deleteMany();
   await prisma.agencyCommissionConfig.deleteMany();
@@ -233,11 +235,11 @@ async function main() {
   // 5. Commission configs
   await prisma.commissionConfig.createMany({
     data: [
-      { tier: 'CTV',  selfSalePct: 0.20, f1Pct: 0,    f2Pct: 0,    f3Pct: 0,    fixedSalary: 0 },
-      { tier: 'PP',   selfSalePct: 0.20, f1Pct: 0,    f2Pct: 0,    f3Pct: 0,    fixedSalary: 5000000 },
-      { tier: 'TP',   selfSalePct: 0.30, f1Pct: 0.10, f2Pct: 0,    f3Pct: 0,    fixedSalary: 10000000 },
-      { tier: 'GDV',  selfSalePct: 0.35, f1Pct: 0.10, f2Pct: 0.05, f3Pct: 0,    fixedSalary: 18000000 },
-      { tier: 'GDKD', selfSalePct: 0.38, f1Pct: 0.10, f2Pct: 0.05, f3Pct: 0.03, fixedSalary: 30000000 },
+      { tier: 'CTV',  selfSalePct: 0.20, f1Pct: 0,    f2Pct: 0,    f3Pct: 0,    fixedSalary: 0,        isSoftSalary: false },
+      { tier: 'PP',   selfSalePct: 0.20, f1Pct: 0,    f2Pct: 0,    f3Pct: 0,    fixedSalary: 5000000,  isSoftSalary: true },
+      { tier: 'TP',   selfSalePct: 0.30, f1Pct: 0.10, f2Pct: 0,    f3Pct: 0,    fixedSalary: 10000000, isSoftSalary: true },
+      { tier: 'GDV',  selfSalePct: 0.35, f1Pct: 0.10, f2Pct: 0.05, f3Pct: 0,    fixedSalary: 18000000, isSoftSalary: true },
+      { tier: 'GDKD', selfSalePct: 0.38, f1Pct: 0.10, f2Pct: 0.05, f3Pct: 0.03, fixedSalary: 30000000, isSoftSalary: true },
     ],
   });
 
@@ -472,6 +474,34 @@ async function main() {
     });
   }
   console.log('✅ Sync logs created');
+
+  // 13. T+1 Promotion Eligibility (demo: some CTVs eligible for promotion next month)
+  const nextMonth = new Date();
+  nextMonth.setMonth(nextMonth.getMonth() + 1);
+  const nextMonthStr = `${nextMonth.getFullYear()}-${String(nextMonth.getMonth() + 1).padStart(2, '0')}`;
+
+  await prisma.promotionEligibility.createMany({
+    data: [
+      { ctvId: gdv1.id, currentRank: 'GDV', targetRank: 'GDKD', effectiveMonth: nextMonthStr, status: 'pending' },
+      { ctvId: tp1.id,  currentRank: 'TP',  targetRank: 'GDV',  effectiveMonth: nextMonthStr, status: 'pending' },
+    ],
+  });
+  console.log('✅ Promotion eligibility created (T+1)');
+
+  // 14. Team Bonuses (demo: bonus for managers based on team revenue)
+  const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  const prevMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const prevMonth = `${prevMonthDate.getFullYear()}-${String(prevMonthDate.getMonth() + 1).padStart(2, '0')}`;
+
+  await prisma.teamBonus.createMany({
+    data: [
+      { ctvId: gdkd.id, month: prevMonth, teamRevenue: 1800000000, bonusAmount: 18000000, tier: 'gold' },
+      { ctvId: gdv1.id, month: prevMonth, teamRevenue: 620000000,  bonusAmount: 6200000,  tier: 'silver' },
+      { ctvId: gdv2.id, month: prevMonth, teamRevenue: 410000000,  bonusAmount: 4100000,  tier: 'bronze' },
+      { ctvId: gdkd.id, month: currentMonth, teamRevenue: 980000000, bonusAmount: 9800000, tier: 'silver' },
+    ],
+  });
+  console.log('✅ Team bonuses created');
 
   console.log('\n🎉 Seed complete!');
   console.log('📧 Login credentials:');
