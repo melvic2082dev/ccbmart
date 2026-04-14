@@ -37,6 +37,12 @@ function shouldBreakaway(traineeRank, mentorRank) {
   return traineeIdx >= mentorIdx && traineeIdx > 0;
 }
 
+async function findTopGdkdUser() {
+  return prisma.user.findFirst({
+    where: { rank: 'GDKD', isActive: true },
+  });
+}
+
 /**
  * Handle breakaway:
  *  - Terminate B2BContract mentor cũ
@@ -219,6 +225,9 @@ async function processMonthlyBreakawayFees(month) {
     where: { status: 'ACTIVE' },
   });
 
+  const gdkdUser = await findTopGdkdUser();
+  if (!gdkdUser) console.warn('No GDKD user found, skipping level 3 fees');
+
   const created = [];
 
   for (const log of activeLogs) {
@@ -266,39 +275,25 @@ async function processMonthlyBreakawayFees(month) {
     }
 
     // Level 3: 1% cho GĐKD — CHỈ khi GĐKD không phải F1/F2 cũ
-    // Tìm GĐKD gần nhất trong upline (đi lên từ newParentId → cha → ông)
-    let cursorId = log.newParentId;
-    let gdkdId = null;
-    const visited = new Set();
-    while (cursorId && !visited.has(cursorId)) {
-      visited.add(cursorId);
-      const u = await prisma.user.findUnique({
-        where: { id: cursorId },
-        select: { id: true, rank: true, parentId: true },
-      });
-      if (!u) break;
-      if (u.rank === 'GDKD') {
-        gdkdId = u.id;
-        break;
-      }
-      cursorId = u.parentId;
-    }
-
-    if (gdkdId && gdkdId !== log.oldParentId && gdkdId !== log.newParentId) {
-      const amt3 = Math.floor(revenue * 0.01);
-      if (amt3 > 0) {
-        const rec = await prisma.breakawayFee.create({
-          data: {
-            breakawayLogId: log.id,
-            fromUserId: log.userId,
-            toUserId: gdkdId,
-            level: 3,
-            amount: amt3,
-            month,
-            status: 'PENDING',
-          },
-        });
-        created.push(rec);
+    if (gdkdUser) {
+      const isGdkdAsF1 = gdkdUser.id === log.oldParentId;
+      const isGdkdAsF2 = gdkdUser.id === log.newParentId;
+      if (!isGdkdAsF1 && !isGdkdAsF2) {
+        const amt3 = Math.floor(revenue * 0.01);
+        if (amt3 > 0) {
+          const rec = await prisma.breakawayFee.create({
+            data: {
+              breakawayLogId: log.id,
+              fromUserId: log.userId,
+              toUserId: gdkdUser.id,
+              level: 3,
+              amount: amt3,
+              month,
+              status: 'PENDING',
+            },
+          });
+          created.push(rec);
+        }
       }
     }
   }

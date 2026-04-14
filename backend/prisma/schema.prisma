@@ -475,6 +475,9 @@ model BreakawayLog {
   breakawayFees BreakawayFee[]
 
   @@index([status, expireAt])
+  @@index([oldParentId])
+  @@index([newParentId])
+  @@index([status])
   @@map("breakaway_logs")
 }
 
