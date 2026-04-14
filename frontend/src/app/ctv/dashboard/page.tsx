@@ -10,10 +10,9 @@ import { TrendingUp, Users, ShoppingCart, Wallet, Award } from 'lucide-react'
 
 interface Commission {
   selfCommission: number
-  f1Commission: number
-  f2Commission: number
-  f3Commission: number
+  trainingFee: number
   fixedSalary: number
+  teamBonus: number
   totalIncome: number
 }
 
@@ -211,22 +210,18 @@ export default function CTVDashboardPage() {
                   <p className="text-base font-bold text-gray-900">{formatVND(data.commission.selfCommission)}</p>
                 </div>
                 <div className="bg-emerald-50 rounded-lg p-3">
-                  <p className="text-xs text-emerald-600 font-medium mb-1">Hoa hồng trực tiếp</p>
-                  <p className="text-base font-bold text-gray-900">{formatVND(data.commission.f1Commission)}</p>
-                </div>
-                <div className="bg-emerald-50 rounded-lg p-3">
-                  <p className="text-xs text-emerald-600 font-medium mb-1">Hoa hồng Cấp 2</p>
-                  <p className="text-base font-bold text-gray-900">{formatVND(data.commission.f2Commission)}</p>
-                </div>
-                <div className="bg-emerald-50 rounded-lg p-3">
-                  <p className="text-xs text-emerald-600 font-medium mb-1">Hoa hồng Cấp 3</p>
-                  <p className="text-base font-bold text-gray-900">{formatVND(data.commission.f3Commission)}</p>
+                  <p className="text-xs text-emerald-600 font-medium mb-1">Phí DV đào tạo</p>
+                  <p className="text-base font-bold text-gray-900">{formatVND(data.commission.trainingFee)}</p>
                 </div>
                 <div className="bg-emerald-50 rounded-lg p-3">
                   <p className="text-xs text-emerald-600 font-medium mb-1">Lương cứng</p>
                   <p className="text-base font-bold text-gray-900">{formatVND(data.commission.fixedSalary)}</p>
                 </div>
-                <div className="bg-emerald-600 rounded-lg p-3">
+                <div className="bg-emerald-50 rounded-lg p-3">
+                  <p className="text-xs text-emerald-600 font-medium mb-1">Thưởng đội nhóm</p>
+                  <p className="text-base font-bold text-gray-900">{formatVND(data.commission.teamBonus)}</p>
+                </div>
+                <div className="bg-emerald-600 rounded-lg p-3 col-span-2">
                   <p className="text-xs text-emerald-100 font-medium mb-1">Tổng thu nhập</p>
                   <p className="text-base font-bold text-white">{formatVND(data.commission.totalIncome)}</p>
                 </div>

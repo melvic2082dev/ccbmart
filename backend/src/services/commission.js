@@ -1,13 +1,13 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
-// Commission rates by professional title (chức danh)
+// Commission rates by professional title (V12.1: F1/F2/F3 removed, replaced by training fees)
 const COMMISSION_RATES = {
-  CTV:  { selfSale: 0.20, f1: 0,    f2: 0,    f3: 0,    fixedSalary: 0,        isSoftSalary: false },
-  PP:   { selfSale: 0.20, f1: 0,    f2: 0,    f3: 0,    fixedSalary: 5000000,  isSoftSalary: true },
-  TP:   { selfSale: 0.30, f1: 0.10, f2: 0,    f3: 0,    fixedSalary: 10000000, isSoftSalary: true },
-  GDV:  { selfSale: 0.35, f1: 0.10, f2: 0.05, f3: 0,    fixedSalary: 18000000, isSoftSalary: true },
-  GDKD: { selfSale: 0.38, f1: 0.10, f2: 0.05, f3: 0.03, fixedSalary: 30000000, isSoftSalary: true },
+  CTV:  { selfSale: 0.20, fixedSalary: 0,        isSoftSalary: false },
+  PP:   { selfSale: 0.20, fixedSalary: 5000000,  isSoftSalary: true },
+  TP:   { selfSale: 0.30, fixedSalary: 10000000, isSoftSalary: true },
+  GDV:  { selfSale: 0.35, fixedSalary: 18000000, isSoftSalary: true },
+  GDKD: { selfSale: 0.38, fixedSalary: 30000000, isSoftSalary: true },
 };
 
 // Team bonus thresholds (based on total team revenue)
@@ -47,51 +47,25 @@ async function calculateCtvCommission(ctvId, month) {
   const selfSalesAmount = selfTransactions.reduce((sum, t) => sum + t.totalAmount, 0);
   const selfCommission = selfSalesAmount * rates.selfSale;
 
-  // Downline sales (direct → level2 → level3)
-  let f1Commission = 0;
-  let f2Commission = 0;
-  let f3Commission = 0;
+  // Calculate team revenue (for team bonus)
   let teamRevenue = selfSalesAmount;
-
-  if (rates.f1 > 0) {
-    const directReports = await prisma.user.findMany({
-      where: { parentId: ctvId, role: 'ctv', isActive: true },
+  const directReports = await prisma.user.findMany({
+    where: { parentId: ctvId, role: 'ctv', isActive: true },
+  });
+  for (const f1 of directReports) {
+    const f1Txns = await prisma.transaction.findMany({
+      where: { ctvId: f1.id, channel: 'ctv', createdAt: { gte: startDate, lt: endDate } },
     });
-    for (const f1 of directReports) {
-      const f1Txns = await prisma.transaction.findMany({
-        where: { ctvId: f1.id, channel: 'ctv', createdAt: { gte: startDate, lt: endDate } },
+    teamRevenue += f1Txns.reduce((sum, t) => sum + t.totalAmount, 0);
+
+    const level2 = await prisma.user.findMany({
+      where: { parentId: f1.id, role: 'ctv', isActive: true },
+    });
+    for (const f2 of level2) {
+      const f2Txns = await prisma.transaction.findMany({
+        where: { ctvId: f2.id, channel: 'ctv', createdAt: { gte: startDate, lt: endDate } },
       });
-      const f1Amount = f1Txns.reduce((sum, t) => sum + t.totalAmount, 0);
-      f1Commission += f1Amount * rates.f1;
-      teamRevenue += f1Amount;
-
-      if (rates.f2 > 0) {
-        const level2 = await prisma.user.findMany({
-          where: { parentId: f1.id, role: 'ctv', isActive: true },
-        });
-        for (const f2 of level2) {
-          const f2Txns = await prisma.transaction.findMany({
-            where: { ctvId: f2.id, channel: 'ctv', createdAt: { gte: startDate, lt: endDate } },
-          });
-          const f2Amount = f2Txns.reduce((sum, t) => sum + t.totalAmount, 0);
-          f2Commission += f2Amount * rates.f2;
-          teamRevenue += f2Amount;
-
-          if (rates.f3 > 0) {
-            const level3 = await prisma.user.findMany({
-              where: { parentId: f2.id, role: 'ctv', isActive: true },
-            });
-            for (const f3 of level3) {
-              const f3Txns = await prisma.transaction.findMany({
-                where: { ctvId: f3.id, channel: 'ctv', createdAt: { gte: startDate, lt: endDate } },
-              });
-              const f3Amount = f3Txns.reduce((sum, t) => sum + t.totalAmount, 0);
-              f3Commission += f3Amount * rates.f3;
-              teamRevenue += f3Amount;
-            }
-          }
-        }
-      }
+      teamRevenue += f2Txns.reduce((sum, t) => sum + t.totalAmount, 0);
     }
   }
 
@@ -100,10 +74,20 @@ async function calculateCtvCommission(ctvId, month) {
   if (rates.isSoftSalary && rates.fixedSalary > 0) {
     const fundStatus = await calculateSalaryFundStatus(month);
     if (fundStatus.warning === 'CRITICAL') {
-      // Fund exceeded: reduce salary proportionally
       const ratio = fundStatus.salaryFundCap / fundStatus.totalFixedSalary;
       effectiveSalary = Math.floor(rates.fixedSalary * Math.min(ratio, 1));
     }
+  }
+
+  // Training fee (V12.1: Phí DV đào tạo - replaces F1/F2/F3)
+  let trainingFee = 0;
+  try {
+    const { calculateTrainingFee, calculateKFactor } = require('./trainingFee');
+    const feeResult = await calculateTrainingFee(ctvId, month);
+    const kResult = await calculateKFactor(month);
+    trainingFee = Math.floor(feeResult.feeAmount * kResult.kFactor);
+  } catch {
+    // trainingFee service not available, skip
   }
 
   // Team bonus
@@ -120,12 +104,10 @@ async function calculateCtvCommission(ctvId, month) {
     month,
     selfSalesAmount,
     selfCommission,
-    f1Commission,
-    f2Commission,
-    f3Commission,
+    trainingFee,
     fixedSalary: effectiveSalary,
     teamBonus: teamBonusAmount,
-    totalIncome: selfCommission + f1Commission + f2Commission + f3Commission + effectiveSalary + teamBonusAmount,
+    totalIncome: selfCommission + trainingFee + effectiveSalary + teamBonusAmount,
   };
 }
 
@@ -183,10 +165,15 @@ async function queuePromotion(ctvId, currentRank, targetRank) {
   );
 }
 
+function invalidateCommissionCache() {
+  // placeholder for cache invalidation
+}
+
 module.exports = {
   calculateCtvCommission,
   calculateSalaryFundStatus,
   queuePromotion,
+  invalidateCommissionCache,
   COMMISSION_RATES,
   AGENCY_COMMISSION,
   TEAM_BONUS_TIERS,

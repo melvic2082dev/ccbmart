@@ -90,6 +90,29 @@ export const api = {
     fetchAPI('/admin/config/commission', { method: 'POST', body: JSON.stringify(data) }),
   adminDeleteCommission: (tier: string) =>
     fetchAPI(`/admin/config/commission/${tier}`, { method: 'DELETE' }),
+
+  // V12.1: Fee Config
+  adminFeeConfig: () => fetchAPI('/admin/fee-config'),
+  adminUpdateFeeConfig: (tier: string, data: Record<string, unknown>) =>
+    fetchAPI(`/admin/fee-config/${tier}`, { method: 'PUT', body: JSON.stringify(data) }),
+
+  // V12.1: Business Household
+  adminBusinessHouseholds: () => fetchAPI('/admin/business-household'),
+  adminBusinessHouseholdAction: (data: Record<string, unknown>) =>
+    fetchAPI('/admin/business-household', { method: 'POST', body: JSON.stringify(data) }),
+
+  // V12.1: Training Logs (admin)
+  adminTrainingLogs: (page = 1, status?: string) =>
+    fetchAPI(`/training-logs/admin?page=${page}${status ? `&status=${status}` : ''}`),
+  adminVerifyTrainingLog: (id: number, action: string) =>
+    fetchAPI(`/training-logs/admin/verify/${id}`, { method: 'POST', body: JSON.stringify({ action }) }),
+
+  // V12.1: Training Logs (CTV)
+  ctvTrainingLogs: () => fetchAPI('/training-logs/my'),
+  ctvCreateTrainingLog: (data: Record<string, unknown>) =>
+    fetchAPI('/training-logs', { method: 'POST', body: JSON.stringify(data) }),
+  ctvConfirmTrainingLog: (id: number) =>
+    fetchAPI(`/training-logs/${id}/confirm`, { method: 'POST' }),
   adminKpiConfig: () => fetchAPI('/admin/config/kpi'),
   adminUpdateKpi: (rank: string, data: Record<string, unknown>) =>
     fetchAPI(`/admin/config/kpi/${rank}`, { method: 'PUT', body: JSON.stringify(data) }),

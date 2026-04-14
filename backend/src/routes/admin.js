@@ -312,13 +312,13 @@ router.get('/config/commission', async (req, res) => {
   }
 });
 
-// Update commission config
+// Update commission config (V12.1: F1/F2/F3 removed)
 router.put('/config/commission/:tier', validate(schemas.updateCommission), async (req, res) => {
   try {
-    const { selfSalePct, f1Pct, f2Pct, f3Pct, fixedSalary } = req.body;
+    const { selfSalePct, fixedSalary } = req.body;
     const config = await prisma.commissionConfig.update({
       where: { tier: req.params.tier },
-      data: { selfSalePct, f1Pct, f2Pct, f3Pct, fixedSalary },
+      data: { selfSalePct, fixedSalary },
     });
     invalidateCommissionCache();
     res.json(config);

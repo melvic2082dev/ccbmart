@@ -6,15 +6,12 @@ import { api, formatVND } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Settings, Users, Building2, Package } from 'lucide-react';
+import { Settings, Users, Building2, Package, GraduationCap } from 'lucide-react';
 
 interface CommissionConfig {
   id: number;
   tier: string;
   selfSalePct: number;
-  f1Pct: number;
-  f2Pct: number;
-  f3Pct: number;
   fixedSalary: number;
 }
 
@@ -23,6 +20,16 @@ interface AgencyConfig {
   group: string;
   commissionPct: number;
   bonusPct: number;
+}
+
+interface FeeConfigItem {
+  id: number;
+  tier: string;
+  minCombo: number;
+  maxCombo: number | null;
+  feeAmount: number;
+  description: string;
+  isActive: boolean;
 }
 
 const RANK_LABELS: Record<string, string> = {
@@ -49,12 +56,17 @@ const COGS_TABLE = [
 export default function AdminConfig() {
   const [ctvConfig, setCtvConfig] = useState<CommissionConfig[]>([]);
   const [agencyConfig, setAgencyConfig] = useState<AgencyConfig[]>([]);
+  const [feeConfig, setFeeConfig] = useState<FeeConfigItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    api.adminCommissionConfig().then((data) => {
-      setCtvConfig(data.ctvConfig || []);
-      setAgencyConfig(data.agencyConfig || []);
+    Promise.all([
+      api.adminCommissionConfig(),
+      api.adminFeeConfig(),
+    ]).then(([commData, feeData]) => {
+      setCtvConfig(commData.ctvConfig || []);
+      setAgencyConfig(commData.agencyConfig || []);
+      setFeeConfig(feeData || []);
       setLoading(false);
     }).catch(() => setLoading(false));
   }, []);
@@ -71,13 +83,13 @@ export default function AdminConfig() {
         </div>
       ) : (
         <>
-          {/* CTV Commission Config */}
+          {/* CTV Commission Config (V12.1: No F1/F2/F3) */}
           <Card className="mb-6">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Users size={20} /> Hoa hồng CTV theo cấp bậc
               </CardTitle>
-              <p className="text-sm text-slate-500">Cascading: Tự bán + Trực tiếp (10%) + Cấp 2 (5%) + Cấp 3 (3%)</p>
+              <p className="text-sm text-slate-500">V12.1: Hoa hồng cá nhân + Phí DV đào tạo (thay F1/F2/F3)</p>
             </CardHeader>
             <CardContent>
               <Table>
@@ -86,9 +98,6 @@ export default function AdminConfig() {
                     <TableHead>Cấp bậc</TableHead>
                     <TableHead>Tên</TableHead>
                     <TableHead className="text-right">HH Tự bán</TableHead>
-                    <TableHead className="text-right">Phụ cấp Trực tiếp</TableHead>
-                    <TableHead className="text-right">Phụ cấp Cấp 2</TableHead>
-                    <TableHead className="text-right">Phụ cấp Cấp 3</TableHead>
                     <TableHead className="text-right">Lương cứng</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -100,14 +109,56 @@ export default function AdminConfig() {
                       </TableCell>
                       <TableCell className="font-medium">{RANK_LABELS[c.tier] || c.tier}</TableCell>
                       <TableCell className="text-right font-mono">{(c.selfSalePct * 100).toFixed(0)}%</TableCell>
-                      <TableCell className="text-right font-mono">{c.f1Pct > 0 ? `${(c.f1Pct * 100).toFixed(0)}%` : '-'}</TableCell>
-                      <TableCell className="text-right font-mono">{c.f2Pct > 0 ? `${(c.f2Pct * 100).toFixed(0)}%` : '-'}</TableCell>
-                      <TableCell className="text-right font-mono">{c.f3Pct > 0 ? `${(c.f3Pct * 100).toFixed(0)}%` : '-'}</TableCell>
                       <TableCell className="text-right font-semibold">{c.fixedSalary > 0 ? formatVND(c.fixedSalary) : '-'}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
+            </CardContent>
+          </Card>
+
+          {/* Fee Config (V12.1: Phí DV đào tạo) */}
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <GraduationCap size={20} /> Phí DV đào tạo theo mốc doanh số nhánh
+              </CardTitle>
+              <p className="text-sm text-slate-500">Thay thế F1/F2/F3 | Phí cố định theo số combo nhánh/tháng | Hệ số K điều chỉnh</p>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Mốc</TableHead>
+                    <TableHead className="text-right">Combo tối thiểu</TableHead>
+                    <TableHead className="text-right">Combo tối đa</TableHead>
+                    <TableHead className="text-right">Phí cố định</TableHead>
+                    <TableHead>Mô tả</TableHead>
+                    <TableHead>Trạng thái</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {feeConfig.map((f) => (
+                    <TableRow key={f.id}>
+                      <TableCell><Badge variant="outline">{f.tier}</Badge></TableCell>
+                      <TableCell className="text-right font-mono">{f.minCombo}</TableCell>
+                      <TableCell className="text-right font-mono">{f.maxCombo !== null ? f.maxCombo : '∞'}</TableCell>
+                      <TableCell className="text-right font-semibold">{formatVND(f.feeAmount)}</TableCell>
+                      <TableCell className="text-sm text-slate-500">{f.description}</TableCell>
+                      <TableCell>
+                        <Badge className={f.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}>
+                          {f.isActive ? 'Active' : 'Inactive'}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+              <div className="mt-4 p-3 bg-blue-50 rounded-lg text-sm text-blue-800">
+                <strong>Hệ số K:</strong> K = (3% x Tổng DT kênh CTV) / (Tổng phí DV lý thuyết) | Tối thiểu K = 0.7
+                <br />
+                <strong>Phí thực nhận:</strong> Phí cố định x K
+              </div>
             </CardContent>
           </Card>
 
@@ -203,7 +254,7 @@ export default function AdminConfig() {
               <CardTitle className="flex items-center gap-2">
                 <Package size={20} /> COGS theo giai đoạn
               </CardTitle>
-              <p className="text-sm text-slate-500">COGS blended GĐ1 = 50% (NS 65% × 50% + TPCN 35% × 50%)</p>
+              <p className="text-sm text-slate-500">COGS blended GĐ1 = 50% (NS 65% x 50% + TPCN 35% x 50%)</p>
             </CardHeader>
             <CardContent>
               <Table>
@@ -247,7 +298,7 @@ export default function AdminConfig() {
               </div>
               <div className="flex items-start gap-2">
                 <Badge variant="outline" className="mt-0.5">Công thức</Badge>
-                <p>Số cấp quản lý tối đa = (5% × DT kênh CTV) / Lương cứng TB theo cấp</p>
+                <p>Số cấp quản lý tối đa = (5% x DT kênh CTV) / Lương cứng TB theo cấp</p>
               </div>
             </CardContent>
           </Card>

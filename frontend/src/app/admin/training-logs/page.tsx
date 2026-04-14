@@ -1,0 +1,164 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import DashboardLayout from '@/components/DashboardLayout';
+import { api } from '@/lib/api';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { ClipboardCheck } from 'lucide-react';
+
+interface TrainingLog {
+  id: number;
+  trainerId: number;
+  traineeId: number;
+  sessionDate: string;
+  durationMinutes: number;
+  content: string;
+  menteeConfirmed: boolean;
+  mentorConfirmed: boolean;
+  status: string;
+  verifiedAt: string | null;
+  trainer: { id: number; name: string; rank: string };
+  trainee: { id: number; name: string; rank: string };
+}
+
+const STATUS_STYLES: Record<string, string> = {
+  PENDING: 'bg-yellow-100 text-yellow-700',
+  VERIFIED: 'bg-green-100 text-green-700',
+  REJECTED: 'bg-red-100 text-red-700',
+};
+
+export default function TrainingLogsPage() {
+  const [logs, setLogs] = useState<TrainingLog[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState<string>('');
+
+  const fetchData = () => {
+    setLoading(true);
+    api.adminTrainingLogs(1, filter || undefined)
+      .then((data) => setLogs(data.logs || []))
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(() => { fetchData(); }, [filter]);
+
+  const handleVerify = async (id: number, action: string) => {
+    try {
+      await api.adminVerifyTrainingLog(id, action);
+      fetchData();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  return (
+    <DashboardLayout role="admin">
+      <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
+        <ClipboardCheck size={24} /> Nhật ký đào tạo
+      </h2>
+
+      <div className="flex gap-2 mb-4">
+        {['', 'PENDING', 'VERIFIED', 'REJECTED'].map((s) => (
+          <button
+            key={s}
+            onClick={() => setFilter(s)}
+            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+              filter === s
+                ? 'bg-blue-600 text-white'
+                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+            }`}
+          >
+            {s === '' ? 'Tất cả' : s}
+          </button>
+        ))}
+      </div>
+
+      {loading ? (
+        <div className="h-64 bg-slate-200 animate-pulse rounded-xl" />
+      ) : (
+        <Card>
+          <CardHeader>
+            <CardTitle>Nhật ký ({logs.length} bản ghi)</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Ngày</TableHead>
+                  <TableHead>Mentor</TableHead>
+                  <TableHead>Mentee</TableHead>
+                  <TableHead>Thời lượng</TableHead>
+                  <TableHead>Nội dung</TableHead>
+                  <TableHead>Xác nhận</TableHead>
+                  <TableHead>Trạng thái</TableHead>
+                  <TableHead>Thao tác</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {logs.map((log) => (
+                  <TableRow key={log.id}>
+                    <TableCell className="text-sm">
+                      {new Date(log.sessionDate).toLocaleDateString('vi-VN')}
+                    </TableCell>
+                    <TableCell>
+                      <div className="text-sm font-medium">{log.trainer.name}</div>
+                      <Badge variant="outline" className="text-xs">{log.trainer.rank}</Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="text-sm font-medium">{log.trainee.name}</div>
+                      <Badge variant="outline" className="text-xs">{log.trainee.rank}</Badge>
+                    </TableCell>
+                    <TableCell className="font-mono text-sm">{log.durationMinutes} phút</TableCell>
+                    <TableCell className="text-sm max-w-[200px] truncate">{log.content}</TableCell>
+                    <TableCell>
+                      <div className="flex gap-1">
+                        <Badge className={log.mentorConfirmed ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'} >
+                          Mentor {log.mentorConfirmed ? '✓' : '✗'}
+                        </Badge>
+                        <Badge className={log.menteeConfirmed ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}>
+                          Mentee {log.menteeConfirmed ? '✓' : '✗'}
+                        </Badge>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge className={STATUS_STYLES[log.status] || 'bg-gray-100 text-gray-700'}>
+                        {log.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {log.status === 'PENDING' && (
+                        <div className="flex gap-1">
+                          <button
+                            onClick={() => handleVerify(log.id, 'verify')}
+                            className="px-2 py-1 text-xs bg-green-100 text-green-700 rounded hover:bg-green-200"
+                          >
+                            Xác nhận
+                          </button>
+                          <button
+                            onClick={() => handleVerify(log.id, 'reject')}
+                            className="px-2 py-1 text-xs bg-red-100 text-red-700 rounded hover:bg-red-200"
+                          >
+                            Từ chối
+                          </button>
+                        </div>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {logs.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={8} className="text-center py-8 text-slate-500">
+                      Không có nhật ký đào tạo
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
+    </DashboardLayout>
+  );
+}

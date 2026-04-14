@@ -6,7 +6,8 @@ import {
   LayoutDashboard, Users, ShoppingCart, Package, Warehouse,
   Settings, FileText, LogOut, Building2, Bell,
   PlusCircle, Banknote, ClipboardCheck, Wallet, Award, CreditCard,
-  ChevronLeft, ChevronRight, Sun, Moon, Menu, X, FileSpreadsheet
+  ChevronLeft, ChevronRight, Sun, Moon, Menu, X, FileSpreadsheet,
+  GraduationCap, BookOpen
 } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react';
 import { api } from '@/lib/api';
@@ -35,6 +36,9 @@ const navByRole: Record<string, NavItem[]> = {
     { label: 'Thanh vien', href: '/admin/membership/wallets', icon: <Award size={20} /> },
     { label: 'Nap tien TV', href: '/admin/membership/deposits', icon: <CreditCard size={20} /> },
     { label: 'Hang the', href: '/admin/membership/tiers', icon: <Wallet size={20} /> },
+    { label: 'HKD', href: '/admin/business-household', icon: <Building2 size={20} /> },
+    { label: 'Phi dao tao', href: '/admin/fee-config', icon: <GraduationCap size={20} /> },
+    { label: 'NK Dao tao', href: '/admin/training-logs', icon: <BookOpen size={20} /> },
     { label: 'Import', href: '/admin/import', icon: <FileSpreadsheet size={20} /> },
     { label: 'Cau hinh', href: '/admin/config', icon: <Settings size={20} /> },
     { label: 'Bao cao', href: '/admin/reports', icon: <FileText size={20} /> },

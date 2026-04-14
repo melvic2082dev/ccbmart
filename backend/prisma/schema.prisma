@@ -18,6 +18,7 @@ model User {
   parentId      Int?     @map("parent_id")
   agencyId      Int?     @map("agency_id")
   isActive      Boolean  @default(true) @map("is_active")
+  isBusinessHousehold Boolean @default(false) @map("is_business_household")
   createdAt     DateTime @default(now()) @map("created_at")
 
   parent        User?    @relation("UserHierarchy", fields: [parentId], references: [id])
@@ -33,6 +34,11 @@ model User {
   ownedAgency         Agency?              @relation("AgencyOwner")
   promotionEligibility PromotionEligibility[]
   teamBonuses         TeamBonus[]
+  businessHousehold   BusinessHousehold?
+  trainerContracts    B2BContract[]        @relation("Trainer")
+  traineeContracts    B2BContract[]        @relation("Trainee")
+  trainerLogs         TrainingLog[]        @relation("TrainerLogs")
+  traineeLogs         TrainingLog[]        @relation("TraineeLogs")
 
   @@map("users")
 }
@@ -71,11 +77,8 @@ model CommissionConfig {
   id            Int     @id @default(autoincrement())
   tier          String  @unique // CTV, PP, TP, GDV, GDKD
   selfSalePct   Float   @map("self_sale_pct")
-  f1Pct         Float   @map("f1_pct")
-  f2Pct         Float   @map("f2_pct")
-  f3Pct         Float   @map("f3_pct")
   fixedSalary   Float   @map("fixed_salary")
-  isSoftSalary  Boolean @default(true) @map("is_soft_salary") // salary conditional on fund cap
+  isSoftSalary  Boolean @default(true) @map("is_soft_salary")
 
   @@map("commission_config")
 }
@@ -87,6 +90,70 @@ model AgencyCommissionConfig {
   bonusPct      Float  @map("bonus_pct")
 
   @@map("agency_commission_config")
+}
+
+model FeeConfig {
+  id          Int      @id @default(autoincrement())
+  tier        String   @unique // M0, M1, M2, M3, M4, M5
+  minCombo    Int      @map("min_combo")
+  maxCombo    Int?     @map("max_combo")
+  feeAmount   Float    @map("fee_amount")
+  description String?
+  isActive    Boolean  @default(true) @map("is_active")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("fee_config")
+}
+
+model BusinessHousehold {
+  id              Int      @id @default(autoincrement())
+  userId          Int      @unique @map("user_id")
+  businessName    String   @map("business_name")
+  taxCode         String?  @map("tax_code")
+  businessLicense String?  @map("business_license")
+  registeredAt    DateTime @default(now()) @map("registered_at")
+  status          String   @default("active") // active, suspended, terminated
+
+  user            User     @relation(fields: [userId], references: [id])
+
+  @@map("business_households")
+}
+
+model B2BContract {
+  id                  Int       @id @default(autoincrement())
+  contractNo          String    @unique @map("contract_no")
+  trainerId           Int       @map("trainer_id")
+  traineeId           Int       @map("trainee_id")
+  signedAt            DateTime  @default(now()) @map("signed_at")
+  expiredAt           DateTime? @map("expired_at")
+  status              String    @default("active") // active, expired, terminated
+  terminatedAt        DateTime? @map("terminated_at")
+  terminationReason   String?   @map("termination_reason")
+
+  trainer             User      @relation("Trainer", fields: [trainerId], references: [id])
+  trainee             User      @relation("Trainee", fields: [traineeId], references: [id])
+
+  @@map("b2b_contracts")
+}
+
+model TrainingLog {
+  id              Int       @id @default(autoincrement())
+  trainerId       Int       @map("trainer_id")
+  traineeId       Int       @map("trainee_id")
+  sessionDate     DateTime  @map("session_date")
+  durationMinutes Int       @map("duration_minutes")
+  content         String
+  menteeConfirmed Boolean   @default(false) @map("mentee_confirmed")
+  mentorConfirmed Boolean   @default(true) @map("mentor_confirmed")
+  status          String    @default("PENDING") // PENDING, VERIFIED, REJECTED
+  verifiedBy      Int?      @map("verified_by")
+  verifiedAt      DateTime? @map("verified_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
+
+  trainer         User      @relation("TrainerLogs", fields: [trainerId], references: [id])
+  trainee         User      @relation("TraineeLogs", fields: [traineeId], references: [id])
+
+  @@map("training_logs")
 }
 
 model Product {
