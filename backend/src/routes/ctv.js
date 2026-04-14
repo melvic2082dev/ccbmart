@@ -3,6 +3,8 @@ const { PrismaClient } = require('@prisma/client');
 const { authenticate, authorize } = require('../middleware/auth');
 const { calculateCtvCommission } = require('../services/commission');
 const { getCachedOrCompute } = require('../services/cache');
+const { getReceivedManagementFeesSummary } = require('../services/managementFee');
+const { getReceivedBreakawayFeesSummary } = require('../services/breakaway');
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -179,6 +181,60 @@ router.get('/transactions', async (req, res) => {
     ]);
 
     res.json({ transactions, total, page: parseInt(page), totalPages: Math.ceil(total / parseInt(limit)) });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// C12.4: Management fees received (F1/F2/F3)
+router.get('/management-fees', async (req, res) => {
+  try {
+    const now = new Date();
+    const month = req.query.month || `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    const summary = await getReceivedManagementFeesSummary(req.user.id, month);
+
+    const detailed = await prisma.managementFee.findMany({
+      where: { toUserId: req.user.id, month },
+      include: { fromUser: { select: { id: true, name: true, rank: true, email: true } } },
+      orderBy: { level: 'asc' },
+    });
+
+    res.json({
+      month,
+      summary: { f1: summary.f1, f2: summary.f2, f3: summary.f3, total: summary.total },
+      records: detailed,
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// C12.4: Breakaway fees received (giai đoạn 1)
+router.get('/breakaway-fees', async (req, res) => {
+  try {
+    const now = new Date();
+    const month = req.query.month || `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    const summary = await getReceivedBreakawayFeesSummary(req.user.id, month);
+
+    const detailed = await prisma.breakawayFee.findMany({
+      where: { toUserId: req.user.id, month },
+      include: {
+        fromUser: { select: { id: true, name: true, rank: true, email: true } },
+        breakawayLog: true,
+      },
+      orderBy: { level: 'asc' },
+    });
+
+    res.json({
+      month,
+      summary: {
+        level1: summary.level1,
+        level2: summary.level2,
+        level3: summary.level3,
+        total: summary.total,
+      },
+      records: detailed,
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

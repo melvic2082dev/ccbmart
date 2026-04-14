@@ -261,6 +261,77 @@ export const api = {
 
   // V12.2: Monthly Report
   ctvMonthlyReport: (month: string) => fetchAPI(`/ctv/monthly-report?month=${month}`),
+
+  // C12.4: Management fees (F1/F2/F3) & breakaway fees
+  ctvManagementFees: (month: string) => fetchAPI(`/ctv/management-fees?month=${month}`),
+  ctvBreakawayFees: (month: string) => fetchAPI(`/ctv/breakaway-fees?month=${month}`),
+  adminManagementFees: (params: { month?: string; level?: number; status?: string } = {}) => {
+    const qs = new URLSearchParams();
+    if (params.month) qs.set('month', params.month);
+    if (params.level) qs.set('level', String(params.level));
+    if (params.status) qs.set('status', params.status);
+    const s = qs.toString();
+    return fetchAPI(`/admin/management-fees${s ? `?${s}` : ''}`);
+  },
+  adminProcessManagementFees: (month: string) =>
+    fetchAPI('/admin/management-fees/process-monthly', {
+      method: 'POST',
+      body: JSON.stringify({ month }),
+    }),
+  adminMarkManagementFeePaid: (id: number) =>
+    fetchAPI(`/admin/management-fees/${id}/mark-paid`, { method: 'POST' }),
+  adminBreakawayLogs: (status?: string) =>
+    fetchAPI(`/admin/breakaway-logs${status ? `?status=${status}` : ''}`),
+  adminBreakawayFees: (params: { month?: string; level?: number; status?: string } = {}) => {
+    const qs = new URLSearchParams();
+    if (params.month) qs.set('month', params.month);
+    if (params.level) qs.set('level', String(params.level));
+    if (params.status) qs.set('status', params.status);
+    const s = qs.toString();
+    return fetchAPI(`/admin/breakaway-fees${s ? `?${s}` : ''}`);
+  },
+  adminProcessBreakawayFees: (month: string) =>
+    fetchAPI('/admin/breakaway/process-monthly', {
+      method: 'POST',
+      body: JSON.stringify({ month }),
+    }),
+  adminMarkBreakawayFeePaid: (id: number) =>
+    fetchAPI(`/admin/breakaway-fees/${id}/mark-paid`, { method: 'POST' }),
+
+  // C12.3: Failover & manual override
+  adminFailoverSummary: () => fetchAPI('/admin/failover/summary'),
+  adminRetryTransfer: (id: number) =>
+    fetchAPI(`/admin/failover/transfers/${id}/retry`, { method: 'POST' }),
+  adminMarkTransferSuccess: (id: number, adminNote?: string) =>
+    fetchAPI(`/admin/failover/transfers/${id}/mark-success`, {
+      method: 'POST',
+      body: JSON.stringify({ adminNote }),
+    }),
+  adminMarkTransferFailed: (id: number, reason?: string) =>
+    fetchAPI(`/admin/failover/transfers/${id}/mark-failed`, {
+      method: 'POST',
+      body: JSON.stringify({ reason }),
+    }),
+  adminResendOtp: (trainingLogId: number, method: string = 'SMS') =>
+    fetchAPI(`/admin/failover/training/${trainingLogId}/resend-otp`, {
+      method: 'POST',
+      body: JSON.stringify({ method }),
+    }),
+  adminVerifyTrainingManual: (trainingLogId: number, reason?: string) =>
+    fetchAPI(`/admin/failover/training/${trainingLogId}/verify-manual`, {
+      method: 'POST',
+      body: JSON.stringify({ reason }),
+    }),
+  adminVerifyKycManual: (userId: number, approved: boolean, reason?: string) =>
+    fetchAPI(`/admin/failover/kyc/${userId}/verify-manual`, {
+      method: 'POST',
+      body: JSON.stringify({ approved, reason }),
+    }),
+  adminMarkInvoiceIssued: (id: number, data: { externalId?: string; pdfUrl?: string; reason?: string }) =>
+    fetchAPI(`/admin/failover/invoices/${id}/mark-issued`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
 };
 
 export function formatVND(amount: number): string {

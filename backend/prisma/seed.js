@@ -20,10 +20,14 @@ function randomName() {
 }
 
 async function main() {
-  console.log('🌱 Seeding database (V12.2)...');
+  console.log('🌱 Seeding database (C12.4)...');
 
   // Clean existing data (order matters for foreign keys)
-  // V12.2 new tables first
+  // C12.4 new tables first
+  if (prisma.breakawayFee) await prisma.breakawayFee.deleteMany();
+  if (prisma.breakawayLog) await prisma.breakawayLog.deleteMany();
+  if (prisma.managementFee) await prisma.managementFee.deleteMany();
+  // V12.2 tables
   if (prisma.taxRecord) await prisma.taxRecord.deleteMany();
   if (prisma.autoTransferLog) await prisma.autoTransferLog.deleteMany();
   if (prisma.invoice) await prisma.invoice.deleteMany();
@@ -653,7 +657,165 @@ async function main() {
   }
   console.log(`✅ ${taxCreated} TaxRecord entries created`);
 
-  console.log('\n🎉 Seed complete (V12.2)!');
+  // =======================================================================
+  // C12.4 ADDITIONS: Management Fees (F1/F2/F3) + Breakaway Logs + Fees
+  // -----------------------------------------------------------------------
+  // Nguyên tắc: TẤT CẢ khoản thù lao/HH/phí đều do CCB Mart chi trả từ
+  // doanh thu bán hàng. Không có chuyển tiền giữa đối tác.
+  // =======================================================================
+
+  // 23. ManagementFee — 20 records (mix F1/F2/F3, mix PAID/PENDING)
+  // F1 (10% - TP+): upline là TP/GDV/GDKD, from = PP/CTV
+  // F2 (5%  - GDV+): upline là GDV/GDKD
+  // F3 (3%  - GDKD): upline là GDKD
+  const mgmtFeeSeeds = [];
+
+  // F1 records: TPs nhận 10% combo revenue của các PP/CTV dưới
+  // tp1 nhận từ pps[0], pps[1]
+  mgmtFeeSeeds.push({ fromId: pps[0].id, toId: tp1.id, level: 1, pct: 0.10 });
+  mgmtFeeSeeds.push({ fromId: pps[1].id, toId: tp1.id, level: 1, pct: 0.10 });
+  mgmtFeeSeeds.push({ fromId: pps[2].id, toId: tp2.id, level: 1, pct: 0.10 });
+  mgmtFeeSeeds.push({ fromId: pps[3].id, toId: tp2.id, level: 1, pct: 0.10 });
+  mgmtFeeSeeds.push({ fromId: pps[4].id, toId: tp3.id, level: 1, pct: 0.10 });
+  mgmtFeeSeeds.push({ fromId: ctvs[0].id, toId: pps[0].id, level: 1, pct: 0.10 }); // PP is actually below TP — but demo
+
+  // F2 records: GDV nhận 5%
+  mgmtFeeSeeds.push({ fromId: tp1.id, toId: gdv1.id, level: 2, pct: 0.05 });
+  mgmtFeeSeeds.push({ fromId: tp2.id, toId: gdv1.id, level: 2, pct: 0.05 });
+  mgmtFeeSeeds.push({ fromId: tp3.id, toId: gdv2.id, level: 2, pct: 0.05 });
+  mgmtFeeSeeds.push({ fromId: pps[0].id, toId: gdv1.id, level: 2, pct: 0.05 });
+  mgmtFeeSeeds.push({ fromId: pps[2].id, toId: gdv1.id, level: 2, pct: 0.05 });
+  mgmtFeeSeeds.push({ fromId: pps[4].id, toId: gdv2.id, level: 2, pct: 0.05 });
+
+  // F3 records: GDKD nhận 3%
+  mgmtFeeSeeds.push({ fromId: gdv1.id, toId: gdkd.id, level: 3, pct: 0.03 });
+  mgmtFeeSeeds.push({ fromId: gdv2.id, toId: gdkd.id, level: 3, pct: 0.03 });
+  mgmtFeeSeeds.push({ fromId: tp1.id, toId: gdkd.id, level: 3, pct: 0.03 });
+  mgmtFeeSeeds.push({ fromId: tp2.id, toId: gdkd.id, level: 3, pct: 0.03 });
+  mgmtFeeSeeds.push({ fromId: tp3.id, toId: gdkd.id, level: 3, pct: 0.03 });
+  mgmtFeeSeeds.push({ fromId: pps[0].id, toId: gdkd.id, level: 3, pct: 0.03 });
+  mgmtFeeSeeds.push({ fromId: pps[1].id, toId: gdkd.id, level: 3, pct: 0.03 });
+  mgmtFeeSeeds.push({ fromId: pps[2].id, toId: gdkd.id, level: 3, pct: 0.03 });
+
+  let mgmtCreated = 0;
+  for (let i = 0; i < mgmtFeeSeeds.length; i++) {
+    const s = mgmtFeeSeeds[i];
+    // Random "combo revenue" base giữa 15-60 triệu → amount = base * pct
+    const baseRevenue = Math.floor(Math.random() * 45000000) + 15000000;
+    const amount = Math.floor(baseRevenue * s.pct);
+    const monthOffset = i % 3;
+    const d = new Date(now.getFullYear(), now.getMonth() - monthOffset, 1);
+    const monthStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+
+    await prisma.managementFee.create({
+      data: {
+        fromUserId: s.fromId,
+        toUserId: s.toId,
+        level: s.level,
+        amount,
+        month: monthStr,
+        status: i % 3 === 0 ? 'PAID' : 'PENDING',
+      },
+    });
+    mgmtCreated++;
+  }
+  console.log(`✅ ${mgmtCreated} ManagementFee records created (F1/F2/F3)`);
+
+  // 24. BreakawayLog — 3 records (2 ACTIVE, 1 EXPIRED)
+  //    Dùng các user đã có trong hệ thống. Giả lập:
+  //    - tp1 thoát ly khỏi gdv1 (2 tháng trước, ACTIVE, còn 10 tháng)
+  //    - tp3 thoát ly khỏi gdv2 (5 tháng trước, ACTIVE, còn 7 tháng)
+  //    - pps[5] thoát ly khỏi tp3 (14 tháng trước, EXPIRED)
+  const breakawaySeeds = [
+    { userId: tp1.id, oldParentId: gdv1.id, newParentId: gdkd.id, monthsAgo: 2, status: 'ACTIVE' },
+    { userId: tp3.id, oldParentId: gdv2.id, newParentId: gdkd.id, monthsAgo: 5, status: 'ACTIVE' },
+    { userId: pps[5].id, oldParentId: tp3.id, newParentId: gdv2.id, monthsAgo: 14, status: 'EXPIRED' },
+  ];
+
+  const createdBreakawayLogs = [];
+  for (const s of breakawaySeeds) {
+    const breakawayAt = new Date(now.getFullYear(), now.getMonth() - s.monthsAgo, 15);
+    const expireAt = new Date(breakawayAt);
+    expireAt.setMonth(expireAt.getMonth() + 12);
+
+    const log = await prisma.breakawayLog.create({
+      data: {
+        userId: s.userId,
+        oldParentId: s.oldParentId,
+        newParentId: s.newParentId,
+        breakawayAt,
+        expireAt,
+        status: s.status,
+      },
+    });
+    createdBreakawayLogs.push(log);
+  }
+  console.log(`✅ ${createdBreakawayLogs.length} BreakawayLog records created (2 ACTIVE, 1 EXPIRED)`);
+
+  // 25. BreakawayFee — 15 records across 3 months for the 2 active logs
+  let breakFeeCreated = 0;
+  const activeLogs = createdBreakawayLogs.filter((l) => l.status === 'ACTIVE');
+  for (let monthOffset = 0; monthOffset < 3 && breakFeeCreated < 15; monthOffset++) {
+    const d = new Date(now.getFullYear(), now.getMonth() - monthOffset, 1);
+    const monthStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+
+    for (const log of activeLogs) {
+      if (breakFeeCreated >= 15) break;
+      // Random subtree revenue giữa 30-100 triệu
+      const revenue = Math.floor(Math.random() * 70000000) + 30000000;
+
+      // Level 1: 3% cho oldParent
+      await prisma.breakawayFee.create({
+        data: {
+          breakawayLogId: log.id,
+          fromUserId: log.userId,
+          toUserId: log.oldParentId,
+          level: 1,
+          amount: Math.floor(revenue * 0.03),
+          month: monthStr,
+          status: breakFeeCreated % 3 === 0 ? 'PAID' : 'PENDING',
+        },
+      });
+      breakFeeCreated++;
+      if (breakFeeCreated >= 15) break;
+
+      // Level 2: 2% cho newParent (F2 cũ)
+      if (log.newParentId !== log.oldParentId) {
+        await prisma.breakawayFee.create({
+          data: {
+            breakawayLogId: log.id,
+            fromUserId: log.userId,
+            toUserId: log.newParentId,
+            level: 2,
+            amount: Math.floor(revenue * 0.02),
+            month: monthStr,
+            status: breakFeeCreated % 3 === 0 ? 'PAID' : 'PENDING',
+          },
+        });
+        breakFeeCreated++;
+      }
+      if (breakFeeCreated >= 15) break;
+
+      // Level 3: 1% cho GĐKD nếu GĐKD không phải old/new parent
+      if (gdkd.id !== log.oldParentId && gdkd.id !== log.newParentId) {
+        await prisma.breakawayFee.create({
+          data: {
+            breakawayLogId: log.id,
+            fromUserId: log.userId,
+            toUserId: gdkd.id,
+            level: 3,
+            amount: Math.floor(revenue * 0.01),
+            month: monthStr,
+            status: breakFeeCreated % 3 === 0 ? 'PAID' : 'PENDING',
+          },
+        });
+        breakFeeCreated++;
+      }
+    }
+  }
+  console.log(`✅ ${breakFeeCreated} BreakawayFee records created`);
+
+  console.log('\n🎉 Seed complete (C12.4)!');
   console.log('📧 Login credentials:');
   console.log('   admin@ccbmart.vn / admin123');
   console.log('   ctv1@ccbmart.vn / ctv123 (GĐKD, KYC VERIFIED)');

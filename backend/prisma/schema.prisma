@@ -22,13 +22,18 @@ model User {
   createdAt     DateTime @default(now()) @map("created_at")
 
   // V12.2: eKYC
-  kycStatus       String    @default("PENDING") @map("kyc_status") // PENDING/SUBMITTED/VERIFIED/REJECTED
+  kycStatus       String    @default("PENDING") @map("kyc_status") // PENDING/SUBMITTED/VERIFIED/REJECTED/NEED_MANUAL_REVIEW
   kycSubmittedAt  DateTime? @map("kyc_submitted_at")
   kycVerifiedAt   DateTime? @map("kyc_verified_at")
   kycRejectReason String?   @map("kyc_reject_reason")
   idNumber        String?   @map("id_number")
   idFrontImage    String?   @map("id_front_image")
   idBackImage     String?   @map("id_back_image")
+
+  // C12.3: eKYC manual override
+  kycMethod       String    @default("AUTO") @map("kyc_method") // AUTO, MANUAL, HYBRID
+  kycManualNote   String?   @map("kyc_manual_note")
+  kycVerifiedBy   Int?      @map("kyc_verified_by")
 
   parent        User?    @relation("UserHierarchy", fields: [parentId], references: [id])
   children      User[]   @relation("UserHierarchy")
@@ -53,6 +58,15 @@ model User {
   transfersFrom       AutoTransferLog[]    @relation("TransfersFrom")
   transfersTo         AutoTransferLog[]    @relation("TransfersTo")
   taxRecords          TaxRecord[]
+
+  // C12.4: Management fees (F1/F2/F3) + breakaway fees (2-phase)
+  mgmtFeesFrom        ManagementFee[]      @relation("MgmtFeeFrom")
+  mgmtFeesTo          ManagementFee[]      @relation("MgmtFeeTo")
+  breakawayLog        BreakawayLog?        @relation("BreakawayUser")
+  breakawayOldParent  BreakawayLog[]       @relation("BreakawayOldParent")
+  breakawayNewParent  BreakawayLog[]       @relation("BreakawayNewParent")
+  breakawayFeesFrom   BreakawayFee[]       @relation("BreakFeeFrom")
+  breakawayFeesTo     BreakawayFee[]       @relation("BreakFeeTo")
 
   @@map("users")
 }
@@ -170,6 +184,16 @@ model TrainingLog {
   otpCode         String?   @map("otp_code")
   otpExpiresAt    DateTime? @map("otp_expires_at")
 
+  // C12.3: Failover / OTP fallback
+  otpSentAt       DateTime? @map("otp_sent_at")
+  otpSentMethod   String?   @map("otp_sent_method") // SMS, EMAIL, MANUAL
+  otpRetryCount   Int       @default(0) @map("otp_retry_count")
+  otpFailCount    Int       @default(0) @map("otp_fail_count")
+  otpBlockedUntil DateTime? @map("otp_blocked_until")
+  adminVerified   Boolean   @default(false) @map("admin_verified")
+  adminVerifiedBy Int?      @map("admin_verified_by")
+  adminVerifiedAt DateTime? @map("admin_verified_at")
+
   trainer         User      @relation("TrainerLogs", fields: [trainerId], references: [id])
   trainee         User      @relation("TraineeLogs", fields: [traineeId], references: [id])
 
@@ -187,7 +211,15 @@ model Invoice {
   invoiceNumber String   @unique @map("invoice_number")
   issuedAt      DateTime @default(now()) @map("issued_at")
   pdfUrl        String?  @map("pdf_url")
-  status        String   @default("DRAFT") // DRAFT/SENT/PAID/CANCELLED
+  status        String   @default("DRAFT") // DRAFT/SENT/PAID/CANCELLED/PENDING_MANUAL_INVOICE
+
+  // C12.3: Failover / manual invoice issuance
+  externalId     String?   @map("external_id")
+  retryCount     Int       @default(0) @map("retry_count")
+  lastRetryAt    DateTime? @map("last_retry_at")
+  manualIssued   Boolean   @default(false) @map("manual_issued")
+  issuedBy       Int?      @map("issued_by")
+  issuedAtManual DateTime? @map("issued_at_manual")
 
   contract      B2BContract? @relation(fields: [contractId], references: [id])
   fromUser      User         @relation("InvoicesFrom", fields: [fromUserId], references: [id])
@@ -207,8 +239,17 @@ model AutoTransferLog {
   amount       Float
   transferDate DateTime @default(now()) @map("transfer_date")
   reference    Int?     // invoiceId
-  status       String   @default("PENDING") // PENDING/SUCCESS/FAILED
+  status       String   @default("PENDING") // PENDING/SUCCESS/FAILED/FAILED_PERMANENT/MANUAL_RESOLVED
   errorMessage String?  @map("error_message")
+
+  // C12.3: Failover / retry tracking
+  retryCount     Int       @default(0) @map("retry_count")
+  maxRetry       Int       @default(3) @map("max_retry")
+  lastRetryAt    DateTime? @map("last_retry_at")
+  manualResolved Boolean   @default(false) @map("manual_resolved")
+  resolvedBy     Int?      @map("resolved_by")
+  resolvedAt     DateTime? @map("resolved_at")
+  adminNote      String?   @map("admin_note")
 
   fromUser     User     @relation("TransfersFrom", fields: [fromUserId], references: [id])
   toUser       User     @relation("TransfersTo", fields: [toUserId], references: [id])
@@ -216,6 +257,24 @@ model AutoTransferLog {
   @@index([fromUserId])
   @@index([status])
   @@map("auto_transfer_logs")
+}
+
+// C12.3: Admin manual action audit log
+model AdminManualAction {
+  id          Int      @id @default(autoincrement())
+  adminId     Int      @map("admin_id")
+  actionType  String   @map("action_type") // VERIFY_TRAINING, MARK_TRANSFER_SUCCESS, MARK_TRANSFER_FAILED, VERIFY_KYC, ISSUE_INVOICE, RESEND_OTP
+  targetType  String   @map("target_type") // TrainingLog, AutoTransferLog, User, Invoice
+  targetId    Int      @map("target_id")
+  oldStatus   String?  @map("old_status")
+  newStatus   String?  @map("new_status")
+  reason      String?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([adminId])
+  @@index([actionType])
+  @@index([targetType, targetId])
+  @@map("admin_manual_actions")
 }
 
 // V12.2: Personal Income Tax (TNCN) record
@@ -368,6 +427,79 @@ model InventoryWarning {
   agency      Agency?  @relation(fields: [agencyId], references: [id])
 
   @@map("inventory_warnings")
+}
+
+// =======================================================================
+// C12.4: Phí quản lý trong nhóm + Phí sau thoát ly (2 giai đoạn)
+// Nguyên tắc: TẤT CẢ khoản thù lao/HH/phí đều do CCB Mart chi trả từ
+// doanh thu bán hàng, không có chuyển tiền trực tiếp giữa đối tác.
+// =======================================================================
+
+// Phí quản lý trong nhóm - điều kiện: cấp trên phải có >=20h đào tạo/tháng
+// F1 (10%) -> TP+ trên combo bán lẻ trực tiếp của F1
+// F2 (5%)  -> GĐV+ trên combo bán lẻ trực tiếp của F2
+// F3 (3%)  -> GĐKD trên combo bán lẻ trực tiếp của F3
+model ManagementFee {
+  id         Int      @id @default(autoincrement())
+  fromUserId Int      @map("from_user_id") // cấp dưới tạo doanh số
+  toUserId   Int      @map("to_user_id")   // cấp trên nhận phí
+  level      Int      // 1 (F1), 2 (F2), 3 (F3)
+  amount     Float
+  month      String   // YYYY-MM
+  status     String   @default("PENDING") // PENDING/PAID
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  fromUser   User     @relation("MgmtFeeFrom", fields: [fromUserId], references: [id])
+  toUser     User     @relation("MgmtFeeTo",   fields: [toUserId],   references: [id])
+
+  @@index([toUserId, month])
+  @@index([fromUserId, month])
+  @@map("management_fees")
+}
+
+// Log mỗi lần mentee thoát ly khỏi mentor cũ
+// Khi thoát ly: parentId được chuyển lên grandParent (cấp trên của mentor cũ)
+// Active trong 12 tháng để tính phí giai đoạn 1
+model BreakawayLog {
+  id           Int      @id @default(autoincrement())
+  userId       Int      @unique @map("user_id") // user thoát ly (1 user = 1 breakaway active)
+  oldParentId  Int      @map("old_parent_id")   // mentor cũ (F1 cũ)
+  newParentId  Int      @map("new_parent_id")   // grandParent (F2 cũ đã thành cấp trên trực tiếp)
+  breakawayAt  DateTime @default(now()) @map("breakaway_at")
+  expireAt     DateTime @map("expire_at")       // +12 months
+  status       String   @default("ACTIVE")      // ACTIVE/EXPIRED
+
+  user         User         @relation("BreakawayUser",      fields: [userId],       references: [id])
+  oldParent    User         @relation("BreakawayOldParent", fields: [oldParentId],  references: [id])
+  newParent    User         @relation("BreakawayNewParent", fields: [newParentId],  references: [id])
+  breakawayFees BreakawayFee[]
+
+  @@index([status, expireAt])
+  @@map("breakaway_logs")
+}
+
+// Phí giai đoạn 1 sau thoát ly (12 tháng đầu)
+// Level 1 = 3% cho F1 cũ trên toàn doanh số nhánh thoát
+// Level 2 = 2% cho F2 cũ trên toàn doanh số nhánh thoát
+// Level 3 = 1% cho GĐKD CHỈ KHI GĐKD không phải F1/F2 cũ (CCB Mart trả từ quỹ)
+model BreakawayFee {
+  id             Int      @id @default(autoincrement())
+  breakawayLogId Int      @map("breakaway_log_id")
+  fromUserId     Int      @map("from_user_id") // user thoát ly
+  toUserId       Int      @map("to_user_id")   // mentor cũ hoặc GĐKD nhận 1%
+  level          Int      // 1 (3%), 2 (2%), 3 (1% cho GĐKD)
+  amount         Float
+  month          String   // YYYY-MM
+  status         String   @default("PENDING") // PENDING/PAID
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  breakawayLog   BreakawayLog @relation(fields: [breakawayLogId], references: [id])
+  fromUser       User         @relation("BreakFeeFrom", fields: [fromUserId], references: [id])
+  toUser         User         @relation("BreakFeeTo",   fields: [toUserId],   references: [id])
+
+  @@index([toUserId, month])
+  @@index([breakawayLogId, month])
+  @@map("breakaway_fees")
 }
 
 model SyncLog {

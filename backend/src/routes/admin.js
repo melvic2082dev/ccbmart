@@ -8,6 +8,8 @@ const { validateReassignment } = require('../services/treeValidator');
 const { validate, schemas } = require('../middleware/validate');
 const { sendRankChangeNotification, sendSalaryWarning } = require('../services/notification');
 const { runRankEvaluation } = require('../jobs/autoRankUpdate');
+const { calculateMonthlyManagementFees } = require('../services/managementFee');
+const { processMonthlyBreakawayFees } = require('../services/breakaway');
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -430,6 +432,157 @@ router.get('/sync-history', async (req, res) => {
   try {
     const history = await getSyncHistory();
     res.json(history);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// =====================================================================
+// C12.4: Admin — Management fees (F1/F2/F3) & breakaway fees
+// =====================================================================
+
+// Trigger tính phí quản lý cho 1 tháng (recompute PENDING)
+router.post('/management-fees/process-monthly', async (req, res) => {
+  try {
+    const { month } = req.body;
+    if (!month) return res.status(400).json({ error: 'month required (YYYY-MM)' });
+    const result = await calculateMonthlyManagementFees(month);
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Xem toàn bộ phí quản lý theo tháng (+ filter level, status, user)
+router.get('/management-fees', async (req, res) => {
+  try {
+    const { month, level, status, userId } = req.query;
+    const where = {};
+    if (month) where.month = month;
+    if (level) where.level = parseInt(level);
+    if (status) where.status = status;
+    if (userId) where.toUserId = parseInt(userId);
+
+    const records = await prisma.managementFee.findMany({
+      where,
+      include: {
+        fromUser: { select: { id: true, name: true, rank: true, email: true } },
+        toUser: { select: { id: true, name: true, rank: true, email: true } },
+      },
+      orderBy: [{ month: 'desc' }, { level: 'asc' }],
+      take: 200,
+    });
+
+    const total = records.reduce((s, r) => s + r.amount, 0);
+    const byLevel = { f1: 0, f2: 0, f3: 0 };
+    for (const r of records) {
+      if (r.level === 1) byLevel.f1 += r.amount;
+      else if (r.level === 2) byLevel.f2 += r.amount;
+      else if (r.level === 3) byLevel.f3 += r.amount;
+    }
+
+    res.json({ records, total, byLevel });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Mark a management fee as PAID
+router.post('/management-fees/:id/mark-paid', async (req, res) => {
+  try {
+    const updated = await prisma.managementFee.update({
+      where: { id: parseInt(req.params.id) },
+      data: { status: 'PAID' },
+    });
+    res.json(updated);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Trigger breakaway fee computation for 1 month
+router.post('/breakaway/process-monthly', async (req, res) => {
+  try {
+    const { month } = req.body;
+    if (!month) return res.status(400).json({ error: 'month required (YYYY-MM)' });
+    const result = await processMonthlyBreakawayFees(month);
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// List breakaway logs (ACTIVE first, then EXPIRED)
+router.get('/breakaway-logs', async (req, res) => {
+  try {
+    const { status } = req.query;
+    const where = status ? { status } : {};
+    const logs = await prisma.breakawayLog.findMany({
+      where,
+      include: {
+        user: { select: { id: true, name: true, rank: true, email: true } },
+        oldParent: { select: { id: true, name: true, rank: true } },
+        newParent: { select: { id: true, name: true, rank: true } },
+      },
+      orderBy: [{ status: 'asc' }, { breakawayAt: 'desc' }],
+    });
+
+    // Add monthsRemaining calc
+    const now = new Date();
+    const enriched = logs.map((l) => {
+      const ms = l.expireAt.getTime() - now.getTime();
+      const monthsRemaining = Math.max(0, Math.ceil(ms / (1000 * 60 * 60 * 24 * 30)));
+      return { ...l, monthsRemaining };
+    });
+
+    res.json(enriched);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// List breakaway fee records
+router.get('/breakaway-fees', async (req, res) => {
+  try {
+    const { month, level, status, userId } = req.query;
+    const where = {};
+    if (month) where.month = month;
+    if (level) where.level = parseInt(level);
+    if (status) where.status = status;
+    if (userId) where.toUserId = parseInt(userId);
+
+    const records = await prisma.breakawayFee.findMany({
+      where,
+      include: {
+        fromUser: { select: { id: true, name: true, rank: true } },
+        toUser: { select: { id: true, name: true, rank: true } },
+        breakawayLog: true,
+      },
+      orderBy: [{ month: 'desc' }, { level: 'asc' }],
+      take: 200,
+    });
+
+    const total = records.reduce((s, r) => s + r.amount, 0);
+    const byLevel = { level1: 0, level2: 0, level3: 0 };
+    for (const r of records) {
+      if (r.level === 1) byLevel.level1 += r.amount;
+      else if (r.level === 2) byLevel.level2 += r.amount;
+      else if (r.level === 3) byLevel.level3 += r.amount;
+    }
+
+    res.json({ records, total, byLevel });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.post('/breakaway-fees/:id/mark-paid', async (req, res) => {
+  try {
+    const updated = await prisma.breakawayFee.update({
+      where: { id: parseInt(req.params.id) },
+      data: { status: 'PAID' },
+    });
+    res.json(updated);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
