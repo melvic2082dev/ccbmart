@@ -629,26 +629,29 @@ async function main() {
   }
   console.log('✅ 30 AutoTransferLog records created');
 
-  // 22. TaxRecord (15 records across key CTVs)
-  const taxTargets = [gdkd, gdv1, gdv2, tp1, tp2, tp3, ...pps.slice(0, 9)];
-  for (let i = 0; i < 15; i++) {
-    const user = taxTargets[i];
-    const taxableIncome = Math.floor(Math.random() * 25000000) + 8000000;
-    const taxAmount = Math.floor(taxableIncome * 0.10);
-    const monthOffset = i % 3;
+  // 22. TaxRecord (15 records across key CTVs × 3 months)
+  const taxUsers = [gdkd, gdv1, gdv2, tp1, tp2];
+  let taxCreated = 0;
+  for (let monthOffset = 0; monthOffset < 3 && taxCreated < 15; monthOffset++) {
     const d = new Date(now.getFullYear(), now.getMonth() - monthOffset, 1);
     const monthStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-    await prisma.taxRecord.create({
-      data: {
-        userId: user.id,
-        month: monthStr,
-        taxableIncome,
-        taxAmount,
-        status: i % 3 === 0 ? 'PAID' : 'PENDING',
-      },
-    });
+    for (const user of taxUsers) {
+      if (taxCreated >= 15) break;
+      const taxableIncome = Math.floor(Math.random() * 25000000) + 8000000;
+      const taxAmount = Math.floor(taxableIncome * 0.10);
+      await prisma.taxRecord.create({
+        data: {
+          userId: user.id,
+          month: monthStr,
+          taxableIncome,
+          taxAmount,
+          status: taxCreated % 3 === 0 ? 'PAID' : 'PENDING',
+        },
+      });
+      taxCreated++;
+    }
   }
-  console.log('✅ 15 TaxRecord entries created');
+  console.log(`✅ ${taxCreated} TaxRecord entries created`);
 
   console.log('\n🎉 Seed complete (V12.2)!');
   console.log('📧 Login credentials:');
