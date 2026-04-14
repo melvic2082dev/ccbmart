@@ -7,7 +7,7 @@ import {
   Settings, FileText, LogOut, Building2, Bell,
   PlusCircle, Banknote, ClipboardCheck, Wallet, Award, CreditCard,
   ChevronLeft, ChevronRight, Sun, Moon, Menu, X, FileSpreadsheet,
-  GraduationCap, BookOpen
+  GraduationCap, BookOpen, ShieldCheck, Calculator, FileBarChart, Receipt
 } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react';
 import { api } from '@/lib/api';
@@ -22,6 +22,9 @@ const navByRole: Record<string, NavItem[]> = {
     { label: 'Nop tien', href: '/ctv/cash', icon: <Banknote size={20} /> },
     { label: 'Khach hang', href: '/ctv/customers', icon: <Users size={20} /> },
     { label: 'San pham', href: '/ctv/products', icon: <Package size={20} /> },
+    { label: 'eKYC', href: '/ctv/kyc', icon: <ShieldCheck size={20} /> },
+    { label: 'Hoa don', href: '/ctv/invoices', icon: <Receipt size={20} /> },
+    { label: 'Bao cao thang', href: '/ctv/monthly-report', icon: <FileBarChart size={20} /> },
   ],
   agency: [
     { label: 'Dashboard', href: '/agency/dashboard', icon: <LayoutDashboard size={20} /> },
@@ -39,6 +42,10 @@ const navByRole: Record<string, NavItem[]> = {
     { label: 'HKD', href: '/admin/business-household', icon: <Building2 size={20} /> },
     { label: 'Phi dao tao', href: '/admin/fee-config', icon: <GraduationCap size={20} /> },
     { label: 'NK Dao tao', href: '/admin/training-logs', icon: <BookOpen size={20} /> },
+    { label: 'eKYC', href: '/admin/kyc', icon: <ShieldCheck size={20} /> },
+    { label: 'Hoa don', href: '/admin/invoices', icon: <Receipt size={20} /> },
+    { label: 'Auto Transfer', href: '/admin/transfers', icon: <Banknote size={20} /> },
+    { label: 'Thue TNCN', href: '/admin/tax', icon: <Calculator size={20} /> },
     { label: 'Import', href: '/admin/import', icon: <FileSpreadsheet size={20} /> },
     { label: 'Cau hinh', href: '/admin/config', icon: <Settings size={20} /> },
     { label: 'Bao cao', href: '/admin/reports', icon: <FileText size={20} /> },

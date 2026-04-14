@@ -1,0 +1,57 @@
+const express = require('express');
+const { authenticate, authorize } = require('../middleware/auth');
+const {
+  submitKyc,
+  getKycStatus,
+  verifyKyc,
+  listPendingKyc,
+} = require('../services/kycService');
+
+const router = express.Router();
+
+router.use(authenticate);
+
+// POST /api/kyc/submit — CTV uploads KYC documents
+router.post('/kyc/submit', authorize('ctv'), async (req, res) => {
+  try {
+    const { idNumber, idFrontImage, idBackImage } = req.body;
+    const result = await submitKyc(req.user.id, { idNumber, idFrontImage, idBackImage });
+    res.json(result);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// GET /api/kyc/status — CTV checks own KYC status
+router.get('/kyc/status', authorize('ctv'), async (req, res) => {
+  try {
+    const status = await getKycStatus(req.user.id);
+    res.json(status);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/admin/kyc/pending — Admin lists pending KYC
+router.get('/admin/kyc/pending', authorize('admin'), async (req, res) => {
+  try {
+    const list = await listPendingKyc();
+    res.json(list);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/admin/kyc/verify/:userId — Admin verifies or rejects
+router.post('/admin/kyc/verify/:userId', authorize('admin'), async (req, res) => {
+  try {
+    const userId = parseInt(req.params.userId, 10);
+    const { approved, reason } = req.body;
+    const result = await verifyKyc(userId, { approved, reason });
+    res.json(result);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+module.exports = router;

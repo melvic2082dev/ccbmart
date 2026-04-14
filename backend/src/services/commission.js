@@ -47,6 +47,27 @@ async function calculateCtvCommission(ctvId, month) {
   const selfSalesAmount = selfTransactions.reduce((sum, t) => sum + t.totalAmount, 0);
   const selfCommission = selfSalesAmount * rates.selfSale;
 
+  // V12.2: Validation - cap 5% fixed salary vs total CTV channel revenue.
+  // If the sum of all fixed salaries in the salary pool exceeds 5% of total
+  // CTV channel revenue, we proportionally scale down this user's fixedSalary.
+  const fundStatusForCap = await calculateSalaryFundStatus(month);
+  let capFactor = 1;
+  if (
+    fundStatusForCap.totalFixedSalary > 0 &&
+    fundStatusForCap.totalFixedSalary > fundStatusForCap.salaryFundCap
+  ) {
+    capFactor = fundStatusForCap.salaryFundCap / fundStatusForCap.totalFixedSalary;
+    try {
+      await prisma.syncLog.create({
+        data: {
+          source: 'commission-5pct-cap',
+          recordsSynced: 1,
+          status: 'warning',
+        },
+      });
+    } catch {}
+  }
+
   // Calculate team revenue (for team bonus)
   let teamRevenue = selfSalesAmount;
   const directReports = await prisma.user.findMany({
@@ -69,14 +90,11 @@ async function calculateCtvCommission(ctvId, month) {
     }
   }
 
-  // Soft salary: only paid if salary fund has capacity
+  // Soft salary: only paid if salary fund has capacity.
+  // V12.2: always apply 5% cap factor (capFactor <= 1 when over cap).
   let effectiveSalary = rates.fixedSalary;
   if (rates.isSoftSalary && rates.fixedSalary > 0) {
-    const fundStatus = await calculateSalaryFundStatus(month);
-    if (fundStatus.warning === 'CRITICAL') {
-      const ratio = fundStatus.salaryFundCap / fundStatus.totalFixedSalary;
-      effectiveSalary = Math.floor(rates.fixedSalary * Math.min(ratio, 1));
-    }
+    effectiveSalary = Math.floor(rates.fixedSalary * capFactor);
   }
 
   // Training fee (V12.1: Phí DV đào tạo - replaces F1/F2/F3)

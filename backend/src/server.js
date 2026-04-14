@@ -16,6 +16,10 @@ const importRoutes = require('./routes/import');
 const feeConfigRoutes = require('./routes/feeConfig');
 const businessHouseholdRoutes = require('./routes/businessHousehold');
 const trainingLogRoutes = require('./routes/trainingLogs');
+const kycRoutes = require('./routes/kyc');
+const invoiceRoutes = require('./routes/invoices');
+const taxRoutes = require('./routes/tax');
+const monthlyReportRoutes = require('./routes/monthlyReport');
 const { subscribeUser, unsubscribeUser } = require('./services/pushNotification');
 const { authenticate: authMw } = require('./middleware/auth');
 const { createMomoPayment, verifyMomoSignature, createZaloPayPayment, verifyZaloPayCallback } = require('./services/payment');
@@ -62,6 +66,12 @@ app.use('/api/admin/business-household', businessHouseholdRoutes);
 app.use('/api/training-logs', trainingLogRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/admin/reports', reportRoutes);
+
+// V12.2: eKYC, invoices, tax, monthly report (routers define their own /admin/... /ctv/... paths)
+app.use('/api', kycRoutes);
+app.use('/api', invoiceRoutes);
+app.use('/api', taxRoutes);
+app.use('/api', monthlyReportRoutes);
 
 // Push notification subscribe/unsubscribe
 app.post('/api/notifications/subscribe', authMw, async (req, res) => {

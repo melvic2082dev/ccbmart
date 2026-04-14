@@ -20,9 +20,13 @@ function randomName() {
 }
 
 async function main() {
-  console.log('🌱 Seeding database (V12.1)...');
+  console.log('🌱 Seeding database (V12.2)...');
 
   // Clean existing data (order matters for foreign keys)
+  // V12.2 new tables first
+  if (prisma.taxRecord) await prisma.taxRecord.deleteMany();
+  if (prisma.autoTransferLog) await prisma.autoTransferLog.deleteMany();
+  if (prisma.invoice) await prisma.invoice.deleteMany();
   await prisma.trainingLog.deleteMany();
   await prisma.b2BContract.deleteMany();
   await prisma.businessHousehold.deleteMany();
@@ -536,11 +540,121 @@ async function main() {
   });
   console.log('✅ Team bonuses created');
 
-  console.log('\n🎉 Seed complete (V12.1)!');
+  // =======================================================================
+  // V12.2 ADDITIONS: eKYC, Invoices, Auto-Transfer, Tax Records
+  // =======================================================================
+
+  // 19. eKYC — 5 users VERIFIED, 5 SUBMITTED (pending review)
+  const kycVerifiedUsers = [gdkd, gdv1, gdv2, tp1, tp2];
+  for (const u of kycVerifiedUsers) {
+    await prisma.user.update({
+      where: { id: u.id },
+      data: {
+        idNumber: `0790${String(u.id).padStart(9, '0')}`,
+        idFrontImage: `/uploads/kyc/${u.id}_front.jpg`,
+        idBackImage: `/uploads/kyc/${u.id}_back.jpg`,
+        kycStatus: 'VERIFIED',
+        kycSubmittedAt: new Date(now.getFullYear(), now.getMonth() - 1, 10),
+        kycVerifiedAt: new Date(now.getFullYear(), now.getMonth() - 1, 12),
+      },
+    });
+  }
+  const kycSubmittedUsers = [tp3, pps[0], pps[1], pps[2], pps[3]];
+  for (const u of kycSubmittedUsers) {
+    await prisma.user.update({
+      where: { id: u.id },
+      data: {
+        idNumber: `0790${String(u.id).padStart(9, '0')}`,
+        idFrontImage: `/uploads/kyc/${u.id}_front.jpg`,
+        idBackImage: `/uploads/kyc/${u.id}_back.jpg`,
+        kycStatus: 'SUBMITTED',
+        kycSubmittedAt: new Date(),
+      },
+    });
+  }
+  console.log('✅ eKYC: 5 VERIFIED + 5 SUBMITTED');
+
+  // 20. Invoices (20 records, mix of status)
+  const invoiceStatuses = ['DRAFT', 'SENT', 'PAID', 'CANCELLED'];
+  const feeTiers = ['M0', 'M1', 'M2', 'M3', 'M4', 'M5'];
+  const feeAmounts = { M0: 0, M1: 1500000, M2: 3000000, M3: 4500000, M4: 6000000, M5: 7500000 };
+  const contracts = await prisma.b2BContract.findMany();
+
+  const invoices = [];
+  for (let i = 0; i < 20; i++) {
+    const contract = contracts[i % contracts.length];
+    const tier = feeTiers[(i % 5) + 1]; // skip M0
+    const amount = Math.floor(feeAmounts[tier] * 0.85); // apply ~K factor
+    const issuedMonth = new Date(now.getFullYear(), now.getMonth() - (i % 3), 28);
+    const status = invoiceStatuses[i % 4];
+    const seq = String(i + 1).padStart(4, '0');
+    const mm = String(issuedMonth.getMonth() + 1).padStart(2, '0');
+    const yy = issuedMonth.getFullYear();
+
+    const inv = await prisma.invoice.create({
+      data: {
+        contractId: contract.id,
+        fromUserId: contract.traineeId,
+        toUserId: contract.trainerId,
+        amount,
+        feeTier: tier,
+        invoiceNumber: `CCB-${yy}${mm}-${seq}`,
+        issuedAt: issuedMonth,
+        pdfUrl: `/uploads/invoices/CCB-${yy}${mm}-${seq}.pdf`,
+        status,
+      },
+    });
+    invoices.push(inv);
+  }
+  console.log('✅ 20 Invoices created (mix DRAFT/SENT/PAID/CANCELLED)');
+
+  // 21. AutoTransferLog (30 records)
+  const transferStatuses = ['PENDING', 'SUCCESS', 'SUCCESS', 'SUCCESS', 'FAILED'];
+  for (let i = 0; i < 30; i++) {
+    const contract = contracts[i % contracts.length];
+    const status = transferStatuses[i % transferStatuses.length];
+    const amount = Math.floor(Math.random() * 6000000) + 500000;
+    const refInvoice = invoices[i % invoices.length];
+    await prisma.autoTransferLog.create({
+      data: {
+        fromUserId: contract.traineeId,
+        toUserId: contract.trainerId,
+        amount: status === 'FAILED' ? 0 : amount,
+        reference: refInvoice?.id,
+        transferDate: new Date(now.getFullYear(), now.getMonth(), Math.max(1, 28 - i)),
+        status,
+        errorMessage: status === 'FAILED' ? 'Số dư không đủ thực hiện auto-transfer' : null,
+      },
+    });
+  }
+  console.log('✅ 30 AutoTransferLog records created');
+
+  // 22. TaxRecord (15 records across key CTVs)
+  const taxTargets = [gdkd, gdv1, gdv2, tp1, tp2, tp3, ...pps.slice(0, 9)];
+  for (let i = 0; i < 15; i++) {
+    const user = taxTargets[i];
+    const taxableIncome = Math.floor(Math.random() * 25000000) + 8000000;
+    const taxAmount = Math.floor(taxableIncome * 0.10);
+    const monthOffset = i % 3;
+    const d = new Date(now.getFullYear(), now.getMonth() - monthOffset, 1);
+    const monthStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    await prisma.taxRecord.create({
+      data: {
+        userId: user.id,
+        month: monthStr,
+        taxableIncome,
+        taxAmount,
+        status: i % 3 === 0 ? 'PAID' : 'PENDING',
+      },
+    });
+  }
+  console.log('✅ 15 TaxRecord entries created');
+
+  console.log('\n🎉 Seed complete (V12.2)!');
   console.log('📧 Login credentials:');
   console.log('   admin@ccbmart.vn / admin123');
-  console.log('   ctv1@ccbmart.vn / ctv123 (GĐKD)');
-  console.log('   ctv2@ccbmart.vn / ctv123 (GĐV)');
+  console.log('   ctv1@ccbmart.vn / ctv123 (GĐKD, KYC VERIFIED)');
+  console.log('   ctv2@ccbmart.vn / ctv123 (GĐV, KYC VERIFIED)');
   console.log('   agency1@ccbmart.vn / agency123');
 }
 

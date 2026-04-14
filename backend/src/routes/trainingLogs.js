@@ -1,6 +1,7 @@
 const express = require('express');
 const { PrismaClient } = require('@prisma/client');
 const { authenticate, authorize } = require('../middleware/auth');
+const { generateOTP, verifyOTP } = require('../services/otpService');
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -111,10 +112,28 @@ router.post('/', authorize('ctv'), async (req, res) => {
   }
 });
 
-// POST /api/ctv/training-logs/:id/confirm — trainee confirms the session
+// POST /api/ctv/training-logs/:id/request-otp — trainer requests OTP for the session
+// Returns the OTP code for demo visibility (in prod it'd be sent to trainee).
+router.post('/:id/request-otp', authorize('ctv'), async (req, res) => {
+  try {
+    const logId = parseInt(req.params.id);
+    const log = await prisma.trainingLog.findUnique({ where: { id: logId } });
+    if (!log) return res.status(404).json({ error: 'Training log not found' });
+    if (log.trainerId !== req.user.id && log.traineeId !== req.user.id) {
+      return res.status(403).json({ error: 'Not allowed' });
+    }
+    const result = await generateOTP(logId);
+    res.json(result);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// POST /api/ctv/training-logs/:id/confirm — trainee confirms the session via OTP
 router.post('/:id/confirm', authorize('ctv'), async (req, res) => {
   try {
     const logId = parseInt(req.params.id);
+    const { otp } = req.body;
     const log = await prisma.trainingLog.findUnique({ where: { id: logId } });
 
     if (!log) return res.status(404).json({ error: 'Training log not found' });
@@ -122,11 +141,18 @@ router.post('/:id/confirm', authorize('ctv'), async (req, res) => {
       return res.status(403).json({ error: 'Only the trainee can confirm this session' });
     }
 
+    // V12.2: If OTP was requested, require OTP verification
+    if (log.otpCode) {
+      if (!otp) return res.status(400).json({ error: 'OTP is required' });
+      const updated = await verifyOTP(logId, otp);
+      return res.json(updated);
+    }
+
+    // Fallback: legacy confirm without OTP (for seeded data or older flows)
     const updated = await prisma.trainingLog.update({
       where: { id: logId },
       data: { menteeConfirmed: true },
     });
-
     res.json(updated);
   } catch (err) {
     res.status(400).json({ error: err.message });

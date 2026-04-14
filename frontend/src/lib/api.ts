@@ -222,6 +222,45 @@ export const api = {
     fetchAPI(`/notifications/${id}/read`, { method: 'POST' }),
   markAllNotificationsRead: () =>
     fetchAPI('/notifications/read-all', { method: 'POST' }),
+
+  // V12.2: eKYC
+  ctvKycStatus: () => fetchAPI('/kyc/status'),
+  ctvKycSubmit: (data: { idNumber: string; idFrontImage: string; idBackImage: string }) =>
+    fetchAPI('/kyc/submit', { method: 'POST', body: JSON.stringify(data) }),
+  adminKycPending: () => fetchAPI('/admin/kyc/pending'),
+  adminKycVerify: (userId: number, approved: boolean, reason?: string) =>
+    fetchAPI(`/admin/kyc/verify/${userId}`, { method: 'POST', body: JSON.stringify({ approved, reason }) }),
+
+  // V12.2: Invoices & Auto-Transfer
+  adminInvoices: (page = 1, status?: string) =>
+    fetchAPI(`/admin/invoices?page=${page}${status ? `&status=${status}` : ''}`),
+  adminProcessMonthlyTransfer: (month: number, year: number) =>
+    fetchAPI('/admin/invoices/process-monthly', { method: 'POST', body: JSON.stringify({ month, year }) }),
+  adminTransfers: (page = 1, status?: string) =>
+    fetchAPI(`/admin/transfers?page=${page}${status ? `&status=${status}` : ''}`),
+  adminInvoicePdf: (id: number) => fetchAPI(`/admin/invoices/${id}/pdf`),
+  adminTerminateContract: (id: number, reason: string) =>
+    fetchAPI(`/admin/contracts/${id}/terminate`, { method: 'POST', body: JSON.stringify({ reason }) }),
+  ctvInvoices: () => fetchAPI('/ctv/invoices/my'),
+
+  // V12.2: Tax
+  adminTax: (month?: string, status?: string) => {
+    const params = new URLSearchParams();
+    if (month) params.set('month', month);
+    if (status) params.set('status', status);
+    const qs = params.toString();
+    return fetchAPI(`/admin/tax${qs ? `?${qs}` : ''}`);
+  },
+  adminTaxProcess: (month: string) =>
+    fetchAPI('/admin/tax/process', { method: 'POST', body: JSON.stringify({ month }) }),
+  adminTaxMarkPaid: (id: number) =>
+    fetchAPI(`/admin/tax/mark-paid/${id}`, { method: 'POST' }),
+  adminTaxReport: (hkdId: number, month: string) =>
+    fetchAPI(`/admin/tax/report/${hkdId}?month=${month}`),
+  ctvTaxPreview: (month: string) => fetchAPI(`/ctv/tax/preview?month=${month}`),
+
+  // V12.2: Monthly Report
+  ctvMonthlyReport: (month: string) => fetchAPI(`/ctv/monthly-report?month=${month}`),
 };
 
 export function formatVND(amount: number): string {

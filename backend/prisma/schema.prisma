@@ -21,6 +21,15 @@ model User {
   isBusinessHousehold Boolean @default(false) @map("is_business_household")
   createdAt     DateTime @default(now()) @map("created_at")
 
+  // V12.2: eKYC
+  kycStatus       String    @default("PENDING") @map("kyc_status") // PENDING/SUBMITTED/VERIFIED/REJECTED
+  kycSubmittedAt  DateTime? @map("kyc_submitted_at")
+  kycVerifiedAt   DateTime? @map("kyc_verified_at")
+  kycRejectReason String?   @map("kyc_reject_reason")
+  idNumber        String?   @map("id_number")
+  idFrontImage    String?   @map("id_front_image")
+  idBackImage     String?   @map("id_back_image")
+
   parent        User?    @relation("UserHierarchy", fields: [parentId], references: [id])
   children      User[]   @relation("UserHierarchy")
   agency        Agency?  @relation("AgencyUser", fields: [agencyId], references: [id])
@@ -39,6 +48,11 @@ model User {
   traineeContracts    B2BContract[]        @relation("Trainee")
   trainerLogs         TrainingLog[]        @relation("TrainerLogs")
   traineeLogs         TrainingLog[]        @relation("TraineeLogs")
+  invoicesFrom        Invoice[]            @relation("InvoicesFrom")
+  invoicesTo          Invoice[]            @relation("InvoicesTo")
+  transfersFrom       AutoTransferLog[]    @relation("TransfersFrom")
+  transfersTo         AutoTransferLog[]    @relation("TransfersTo")
+  taxRecords          TaxRecord[]
 
   @@map("users")
 }
@@ -129,9 +143,11 @@ model B2BContract {
   status              String    @default("active") // active, expired, terminated
   terminatedAt        DateTime? @map("terminated_at")
   terminationReason   String?   @map("termination_reason")
+  terminatedBy        Int?      @map("terminated_by") // V12.2: who terminated
 
   trainer             User      @relation("Trainer", fields: [trainerId], references: [id])
   trainee             User      @relation("Trainee", fields: [traineeId], references: [id])
+  invoices            Invoice[]
 
   @@map("b2b_contracts")
 }
@@ -150,10 +166,72 @@ model TrainingLog {
   verifiedAt      DateTime? @map("verified_at")
   createdAt       DateTime  @default(now()) @map("created_at")
 
+  // V12.2: OTP confirmation
+  otpCode         String?   @map("otp_code")
+  otpExpiresAt    DateTime? @map("otp_expires_at")
+
   trainer         User      @relation("TrainerLogs", fields: [trainerId], references: [id])
   trainee         User      @relation("TraineeLogs", fields: [traineeId], references: [id])
 
   @@map("training_logs")
+}
+
+// V12.2: Electronic invoice for training service fees
+model Invoice {
+  id            Int      @id @default(autoincrement())
+  contractId    Int?     @map("contract_id")
+  fromUserId    Int      @map("from_user_id")
+  toUserId      Int      @map("to_user_id")
+  amount        Float
+  feeTier       String   @map("fee_tier") // M0-M5
+  invoiceNumber String   @unique @map("invoice_number")
+  issuedAt      DateTime @default(now()) @map("issued_at")
+  pdfUrl        String?  @map("pdf_url")
+  status        String   @default("DRAFT") // DRAFT/SENT/PAID/CANCELLED
+
+  contract      B2BContract? @relation(fields: [contractId], references: [id])
+  fromUser      User         @relation("InvoicesFrom", fields: [fromUserId], references: [id])
+  toUser        User         @relation("InvoicesTo", fields: [toUserId], references: [id])
+
+  @@index([fromUserId])
+  @@index([toUserId])
+  @@index([status])
+  @@map("invoices")
+}
+
+// V12.2: Auto-transfer log for monthly fee settlement
+model AutoTransferLog {
+  id           Int      @id @default(autoincrement())
+  fromUserId   Int      @map("from_user_id")
+  toUserId     Int      @map("to_user_id")
+  amount       Float
+  transferDate DateTime @default(now()) @map("transfer_date")
+  reference    Int?     // invoiceId
+  status       String   @default("PENDING") // PENDING/SUCCESS/FAILED
+  errorMessage String?  @map("error_message")
+
+  fromUser     User     @relation("TransfersFrom", fields: [fromUserId], references: [id])
+  toUser       User     @relation("TransfersTo", fields: [toUserId], references: [id])
+
+  @@index([fromUserId])
+  @@index([status])
+  @@map("auto_transfer_logs")
+}
+
+// V12.2: Personal Income Tax (TNCN) record
+model TaxRecord {
+  id             Int      @id @default(autoincrement())
+  userId         Int      @map("user_id")
+  month          String   // YYYY-MM
+  taxableIncome  Float    @map("taxable_income")
+  taxAmount      Float    @map("tax_amount") // 10% TNCN
+  status         String   @default("PENDING") // PENDING/PAID
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  user           User     @relation(fields: [userId], references: [id])
+
+  @@unique([userId, month])
+  @@map("tax_records")
 }
 
 model Product {
