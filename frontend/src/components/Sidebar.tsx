@@ -110,35 +110,33 @@ const ROLE_LABELS: Record<string, string> = {
   ctv: 'CTV', agency: 'Đại lý', admin: 'Admin', member: 'Thành viên',
 };
 
-// Read from localStorage synchronously to prevent flash
-function readLS(key: string, fallback: string): string {
-  if (typeof window === 'undefined') return fallback;
-  return localStorage.getItem(key) || fallback;
-}
-
 export default function Sidebar({ role }: { role: string }) {
   const pathname = usePathname();
   const isAdmin = role === 'admin';
   const items = navByRole[role] || [];
 
-  // Initialize synchronously from localStorage - NO useEffect flash
-  const [expanded, setExpanded] = useState(() => readLS('sidebar-expanded', 'false') === 'true');
-  const [dark, setDark] = useState(() => readLS('theme', 'light') === 'dark');
+  // SSR-safe defaults; sync with localStorage after mount to avoid hydration mismatch.
+  const [expanded, setExpanded] = useState(false);
+  const [dark, setDark] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
 
-  // Apply dark class on mount (synchronous read already done above)
+  useEffect(() => {
+    setExpanded(localStorage.getItem('sidebar-expanded') === 'true');
+    setDark(localStorage.getItem('theme') === 'dark');
+  }, []);
+
   useEffect(() => {
     if (dark) document.documentElement.classList.add('dark');
     else document.documentElement.classList.remove('dark');
   }, [dark]);
 
-  // Persist `expanded` + notify layout — runs AFTER render, not during state updater
-  // (dispatching events inside a setState updater triggers setState-in-render warnings)
-  const isFirstExpandRender = useRef(true);
+  // Persist `expanded` + notify layout — skip the first render (initial false) and
+  // the mount-sync render. Only dispatch when the user actually toggles.
+  const isInitialExpandRender = useRef(true);
   useEffect(() => {
-    if (isFirstExpandRender.current) {
-      isFirstExpandRender.current = false;
+    if (isInitialExpandRender.current) {
+      isInitialExpandRender.current = false;
       return;
     }
     localStorage.setItem('sidebar-expanded', String(expanded));
