@@ -208,7 +208,7 @@ export function HkdDetailModal({
                       <TableRow>
                         <TableHead>Tháng</TableHead>
                         <TableHead className="text-right">Phí cố định (M0–M5)</TableHead>
-                        <TableHead className="text-right">Phí cố vấn (Pool 6.5%)</TableHead>
+                        <TableHead className="text-right">Phí quản lý (F1/F2/F3)</TableHead>
                         <TableHead className="text-right">Tổng</TableHead>
                         <TableHead>Trạng thái</TableHead>
                       </TableRow>

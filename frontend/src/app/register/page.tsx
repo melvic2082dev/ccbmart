@@ -28,11 +28,12 @@ export default function RegisterPage() {
     setLoading(false);
   };
 
+  // V13.3: 4 hạng Green / Basic / Standard / VIP Gold
   const tiers = [
     { name: 'Green', min: 0, discount: '0%' },
-    { name: 'Basic', min: 200000, discount: '3%' },
-    { name: 'Standard', min: 500000, discount: '7%' },
-    { name: 'VIP Gold', min: 2000000, discount: '12%' },
+    { name: 'Basic', min: 2_000_000, discount: '2%' },
+    { name: 'Standard', min: 10_000_000, discount: '5%' },
+    { name: 'VIP Gold', min: 30_000_000, discount: '8%' },
   ];
 
   if (success) {

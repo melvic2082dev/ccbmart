@@ -2,9 +2,10 @@ const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcryptjs');
 const prisma = new PrismaClient();
 
-/**
- * Generate unique referral code: CCB_XXXXXX
- */
+// V13.3: Thanh khoản — khóa 30% trên mỗi phiếu nạp
+const RESERVE_RATE = 0.30;
+const AVAILABLE_RATE = 1 - RESERVE_RATE;
+
 async function generateReferralCode() {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
   for (let attempt = 0; attempt < 10; attempt++) {
@@ -18,26 +19,18 @@ async function generateReferralCode() {
   throw new Error('Failed to generate unique referral code');
 }
 
-/**
- * Determine membership tier based on deposit amount
- */
 async function determineTier(depositAmount) {
   const tiers = await prisma.membershipTier.findMany({ orderBy: { minDeposit: 'desc' } });
   for (const tier of tiers) {
     if (depositAmount >= tier.minDeposit) return tier;
   }
-  return tiers[tiers.length - 1]; // fallback to lowest tier
+  return tiers[tiers.length - 1];
 }
 
-/**
- * Register a new member
- */
 async function registerMember({ email, password, name, phone, depositAmount = 0, referralCode }) {
-  // Check email not taken
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) throw new Error('Email da duoc su dung');
 
-  // Validate referral code if provided
   let referrerWallet = null;
   if (referralCode) {
     referrerWallet = await prisma.memberWallet.findUnique({ where: { referralCode } });
@@ -48,10 +41,9 @@ async function registerMember({ email, password, name, phone, depositAmount = 0,
   const tier = await determineTier(depositAmount);
   const myReferralCode = await generateReferralCode();
 
-  // Create user + wallet in transaction
   const result = await prisma.$transaction(async (tx) => {
     const user = await tx.user.create({
-      data: { email, passwordHash, role: 'member', name, phone },
+      data: { email, passwordHash, role: 'member', name, phone, isMember: true },
     });
 
     const wallet = await tx.memberWallet.create({
@@ -59,13 +51,14 @@ async function registerMember({ email, password, name, phone, depositAmount = 0,
         userId: user.id,
         tierId: tier.id,
         balance: 0,
-        totalDeposit: 0,
+        availableBalance: 0,
+        reserveBalance: 0,
+        totalDeposited: 0,
         referralCode: myReferralCode,
         referredById: referrerWallet?.id || null,
       },
     });
 
-    // Create initial deposit if amount > 0
     let deposit = null;
     if (depositAmount > 0) {
       deposit = await tx.depositHistory.create({
@@ -90,34 +83,29 @@ async function registerMember({ email, password, name, phone, depositAmount = 0,
   };
 }
 
-/**
- * Process referral commission when a deposit is confirmed
- */
 async function processReferralCommission(walletId, depositAmount) {
   const wallet = await prisma.memberWallet.findUnique({
     where: { id: walletId },
     include: { referredBy: { include: { tier: true } } },
   });
 
-  if (!wallet?.referredBy) return null; // No referrer
+  if (!wallet?.referredBy) return null;
 
   const referrer = wallet.referredBy;
-  const rate = referrer.tier.referralPct;
-  const cap = referrer.tier.monthlyReferralCap;
+  const rate = referrer.tier?.referralPct || 0;
+  const cap = referrer.tier?.monthlyReferralCap || 0;
 
-  if (rate <= 0 || cap <= 0) return null; // Tier doesn't support referral
+  if (rate <= 0 || cap <= 0) return null;
 
   const commission = depositAmount * rate;
   const now = new Date();
   const month = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
 
-  // Check monthly cap
-  const remaining = cap - referrer.monthlyReferralEarned;
-  if (remaining <= 0) return null; // Cap reached
+  const remaining = cap - (referrer.monthlyReferralEarned || 0);
+  if (remaining <= 0) return null;
 
   const actualCommission = Math.min(commission, remaining);
 
-  // Create commission record + update referrer wallet
   const [commissionRecord] = await prisma.$transaction([
     prisma.referralCommission.create({
       data: {
@@ -131,7 +119,9 @@ async function processReferralCommission(walletId, depositAmount) {
     prisma.memberWallet.update({
       where: { id: referrer.id },
       data: {
+        // Hoa hồng referral được cộng thẳng vào available (không khóa 30%)
         balance: { increment: actualCommission },
+        availableBalance: { increment: actualCommission },
         referralEarned: { increment: actualCommission },
         monthlyReferralEarned: { increment: actualCommission },
       },
@@ -141,9 +131,6 @@ async function processReferralCommission(walletId, depositAmount) {
   return { commissionId: commissionRecord.id, amount: actualCommission, referrerId: referrer.id };
 }
 
-/**
- * Confirm a member deposit
- */
 async function confirmDeposit(depositId, adminId) {
   const deposit = await prisma.depositHistory.findUnique({
     where: { id: depositId },
@@ -152,23 +139,26 @@ async function confirmDeposit(depositId, adminId) {
   if (!deposit) throw new Error('Phieu nap tien khong ton tai');
   if (deposit.status !== 'PENDING') throw new Error('Phieu nap tien khong o trang thai PENDING');
 
-  // Update deposit status
+  // V13.3: split 70/30 vào available/reserve
+  const availableAdd = Math.floor(deposit.amount * AVAILABLE_RATE);
+  const reserveAdd = deposit.amount - availableAdd;
+
   await prisma.depositHistory.update({
     where: { id: depositId },
     data: { status: 'CONFIRMED', confirmedBy: adminId, confirmedAt: new Date() },
   });
 
-  // Credit wallet + update total deposit
   const wallet = await prisma.memberWallet.update({
     where: { id: deposit.walletId },
     data: {
       balance: { increment: deposit.amount },
-      totalDeposit: { increment: deposit.amount },
+      availableBalance: { increment: availableAdd },
+      reserveBalance: { increment: reserveAdd },
+      totalDeposited: { increment: deposit.amount },
     },
   });
 
-  // Check if tier should upgrade
-  const newTier = await determineTier(wallet.totalDeposit);
+  const newTier = await determineTier(wallet.totalDeposited);
   if (newTier.id !== wallet.tierId) {
     await prisma.memberWallet.update({
       where: { id: wallet.id },
@@ -176,15 +166,18 @@ async function confirmDeposit(depositId, adminId) {
     });
   }
 
-  // Process referral commission
   const referralResult = await processReferralCommission(wallet.id, deposit.amount);
 
-  return { walletId: wallet.id, newBalance: wallet.balance + deposit.amount, referralResult };
+  return {
+    walletId: wallet.id,
+    depositAmount: deposit.amount,
+    availableAdded: availableAdd,
+    reserveAdded: reserveAdd,
+    newBalance: wallet.balance,
+    referralResult,
+  };
 }
 
-/**
- * Reject a member deposit
- */
 async function rejectDeposit(depositId, adminId, reason) {
   const deposit = await prisma.depositHistory.findUnique({ where: { id: depositId } });
   if (!deposit) throw new Error('Phieu nap tien khong ton tai');
@@ -196,9 +189,6 @@ async function rejectDeposit(depositId, adminId, reason) {
   });
 }
 
-/**
- * Get wallet details for a member
- */
 async function getWalletDetails(userId) {
   const wallet = await prisma.memberWallet.findUnique({
     where: { userId },
@@ -212,9 +202,6 @@ async function getWalletDetails(userId) {
   return wallet;
 }
 
-/**
- * Get referral statistics for a member
- */
 async function getReferralStats(userId) {
   const wallet = await prisma.memberWallet.findUnique({
     where: { userId },
@@ -238,25 +225,28 @@ async function getReferralStats(userId) {
   });
 
   const earnedThisMonth = monthlyCommissions.reduce((s, c) => s + c.amount, 0);
-  const capRemaining = Math.max(0, wallet.tier.monthlyReferralCap - earnedThisMonth);
+  const cap = wallet.tier?.monthlyReferralCap || 0;
+  const capRemaining = Math.max(0, cap - earnedThisMonth);
 
   return {
     referralCode: wallet.referralCode,
     totalReferrals: wallet.referrals.length,
     referrals: wallet.referrals.map(r => ({
       name: r.user.name,
-      tier: r.tier.name,
+      tier: r.tier?.name || null,
       joinedAt: r.user.createdAt,
     })),
     totalEarned: wallet.referralEarned,
     earnedThisMonth,
-    monthlyReferralCap: wallet.tier.monthlyReferralCap,
+    monthlyReferralCap: cap,
     capRemaining,
-    referralPct: wallet.tier.referralPct,
+    referralPct: wallet.tier?.referralPct || 0,
   };
 }
 
 module.exports = {
+  RESERVE_RATE,
+  AVAILABLE_RATE,
   generateReferralCode,
   determineTier,
   registerMember,

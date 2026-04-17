@@ -28,7 +28,7 @@ model User {
   kycSubmittedAt  DateTime? @map("kyc_submitted_at")
   kycVerifiedAt   DateTime? @map("kyc_verified_at")
   kycRejectReason String?   @map("kyc_reject_reason")
-  idNumber        String?   @map("id_number")
+  idNumber        String?   @unique @map("id_number")
   idFrontImage    String?   @map("id_front_image")
   idBackImage     String?   @map("id_back_image")
 
@@ -36,6 +36,10 @@ model User {
   kycMethod       String    @default("AUTO") @map("kyc_method") // AUTO, MANUAL, HYBRID
   kycManualNote   String?   @map("kyc_manual_note")
   kycVerifiedBy   Int?      @map("kyc_verified_by")
+
+  // V13.3: eKYC "3 duy nhất" — CCCD (idNumber @unique), deviceId + IP tracked on submit
+  kycDeviceId     String?   @map("kyc_device_id")
+  kycIpAddress    String?   @map("kyc_ip_address")
 
   parent        User?    @relation("UserHierarchy", fields: [parentId], references: [id])
   children      User[]   @relation("UserHierarchy")
@@ -619,11 +623,15 @@ model Notification {
 // ========================================================
 
 model MembershipTier {
-  id          Int      @id @default(autoincrement())
-  name        String   @unique // BASIC/SILVER/GOLD
-  minDeposit  Float    @map("min_deposit")
-  pointsRate  Float    @default(0.01) @map("points_rate") // % của đơn mua tính thành điểm
-  description String?
+  id                 Int      @id @default(autoincrement())
+  name               String   @unique // GREEN/BASIC/STANDARD/VIP_GOLD (V13.3: 4 hạng)
+  minDeposit         Float    @map("min_deposit")
+  pointsRate         Float    @default(0.01) @map("points_rate") // % của đơn mua tính thành điểm
+  discountPct        Float    @default(0) @map("discount_pct") // % giảm giá khi mua hàng
+  referralPct        Float    @default(0) @map("referral_pct") // % hoa hồng giới thiệu
+  monthlyReferralCap Float    @default(2000000) @map("monthly_referral_cap") // V13.3: cap 2tr/tháng
+  color              String?  // cho UI badge
+  description        String?
 
   wallets     MemberWallet[]
 
@@ -631,24 +639,49 @@ model MembershipTier {
 }
 
 model MemberWallet {
-  id             Int      @id @default(autoincrement())
-  userId         Int      @unique @map("user_id")
-  tierId         Int?     @map("tier_id")
-  balance        Float    @default(0)      // VND số dư ví
-  points         Int      @default(0)       // điểm tích luỹ
-  referralCode   String   @unique @map("referral_code") // CCB_XXXXXX
-  referredById   Int?     @map("referred_by_id") // wallet của người giới thiệu
-  totalDeposited Float    @default(0) @map("total_deposited")
-  totalSpent     Float    @default(0) @map("total_spent")
-  referralCap    Float    @default(500000) @map("referral_cap") // cap 500K/tháng
-  createdAt      DateTime @default(now()) @map("created_at")
+  id                    Int      @id @default(autoincrement())
+  userId                Int      @unique @map("user_id")
+  tierId                Int?     @map("tier_id")
+  balance               Float    @default(0)      // V13.3: tổng số dư (availableBalance + reserveBalance)
+  availableBalance      Float    @default(0) @map("available_balance") // V13.3: 70% khả dụng
+  reserveBalance        Float    @default(0) @map("reserve_balance")   // V13.3: 30% khóa thanh khoản
+  points                Int      @default(0)       // điểm tích luỹ
+  referralCode          String   @unique @map("referral_code") // CCB_XXXXXX
+  referredById          Int?     @map("referred_by_id") // wallet của người giới thiệu
+  totalDeposited        Float    @default(0) @map("total_deposited")
+  totalSpent            Float    @default(0) @map("total_spent")
+  referralCap           Float    @default(2000000) @map("referral_cap") // V13.3: cap 2tr/tháng
+  referralEarned        Float    @default(0) @map("referral_earned")
+  monthlyReferralEarned Float    @default(0) @map("monthly_referral_earned")
+  createdAt             DateTime @default(now()) @map("created_at")
 
   user           User     @relation(fields: [userId], references: [id])
   tier           MembershipTier? @relation(fields: [tierId], references: [id])
   deposits       DepositHistory[]
+  referrals      MemberWallet[]  @relation("WalletReferral")
+  referredBy     MemberWallet?   @relation("WalletReferral", fields: [referredById], references: [id])
+  earnedCommissions    ReferralCommission[] @relation("EarnerWallet")
+  sourcedCommissions   ReferralCommission[] @relation("SourceWallet")
 
   @@index([referralCode])
   @@map("member_wallets")
+}
+
+// V13.1+: Commission log when a referral deposit is confirmed
+model ReferralCommission {
+  id              Int      @id @default(autoincrement())
+  earnerWalletId  Int      @map("earner_wallet_id")
+  sourceWalletId  Int      @map("source_wallet_id")
+  amount          Float
+  ratePct         Float    @map("rate_pct")
+  month           String   // YYYY-MM
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  earnerWallet    MemberWallet @relation("EarnerWallet", fields: [earnerWalletId], references: [id])
+  sourceWallet    MemberWallet @relation("SourceWallet", fields: [sourceWalletId], references: [id])
+
+  @@index([earnerWalletId, month])
+  @@map("referral_commissions")
 }
 
 model DepositHistory {
@@ -658,6 +691,7 @@ model DepositHistory {
   method      String   // bank_transfer / cash / momo / zalopay
   status      String   @default("PENDING") // PENDING/CONFIRMED/REJECTED
   reference   String?  // mã giao dịch từ cổng thanh toán
+  notes       String?
   confirmedBy Int?     @map("confirmed_by")
   confirmedAt DateTime? @map("confirmed_at")
   createdAt   DateTime @default(now()) @map("created_at")

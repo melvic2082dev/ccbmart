@@ -81,7 +81,7 @@ const schemas = {
 
   memberDeposit: Joi.object({
     amount: Joi.number().min(10000).required(),
-    method: Joi.string().valid('bank_transfer', 'cash').default('bank_transfer'),
+    method: Joi.string().valid('bank_transfer', 'cash', 'momo', 'zalopay').default('bank_transfer'),
   }),
 
   // Admin: create CTV manually

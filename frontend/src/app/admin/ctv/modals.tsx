@@ -870,7 +870,7 @@ export function CtvDetailsModal({
 
                   <div>
                     <p className="text-xs uppercase text-gray-500 tracking-wide mb-2">
-                      Người được giới thiệu (referral, cap 500K/tháng, sunset 12 tháng)
+                      Người được giới thiệu (referral, cap 2.000.000đ/tháng, sunset 12 tháng)
                     </p>
                     {!data.memberActivity.referralsGiven || data.memberActivity.referralsGiven.length === 0 ? (
                       <p className="py-4 text-center text-sm text-gray-400">Chưa có referral</p>

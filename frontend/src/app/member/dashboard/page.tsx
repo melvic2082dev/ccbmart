@@ -6,7 +6,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Wallet, Award, Users, Copy } from 'lucide-react';
 
-const tierColors: Record<string, string> = { Green: 'bg-gray-100 text-gray-700', Basic: 'bg-blue-100 text-blue-700', Standard: 'bg-purple-100 text-purple-700', 'VIP Gold': 'bg-amber-100 text-amber-700' };
+// V13.3: 4 hạng Green/Basic/Standard/VIP_GOLD (DB code) — label + màu riêng
+const tierColors: Record<string, string> = {
+  GREEN: 'bg-green-100 text-green-700', Green: 'bg-green-100 text-green-700',
+  BASIC: 'bg-slate-100 text-slate-700', Basic: 'bg-slate-100 text-slate-700',
+  STANDARD: 'bg-blue-100 text-blue-700', Standard: 'bg-blue-100 text-blue-700',
+  VIP_GOLD: 'bg-amber-100 text-amber-700', 'VIP Gold': 'bg-amber-100 text-amber-700',
+};
+const tierLabels: Record<string, string> = { GREEN: 'Green', BASIC: 'Basic', STANDARD: 'Standard', VIP_GOLD: 'VIP Gold' };
 
 export default function MemberDashboard() {
   const [wallet, setWallet] = useState<any>(null);
@@ -37,7 +44,7 @@ export default function MemberDashboard() {
           <CardContent className="pt-6 text-center">
             <p className="text-sm text-gray-500">So du vi</p>
             <p className="text-3xl font-bold text-blue-600">{formatVND(wallet?.balance || 0)}</p>
-            <Badge className={tierColors[wallet?.tier?.name] || 'bg-gray-100'}>{wallet?.tier?.name}</Badge>
+            <Badge className={tierColors[wallet?.tier?.name] || 'bg-gray-100'}>{tierLabels[wallet?.tier?.name] || wallet?.tier?.name}</Badge>
           </CardContent>
         </Card>
         <Card className="floating-card">

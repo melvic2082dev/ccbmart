@@ -590,6 +590,9 @@ async function main() {
         idNumber: `0790${String(u.id).padStart(9, '0')}`,
         idFrontImage: `/uploads/kyc/${u.id}_front.jpg`,
         idBackImage: `/uploads/kyc/${u.id}_back.jpg`,
+        // V13.3: 3 duy nhất — deviceId + IP
+        kycDeviceId: `DEV-${u.id}-${Math.random().toString(36).slice(2, 10)}`,
+        kycIpAddress: `192.168.${(u.id % 250) + 1}.${(u.id * 7) % 250 + 1}`,
         kycStatus: 'VERIFIED',
         kycSubmittedAt: new Date(now.getFullYear(), now.getMonth() - 1, 10),
         kycVerifiedAt: new Date(now.getFullYear(), now.getMonth() - 1, 12),
@@ -604,6 +607,8 @@ async function main() {
         idNumber: `0790${String(u.id).padStart(9, '0')}`,
         idFrontImage: `/uploads/kyc/${u.id}_front.jpg`,
         idBackImage: `/uploads/kyc/${u.id}_back.jpg`,
+        kycDeviceId: `DEV-${u.id}-${Math.random().toString(36).slice(2, 10)}`,
+        kycIpAddress: `10.0.${(u.id % 250) + 1}.${(u.id * 3) % 250 + 1}`,
         kycStatus: 'SUBMITTED',
         kycSubmittedAt: new Date(),
       },
@@ -981,17 +986,32 @@ async function main() {
     console.log('✅ 2 REJECTED sample transactions created');
   }
 
-  // 24. Membership — tiers + wallets (V13.1)
+  // 24. Membership — tiers + wallets (V13.3: 4 hạng Green/Basic/Standard/VIP Gold)
   // Clean + reseed member tables
+  if (prisma.referralCommission) await prisma.referralCommission.deleteMany();
   if (prisma.depositHistory) await prisma.depositHistory.deleteMany();
   if (prisma.referralLog)    await prisma.referralLog.deleteMany();
   if (prisma.memberWallet)   await prisma.memberWallet.deleteMany();
   if (prisma.membershipTier) await prisma.membershipTier.deleteMany();
 
+  // V13.3: 4 hạng thẻ thành viên, cap referral 2tr/tháng (đồng nhất)
   const tiers = await Promise.all([
-    prisma.membershipTier.create({ data: { name: 'BASIC',  minDeposit: 0,          pointsRate: 0.01, description: 'Mặc định — tích 1% điểm' } }),
-    prisma.membershipTier.create({ data: { name: 'SILVER', minDeposit: 5_000_000,  pointsRate: 0.02, description: 'Nạp từ 5tr — tích 2% điểm' } }),
-    prisma.membershipTier.create({ data: { name: 'GOLD',   minDeposit: 20_000_000, pointsRate: 0.03, description: 'Nạp từ 20tr — tích 3% + ưu đãi VIP' } }),
+    prisma.membershipTier.create({ data: {
+      name: 'GREEN',    minDeposit: 0,           pointsRate: 0.01, discountPct: 0.00, referralPct: 0.01, monthlyReferralCap: 2_000_000, color: 'green',
+      description: 'Hạng khởi đầu — tích 1% điểm, referral 1%',
+    } }),
+    prisma.membershipTier.create({ data: {
+      name: 'BASIC',    minDeposit: 2_000_000,   pointsRate: 0.015, discountPct: 0.02, referralPct: 0.015, monthlyReferralCap: 2_000_000, color: 'slate',
+      description: 'Nạp từ 2tr — tích 1.5%, giảm 2%',
+    } }),
+    prisma.membershipTier.create({ data: {
+      name: 'STANDARD', minDeposit: 10_000_000,  pointsRate: 0.02, discountPct: 0.05, referralPct: 0.02, monthlyReferralCap: 2_000_000, color: 'blue',
+      description: 'Nạp từ 10tr — tích 2%, giảm 5%',
+    } }),
+    prisma.membershipTier.create({ data: {
+      name: 'VIP_GOLD', minDeposit: 30_000_000,  pointsRate: 0.03, discountPct: 0.08, referralPct: 0.03, monthlyReferralCap: 2_000_000, color: 'amber',
+      description: 'VIP Gold — nạp từ 30tr, tích 3%, giảm 8%, ưu đãi VIP',
+    } }),
   ]);
   const tierByMin = tiers.sort((a, b) => b.minDeposit - a.minDeposit);
 
@@ -1006,16 +1026,22 @@ async function main() {
   }
 
   // 24.1 — Gán MemberWallet cho 20 CTV (multi-role: vừa bán vừa mua)
+  // V13.3: balance = available + reserve (70/30)
   const ctvMembers = [gdkd, gdv1, gdv2, tp1, tp2, tp3, ...pps.slice(0, 6), ...ctvs.slice(0, 8)];
   let walletCount = 0;
   for (const u of ctvMembers) {
     const deposit = Math.floor(Math.random() * 30_000_000);
     const tier = pickTier(deposit);
+    const balance = Math.floor(deposit * 0.6);
+    const available = Math.floor(balance * 0.7);
+    const reserve = balance - available;
     await prisma.memberWallet.create({
       data: {
         userId: u.id,
         tierId: tier.id,
-        balance: Math.floor(deposit * 0.6),
+        balance,
+        availableBalance: available,
+        reserveBalance: reserve,
         points: Math.floor(deposit * tier.pointsRate),
         referralCode: genRefCode(),
         totalDeposited: deposit,
@@ -1042,11 +1068,16 @@ async function main() {
         isMember: true,
       },
     });
+    const pureBalance = Math.floor(deposit * 0.7);
+    const pureAvail = Math.floor(pureBalance * 0.7);
+    const pureReserve = pureBalance - pureAvail;
     await prisma.memberWallet.create({
       data: {
         userId: user.id,
         tierId: tier.id,
-        balance: Math.floor(deposit * 0.7),
+        balance: pureBalance,
+        availableBalance: pureAvail,
+        reserveBalance: pureReserve,
         points: Math.floor(deposit * tier.pointsRate),
         referralCode: genRefCode(),
         totalDeposited: deposit,
@@ -1083,7 +1114,7 @@ async function main() {
   }
   console.log(`✅ ${depositLogCount} DepositHistory entries`);
 
-  // 24.4 — ReferralLog mẫu (member giới thiệu lẫn nhau, < 500K/tháng cap)
+  // 24.4 — ReferralLog mẫu (member giới thiệu lẫn nhau, V13.3 cap 2tr/tháng)
   let refCount = 0;
   for (let i = 0; i < 12; i++) {
     const referrer = pureMembers[i % pureMembers.length];

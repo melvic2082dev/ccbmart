@@ -162,44 +162,49 @@ export default function AdminConfig() {
             </CardContent>
           </Card>
 
-          {/* Mentor Bonus Pool 6.5% — V13.1 Mục 7.9 */}
-          <Card className="mb-6 border-purple-200">
+          {/* Phí quản lý F1/F2/F3 (V13.3: bỏ Pool 6.5% độc lập) */}
+          <Card className="mb-6 border-emerald-200">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <GraduationCap size={20} className="text-purple-600" />
-                Phí DV đào tạo cố vấn (Mentor Bonus Pool)
+                <GraduationCap size={20} className="text-emerald-600" />
+                Phí quản lý trong nhóm (F1/F2/F3)
               </CardTitle>
-              <p className="text-sm text-slate-500">V13.1 Mục 7.9 · 6.5% doanh số nhánh vượt cấp</p>
+              <p className="text-sm text-slate-500">V13.3 · 3% + 2% + 1% = 6% được chi trả từ quỹ hiện có, không có pool độc lập. Điều kiện: cấp trên ≥ 20h đào tạo/tháng.</p>
             </CardHeader>
             <CardContent>
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Tham số</TableHead>
-                    <TableHead>Giá trị mặc định</TableHead>
+                    <TableHead>Cấp</TableHead>
+                    <TableHead>Tỷ lệ</TableHead>
+                    <TableHead>Ai nhận</TableHead>
                     <TableHead>Mô tả</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   <TableRow>
-                    <TableCell className="font-medium">% Pool tổng</TableCell>
-                    <TableCell><Badge className="bg-purple-100 text-purple-700">6.5%</Badge></TableCell>
-                    <TableCell className="text-sm text-gray-600">% doanh số nhánh vượt cấp trích vào quỹ</TableCell>
+                    <TableCell><Badge className="bg-orange-100 text-orange-700">F1</Badge></TableCell>
+                    <TableCell><Badge className="bg-orange-100 text-orange-700">10%</Badge></TableCell>
+                    <TableCell className="text-sm">TP+ (cấp trên trực tiếp)</TableCell>
+                    <TableCell className="text-sm text-gray-600">Trên combo bán lẻ trực tiếp của F1</TableCell>
                   </TableRow>
                   <TableRow>
-                    <TableCell className="font-medium">Phân bổ T1 — Cố vấn trực tiếp</TableCell>
-                    <TableCell><Badge className="bg-orange-100 text-orange-700">3%</Badge></TableCell>
-                    <TableCell className="text-sm text-gray-600">Cấp trên trực tiếp của người vượt cấp</TableCell>
+                    <TableCell><Badge className="bg-amber-100 text-amber-700">F2</Badge></TableCell>
+                    <TableCell><Badge className="bg-amber-100 text-amber-700">5%</Badge></TableCell>
+                    <TableCell className="text-sm">GĐV+ (grand-parent)</TableCell>
+                    <TableCell className="text-sm text-gray-600">Trên combo bán lẻ trực tiếp của F2</TableCell>
                   </TableRow>
                   <TableRow>
-                    <TableCell className="font-medium">Phân bổ T2 — Cố vấn gián tiếp</TableCell>
-                    <TableCell><Badge className="bg-amber-100 text-amber-700">2%</Badge></TableCell>
-                    <TableCell className="text-sm text-gray-600">Cấp trên gián tiếp (grand-parent)</TableCell>
+                    <TableCell><Badge className="bg-indigo-100 text-indigo-700">F3</Badge></TableCell>
+                    <TableCell><Badge className="bg-indigo-100 text-indigo-700">3%</Badge></TableCell>
+                    <TableCell className="text-sm">GĐKD (great-grand-parent)</TableCell>
+                    <TableCell className="text-sm text-gray-600">Trên combo bán lẻ trực tiếp của F3</TableCell>
                   </TableRow>
                   <TableRow>
-                    <TableCell className="font-medium">Pool chung</TableCell>
-                    <TableCell><Badge className="bg-indigo-100 text-indigo-700">1.5%</Badge></TableCell>
-                    <TableCell className="text-sm text-gray-600">Chia đều cho các GĐKD/GĐV không trực tiếp liên quan</TableCell>
+                    <TableCell><Badge className="bg-rose-100 text-rose-700">Sau thoát ly</Badge></TableCell>
+                    <TableCell><Badge className="bg-rose-100 text-rose-700">3%+2%+1%</Badge></TableCell>
+                    <TableCell className="text-sm">F1 cũ / F2 cũ / GĐKD</TableCell>
+                    <TableCell className="text-sm text-gray-600">12 tháng đầu · GĐKD 1% chỉ khi không trùng F1/F2 cũ</TableCell>
                   </TableRow>
                 </TableBody>
               </Table>
@@ -238,8 +243,8 @@ export default function AdminConfig() {
                   </TableRow>
                   <TableRow>
                     <TableCell className="font-medium">Referral (giới thiệu thành viên)</TableCell>
-                    <TableCell><Badge variant="outline">Cap 500K/tháng · Sunset 12 tháng</Badge></TableCell>
-                    <TableCell className="text-sm text-gray-600">Thưởng giới thiệu tối đa 500K/người giới thiệu/tháng · hết hiệu lực sau 12 tháng kể từ ngày giới thiệu thành công</TableCell>
+                    <TableCell><Badge variant="outline">Cap 2.000.000đ/tháng · Sunset 12 tháng</Badge></TableCell>
+                    <TableCell className="text-sm text-gray-600">V13.3 · Thưởng giới thiệu tối đa 2.000.000đ/người giới thiệu/tháng · hết hiệu lực sau 12 tháng kể từ ngày giới thiệu thành công</TableCell>
                   </TableRow>
                 </TableBody>
               </Table>

@@ -14,8 +14,19 @@ router.use(authenticate);
 // POST /api/kyc/submit — CTV uploads KYC documents
 router.post('/kyc/submit', authorize('ctv'), async (req, res) => {
   try {
-    const { idNumber, idFrontImage, idBackImage } = req.body;
-    const result = await submitKyc(req.user.id, { idNumber, idFrontImage, idBackImage });
+    const { idNumber, idFrontImage, idBackImage, deviceId } = req.body;
+    // V13.3: deviceId từ client, IP từ request
+    const ipAddress = req.headers['x-forwarded-for']?.split(',')[0]?.trim()
+      || req.socket?.remoteAddress
+      || req.ip
+      || 'unknown';
+    const result = await submitKyc(req.user.id, {
+      idNumber,
+      idFrontImage,
+      idBackImage,
+      deviceId: deviceId || req.headers['x-device-id'] || 'unknown',
+      ipAddress,
+    });
     res.json(result);
   } catch (err) {
     res.status(400).json({ error: err.message });
