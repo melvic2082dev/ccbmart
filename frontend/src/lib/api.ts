@@ -73,6 +73,11 @@ export const api = {
     fetchAPI('/ctv/transactions/cash-deposit', { method: 'POST', body: JSON.stringify({ transactionIds, notes }) }),
   ctvPendingCount: () => fetchAPI('/ctv/transactions/pending-count'),
 
+  // CTV V10
+  ctvLoyaltyPoints: () => fetchAPI('/ctv/loyalty-points'),
+  ctvPromotionStatus: () => fetchAPI('/ctv/promotion-status'),
+  ctvTeamBonus: () => fetchAPI('/ctv/team-bonus'),
+
   // Agency
   agencyDashboard: () => fetchAPI('/agency/dashboard'),
   agencyInventory: () => fetchAPI('/agency/inventory'),
@@ -157,7 +162,28 @@ export const api = {
   adminSync: () => fetchAPI('/admin/sync', { method: 'POST' }),
   adminRunRankEvaluation: () => fetchAPI('/admin/rank-evaluation', { method: 'POST' }),
 
-  // Admin Reconciliation (new)
+  // Admin V10: Promotions
+  adminPromotionsPending: () => fetchAPI('/admin/promotions/pending'),
+  adminApprovePromotion: (id: number) =>
+    fetchAPI(`/admin/promotions/${id}/approve`, { method: 'POST' }),
+  adminActivatePromotions: () =>
+    fetchAPI('/admin/promotions/activate', { method: 'POST' }),
+
+  // Admin V10: Soft Salary
+  adminSoftSalary: (month?: string) =>
+    fetchAPI(`/admin/salary/soft-adjustment${month ? `?month=${month}` : ''}`),
+
+  // Admin V10: Team Bonus
+  adminTeamBonus: (month: string) => fetchAPI(`/admin/team-bonus/${month}`),
+  adminCalculateTeamBonus: (month: string) =>
+    fetchAPI(`/admin/team-bonus/${month}/calculate`, { method: 'POST' }),
+
+  // Admin V10: Professional Titles
+  adminTitles: () => fetchAPI('/admin/titles'),
+  adminAwardTitle: (userId: number, title: string) =>
+    fetchAPI('/admin/titles/award', { method: 'POST', body: JSON.stringify({ userId, title }) }),
+
+  // Admin Reconciliation
   adminReconciliationPending: (page = 1, paymentMethod?: string) =>
     fetchAPI(`/admin/reconciliation/pending?page=${page}${paymentMethod ? `&paymentMethod=${paymentMethod}` : ''}`),
   adminReconciliationConfirm: (id: number, notes?: string) =>
@@ -357,6 +383,34 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(data),
     }),
+
+  // C13.3.1: Audit log viewer
+  adminAuditLogs: (params: {
+    page?: number;
+    limit?: number;
+    userId?: number;
+    action?: string;
+    targetType?: string;
+    status?: string;
+    dateFrom?: string;
+    dateTo?: string;
+    search?: string;
+  } = {}) => {
+    const qs = new URLSearchParams();
+    if (params.page) qs.set('page', String(params.page));
+    if (params.limit) qs.set('limit', String(params.limit));
+    if (params.userId) qs.set('userId', String(params.userId));
+    if (params.action) qs.set('action', params.action);
+    if (params.targetType) qs.set('targetType', params.targetType);
+    if (params.status) qs.set('status', params.status);
+    if (params.dateFrom) qs.set('dateFrom', params.dateFrom);
+    if (params.dateTo) qs.set('dateTo', params.dateTo);
+    if (params.search) qs.set('search', params.search);
+    const s = qs.toString();
+    return fetchAPI(`/admin/audit-logs${s ? `?${s}` : ''}`);
+  },
+  adminAuditLogActions: () => fetchAPI('/admin/audit-logs/actions'),
+  logout: () => fetchAPI('/auth/logout', { method: 'POST' }),
 };
 
 export function formatVND(amount: number): string {
