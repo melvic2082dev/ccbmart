@@ -609,4 +609,83 @@ router.get('/sync-history', async (req, res) => {
   }
 });
 
+// ============================================================
+// C12.4: Management fees + Breakaway (admin views)
+// ============================================================
+
+router.get('/management-fees', async (req, res) => {
+  try {
+    const { month, level, status } = req.query;
+    const where = {};
+    if (month) where.month = month;
+    if (level) where.level = parseInt(level, 10);
+    if (status) where.status = status;
+    const fees = await prisma.managementFee.findMany({
+      where,
+      include: {
+        fromUser: { select: { id: true, name: true, rank: true } },
+        toUser:   { select: { id: true, name: true, rank: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+    res.json(fees);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+router.post('/management-fees/:id/mark-paid', async (req, res) => {
+  try {
+    const fee = await prisma.managementFee.update({
+      where: { id: parseInt(req.params.id, 10) },
+      data: { status: 'PAID' },
+    });
+    res.json(fee);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+router.get('/breakaway-logs', async (req, res) => {
+  try {
+    const where = req.query.status ? { status: req.query.status } : {};
+    const logs = await prisma.breakawayLog.findMany({
+      where,
+      include: {
+        user:      { select: { id: true, name: true, rank: true } },
+        oldParent: { select: { id: true, name: true, rank: true } },
+        newParent: { select: { id: true, name: true, rank: true } },
+      },
+      orderBy: { breakawayAt: 'desc' },
+    });
+    res.json(logs);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+router.get('/breakaway-fees', async (req, res) => {
+  try {
+    const { month, level, status } = req.query;
+    const where = {};
+    if (month) where.month = month;
+    if (level) where.level = parseInt(level, 10);
+    if (status) where.status = status;
+    const fees = await prisma.breakawayFee.findMany({
+      where,
+      include: {
+        fromUser: { select: { id: true, name: true, rank: true } },
+        toUser:   { select: { id: true, name: true, rank: true } },
+        breakawayLog: { select: { id: true, breakawayAt: true, expireAt: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+    res.json(fees);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+router.post('/breakaway-fees/:id/mark-paid', async (req, res) => {
+  try {
+    const fee = await prisma.breakawayFee.update({
+      where: { id: parseInt(req.params.id, 10) },
+      data: { status: 'PAID' },
+    });
+    res.json(fee);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 module.exports = router;
