@@ -558,7 +558,7 @@ export default function AdminCtvPage() {
       {/* Tree right-click context menu */}
       {treeMenu && (
         <div
-          className="fixed z-50 min-w-[200px] rounded-md border bg-white shadow-lg py-1"
+          className="fixed z-50 min-w-[200px] rounded-md border bg-white dark:bg-slate-800 shadow-lg py-1"
           style={{ top: treeMenu.y, left: treeMenu.x }}
           onClick={(e) => e.stopPropagation()}
           onContextMenu={(e) => e.preventDefault()}

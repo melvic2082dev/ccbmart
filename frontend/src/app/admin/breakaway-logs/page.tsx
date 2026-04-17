@@ -287,7 +287,7 @@ export default function AdminBreakawayLogsPage() {
           className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
           onClick={() => setPaymentDetailFee(null)}
         >
-          <div className="bg-white rounded-xl p-6 w-96 max-w-[90vw] space-y-3" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-white dark:bg-slate-800 rounded-xl p-6 w-96 max-w-[90vw] space-y-3" onClick={(e) => e.stopPropagation()}>
             <h3 className="text-lg font-bold">Chi tiết khoản phí #{paymentDetailFee.id}</h3>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between"><span className="text-gray-500">Level:</span> <span className="font-medium">L{paymentDetailFee.level}</span></div>

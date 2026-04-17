@@ -223,7 +223,7 @@ export default function AdminReconciliation() {
       {/* Reject modal */}
       {rejectId && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setRejectId(null)}>
-          <div className="bg-white rounded-xl p-6 w-96 max-w-[90vw]" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-slate-800 rounded-xl p-6 w-96 max-w-[90vw]" onClick={e => e.stopPropagation()}>
             <h3 className="text-lg font-bold mb-4">Từ chối giao dịch #{rejectId}</h3>
             <Input
               placeholder="Lý do từ chối…"
@@ -242,7 +242,7 @@ export default function AdminReconciliation() {
       {/* Proof viewer modal */}
       {viewProof && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setViewProof(null)}>
-          <div className="bg-white rounded-xl p-4 max-w-lg max-h-[80vh] overflow-auto" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-slate-800 rounded-xl p-4 max-w-lg max-h-[80vh] overflow-auto" onClick={e => e.stopPropagation()}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={viewProof} alt="Chứng từ thanh toán" className="w-full rounded" />
             <Button variant="outline" onClick={() => setViewProof(null)} className="mt-3 w-full">Đóng</Button>

@@ -8,7 +8,7 @@ import {
   PlusCircle, Banknote, ClipboardCheck, Wallet, Award, CreditCard,
   ChevronLeft, ChevronRight, Sun, Moon, Menu, X, FileSpreadsheet,
   GraduationCap, BookOpen, ShieldCheck, Calculator, FileBarChart, Receipt,
-  Coins, Network
+  Coins, Network, ScrollText
 } from 'lucide-react';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { api } from '@/lib/api';
@@ -72,6 +72,7 @@ const adminGroups: NavGroup[] = [
       { label: 'Import',    href: '/admin/import',        icon: <FileSpreadsheet size={20} /> },
       { label: 'Cấu hình',  href: '/admin/config',        icon: <Settings size={20} /> },
       { label: 'Báo cáo',   href: '/admin/reports',       icon: <FileText size={20} /> },
+      { label: 'Nhật ký hệ thống', href: '/admin/audit-logs', icon: <ScrollText size={20} /> },
       { label: 'Thông báo', href: '/admin/notifications', icon: <Bell size={20} />, isNotificationLink: true },
     ],
   },
@@ -170,7 +171,8 @@ export default function Sidebar({ role }: { role: string }) {
     });
   }, []);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try { await api.logout(); } catch { /* ignore */ }
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     window.location.href = '/login';

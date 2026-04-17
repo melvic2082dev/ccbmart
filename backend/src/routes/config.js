@@ -2,6 +2,7 @@ const express = require('express');
 const { PrismaClient } = require('@prisma/client');
 const { authenticate, authorize } = require('../middleware/auth');
 const { COMMISSION_RATES, AGENCY_COMMISSION, invalidateCommissionCache } = require('../services/commission');
+const { auditLog } = require('../middleware/auditLog');
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -21,7 +22,7 @@ router.get('/commission', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.put('/commission/:tier', async (req, res) => {
+router.put('/commission/:tier', auditLog('CONFIG_CHANGE', 'CommissionConfig'), async (req, res) => {
   try {
     const { selfSalePct, fixedSalary } = req.body;
     const config = await prisma.commissionConfig.update({
@@ -33,7 +34,7 @@ router.put('/commission/:tier', async (req, res) => {
   } catch (err) { res.status(400).json({ error: err.message }); }
 });
 
-router.post('/commission', async (req, res) => {
+router.post('/commission', auditLog('CONFIG_CHANGE', 'CommissionConfig'), async (req, res) => {
   try {
     const { tier, selfSalePct, fixedSalary } = req.body;
     if (!tier) return res.status(400).json({ error: 'Tier is required' });
@@ -45,7 +46,7 @@ router.post('/commission', async (req, res) => {
   } catch (err) { res.status(400).json({ error: err.message }); }
 });
 
-router.delete('/commission/:tier', async (req, res) => {
+router.delete('/commission/:tier', auditLog('CONFIG_CHANGE', 'CommissionConfig'), async (req, res) => {
   try {
     if (['CTV', 'GDKD'].includes(req.params.tier)) {
       return res.status(400).json({ error: 'Khong the xoa cap bac CTV hoac GDKD' });
@@ -65,7 +66,7 @@ router.get('/kpi', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.put('/kpi/:rank', async (req, res) => {
+router.put('/kpi/:rank', auditLog('CONFIG_CHANGE', 'Kpi'), async (req, res) => {
   try {
     const { minSelfCombo, minPortfolio, fallbackRank } = req.body;
     const config = await prisma.kpiConfig.upsert({
@@ -86,7 +87,7 @@ router.get('/agency', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.put('/agency/:group', async (req, res) => {
+router.put('/agency/:group', auditLog('CONFIG_CHANGE', 'AgencyCommissionConfig'), async (req, res) => {
   try {
     const { commissionPct, bonusPct } = req.body;
     if ((commissionPct || 0) + (bonusPct || 0) > 0.30) {
@@ -109,7 +110,7 @@ router.get('/cogs', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.put('/cogs/:phase', async (req, res) => {
+router.put('/cogs/:phase', auditLog('CONFIG_CHANGE', 'CogsConfig'), async (req, res) => {
   try {
     const { name, cogsPct, description } = req.body;
     const config = await prisma.cogsConfig.upsert({
@@ -123,7 +124,7 @@ router.put('/cogs/:phase', async (req, res) => {
 
 // ========== RESET DEFAULT ==========
 
-router.post('/reset-default', async (req, res) => {
+router.post('/reset-default', auditLog('CONFIG_CHANGE', 'Config'), async (req, res) => {
   try {
     // Reset CTV Commission (V12.1: F1/F2/F3 removed)
     await prisma.commissionConfig.deleteMany();

@@ -214,7 +214,7 @@ export default function AdminManagementFeesPage() {
           className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
           onClick={() => setOpenTrainingLogsFor(null)}
         >
-          <div className="bg-white rounded-xl p-5 w-[440px] max-w-[90vw] space-y-3" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-white dark:bg-slate-800 rounded-xl p-5 w-[440px] max-w-[90vw] space-y-3" onClick={(e) => e.stopPropagation()}>
             <h3 className="text-lg font-bold">Log đào tạo kèm theo</h3>
             <p className="text-xs text-gray-500">
               Mentor/Tháng: <b>{openTrainingLogsFor}</b>

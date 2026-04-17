@@ -366,7 +366,7 @@ export function AgencyDetailModal({
 
 function FinanceStat({ label, icon, value }: { label: string; icon: React.ReactNode; value: string }) {
   return (
-    <div className="rounded-md border border-emerald-100 bg-white p-3">
+    <div className="rounded-md border border-emerald-100 bg-white dark:bg-slate-800 p-3">
       <div className="flex items-center gap-2 mb-1">
         {icon}
         <p className="text-xs uppercase text-gray-500 tracking-wide">{label}</p>
@@ -440,7 +440,7 @@ export function AgencyBulkNotifyModal({
         <div className="space-y-3">
           <div className="max-h-24 overflow-y-auto rounded-md border border-gray-100 bg-gray-50 p-2 text-xs text-gray-600">
             {selectedAgencies.map((a) => (
-              <span key={a.id} className="inline-block mr-2 mb-1 rounded bg-white border px-1.5 py-0.5">
+              <span key={a.id} className="inline-block mr-2 mb-1 rounded bg-white dark:bg-slate-800 border px-1.5 py-0.5">
                 {a.name}
               </span>
             ))}

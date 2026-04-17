@@ -178,7 +178,7 @@ export default function SalaryReportPage() {
                             <tr
                               key={idx}
                               className={`border-b border-gray-50 hover:bg-emerald-50 transition-colors ${
-                                idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'
+                                idx % 2 === 0 ? 'bg-white dark:bg-slate-800' : 'bg-gray-50/50'
                               }`}
                             >
                               <td className="py-2.5 px-3 text-gray-500">{idx + 1}</td>

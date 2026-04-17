@@ -162,14 +162,14 @@ export default function AdminConfig() {
             </CardContent>
           </Card>
 
-          {/* Phí quản lý F1/F2/F3 (V13.3: bỏ Pool 6.5% độc lập) */}
+          {/* Phí quản lý trong nhóm (Cấp 1/Cấp 2/Cấp 3) */}
           <Card className="mb-6 border-emerald-200">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <GraduationCap size={20} className="text-emerald-600" />
-                Phí quản lý trong nhóm (F1/F2/F3)
+                Phí quản lý trong nhóm (Cấp 1/Cấp 2/Cấp 3)
               </CardTitle>
-              <p className="text-sm text-slate-500">V13.3 · 3% + 2% + 1% = 6% được chi trả từ quỹ hiện có, không có pool độc lập. Điều kiện: cấp trên ≥ 20h đào tạo/tháng.</p>
+              <p className="text-sm text-slate-500">3% + 2% + 1% = 6% được chi trả từ quỹ hiện có. Điều kiện: cấp trên ≥ 20h đào tạo/tháng.</p>
             </CardHeader>
             <CardContent>
               <Table>

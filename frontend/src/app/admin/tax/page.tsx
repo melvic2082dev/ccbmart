@@ -241,7 +241,7 @@ export default function AdminTaxPage() {
           className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
           onClick={() => setViewCertFor(null)}
         >
-          <div className="bg-white rounded-xl p-6 w-[480px] max-w-[90vw] space-y-3" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-white dark:bg-slate-800 rounded-xl p-6 w-[480px] max-w-[90vw] space-y-3" onClick={(e) => e.stopPropagation()}>
             <h3 className="text-lg font-bold">Chứng từ thuế TNCN</h3>
             {(() => {
               const pi = paymentInfo(viewCertFor);

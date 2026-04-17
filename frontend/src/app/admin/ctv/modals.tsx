@@ -986,7 +986,7 @@ export function BulkNotificationModal({
         <div className="space-y-3">
           <div className="max-h-24 overflow-y-auto rounded-md border border-gray-100 bg-gray-50 p-2 text-xs text-gray-600">
             {selectedCtvs.slice(0, 20).map(c => (
-              <span key={c.id} className="inline-block mr-2 mb-1 rounded bg-white border px-1.5 py-0.5">
+              <span key={c.id} className="inline-block mr-2 mb-1 rounded bg-white dark:bg-slate-800 border px-1.5 py-0.5">
                 {c.name}
               </span>
             ))}

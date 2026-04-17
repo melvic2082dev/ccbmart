@@ -280,7 +280,7 @@ export default function AdminDashboardPage() {
                   <select
                     value={period}
                     onChange={(e) => setPeriod(e.target.value as Period)}
-                    className="border border-emerald-200 rounded-md text-sm px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-300"
+                    className="border border-emerald-200 rounded-md text-sm px-3 py-1.5 bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-300"
                   >
                     <option value="month">Tháng</option>
                     <option value="quarter">Quý</option>
@@ -400,7 +400,7 @@ export default function AdminDashboardPage() {
                           <tr
                             key={r.key}
                             className={`border-b border-gray-50 hover:bg-emerald-50 transition-colors ${
-                              idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'
+                              idx % 2 === 0 ? 'bg-white dark:bg-slate-800' : 'bg-gray-50/50'
                             }`}
                           >
                             <td className="py-2.5 px-3 text-gray-700 font-medium">{r.label}</td>
@@ -501,11 +501,11 @@ export default function AdminDashboardPage() {
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="grid md:grid-cols-2 gap-4">
-                      <div className="bg-white rounded-lg p-3 border border-gray-100">
+                      <div className="bg-white dark:bg-slate-800 rounded-lg p-3 border border-gray-100">
                         <p className="text-xs text-gray-500 uppercase tracking-wide">Ngưỡng (5% doanh thu kênh CTV)</p>
                         <p className="text-lg font-bold text-gray-900 mt-1">{formatVND(sf.salaryFundCap)}</p>
                       </div>
-                      <div className="bg-white rounded-lg p-3 border border-gray-100">
+                      <div className="bg-white dark:bg-slate-800 rounded-lg p-3 border border-gray-100">
                         <p className="text-xs text-gray-500 uppercase tracking-wide">Thực tế đã chi</p>
                         <p className={`text-lg font-bold mt-1 ${colors.text}`}>
                           {formatVND(sf.totalFixedSalary)}{' '}
@@ -532,7 +532,7 @@ export default function AdminDashboardPage() {
                           const count = rankCounts[rank] ?? 0
                           if (count === 0) return null
                           return (
-                            <Badge key={rank} className="bg-white text-gray-700 border border-gray-200 px-2.5 py-1">
+                            <Badge key={rank} className="bg-white dark:bg-slate-800 text-gray-700 border border-gray-200 px-2.5 py-1">
                               {RANK_LABEL[rank] ?? rank}: <span className="font-bold ml-1">{count}</span> người
                             </Badge>
                           )
@@ -580,7 +580,7 @@ export default function AdminDashboardPage() {
                           <tr
                             key={key}
                             className={`border-b border-gray-50 hover:bg-emerald-50 transition-colors ${
-                              idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'
+                              idx % 2 === 0 ? 'bg-white dark:bg-slate-800' : 'bg-gray-50/50'
                             }`}
                           >
                             <td className="py-2.5 px-3 text-gray-700">

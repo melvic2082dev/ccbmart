@@ -86,9 +86,9 @@ export default function FeeConfigPage() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Phí quản lý trong nhóm · F1/F2/F3 (V13.3)</CardTitle>
+              <CardTitle>Phí quản lý trong nhóm · Cấp 1/Cấp 2/Cấp 3</CardTitle>
               <p className="text-sm text-slate-500">
-                Phí quản lý & phí sau thoát ly được CCB Mart chi trả từ quỹ hiện có. Không có pool 6.5% độc lập.
+                Phí quản lý & phí sau thoát ly được CCB Mart chi trả từ quỹ hiện có.
               </p>
             </CardHeader>
             <CardContent className="space-y-3 text-sm">

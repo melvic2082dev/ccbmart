@@ -8,29 +8,30 @@ export default function DashboardLayout({ role, children }: { role: string; chil
   const router = useRouter();
   const checkedRef = useRef(false);
 
-  // Start with SSR-safe defaults. localStorage is only read after mount in useEffect
-  // to avoid server/client HTML mismatch (hydration error).
-  const [mounted, setMounted] = useState(false);
+  // Start with SSR-safe defaults, then read localStorage post-mount. Renders the
+  // full chrome (sidebar + main area) immediately — no full-screen spinner — so
+  // client-side navigation between admin pages doesn't flash a loading state.
   const [user, setUser] = useState<{ name: string; role: string; rank?: string } | null>(null);
+  const [authReady, setAuthReady] = useState(false);
   const [sidebarExpanded, setSidebarExpanded] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
     try {
       const userData = localStorage.getItem('user');
       const token = localStorage.getItem('token');
       if (token && userData) setUser(JSON.parse(userData));
     } catch {}
     setSidebarExpanded(localStorage.getItem('sidebar-expanded') === 'true');
+    setAuthReady(true);
   }, []);
 
   useEffect(() => {
-    if (!mounted) return;
+    if (!authReady) return;
     if (checkedRef.current) return;
     checkedRef.current = true;
     if (!user) { router.push('/login'); return; }
     if (user.role !== role) { router.push(`/${user.role}/dashboard`); return; }
-  }, [mounted, user, role, router]);
+  }, [authReady, user, role, router]);
 
   useEffect(() => {
     const handler = (e: Event) => setSidebarExpanded((e as CustomEvent).detail.expanded);
@@ -38,15 +39,8 @@ export default function DashboardLayout({ role, children }: { role: string; chil
     return () => window.removeEventListener('sidebar-toggle', handler);
   }, []);
 
-  if (!mounted || !user || user.role !== role) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-background">
-        <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
-
   const desktopMl = sidebarExpanded ? '14rem' : '4rem';
+  const authPassed = authReady && user && user.role === role;
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -56,10 +50,16 @@ export default function DashboardLayout({ role, children }: { role: string; chil
         <div className="mb-6 flex items-center justify-between">
           <div>
             <p className="text-sm text-muted-foreground">Xin chào,</p>
-            <p className="text-lg font-semibold">{user.name} {user.rank ? `(${user.rank})` : ''}</p>
+            <p className="text-lg font-semibold">
+              {user ? `${user.name}${user.rank ? ` (${user.rank})` : ''}` : '\u00A0'}
+            </p>
           </div>
         </div>
-        {children}
+        {authPassed ? children : (
+          <div className="flex items-center justify-center py-24">
+            <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+          </div>
+        )}
       </main>
     </div>
   );

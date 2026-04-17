@@ -20,6 +20,7 @@ const kycRoutes = require('./routes/kyc');
 const invoiceRoutes = require('./routes/invoices');
 const taxRoutes = require('./routes/tax');
 const monthlyReportRoutes = require('./routes/monthlyReport');
+const auditLogRoutes = require('./routes/auditLogs');
 const { subscribeUser, unsubscribeUser } = require('./services/pushNotification');
 const { authenticate: authMw } = require('./middleware/auth');
 const { createMomoPayment, verifyMomoSignature, createZaloPayPayment, verifyZaloPayCallback } = require('./services/payment');
@@ -31,6 +32,7 @@ const { initSyncQueue, addSyncJob } = require('./queues/syncQueue');
 const { scheduleAutoRankJob } = require('./jobs/autoRankUpdate');
 const { scheduleCashCheckJob } = require('./jobs/checkUnsubmittedCash');
 const { scheduleReferralCapReset } = require('./jobs/resetReferralCap');
+const { scheduleAuditLogCleanup } = require('./jobs/auditLogCleanup');
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -72,6 +74,9 @@ app.use('/api', kycRoutes);
 app.use('/api', invoiceRoutes);
 app.use('/api', taxRoutes);
 app.use('/api', monthlyReportRoutes);
+
+// C13.3.1: Audit log viewer (admin)
+app.use('/api/admin', auditLogRoutes);
 
 // Push notification subscribe/unsubscribe
 app.post('/api/notifications/subscribe', authMw, async (req, res) => {
@@ -147,6 +152,7 @@ async function start() {
   scheduleAutoRankJob();
   scheduleCashCheckJob();
   scheduleReferralCapReset();
+  scheduleAuditLogCleanup();
 
   app.listen(PORT, () => {
     console.log(`CCB Mart API running on http://localhost:${PORT}`);

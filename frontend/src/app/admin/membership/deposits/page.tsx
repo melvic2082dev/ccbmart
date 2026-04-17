@@ -92,7 +92,7 @@ export default function AdminMemberDeposits() {
       )}
       {rejectId && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setRejectId(null)}>
-          <div className="bg-white rounded-xl p-6 w-96" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-slate-800 rounded-xl p-6 w-96" onClick={e => e.stopPropagation()}>
             <h3 className="text-lg font-bold mb-4">Từ chối nạp tiền #{rejectId}</h3>
             <Input placeholder="Lý do…" value={rejectReason} onChange={e => setRejectReason(e.target.value)} className="mb-4" />
             <div className="flex gap-2">
