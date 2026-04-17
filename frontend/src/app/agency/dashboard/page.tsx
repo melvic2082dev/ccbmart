@@ -15,16 +15,28 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts'
-import { TrendingUp, DollarSign, Gift, Award } from 'lucide-react'
+import { TrendingUp, DollarSign, Gift, Award, Clock } from 'lucide-react'
 
 export default function AgencyDashboardPage() {
   const [data, setData] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+  const [updatedAt, setUpdatedAt] = useState<Date | null>(null)
 
   useEffect(() => {
-    api.agencyDashboard()
-      .then((res: any) => setData(res))
-      .finally(() => setLoading(false))
+    async function fetchData() {
+      try {
+        const res: any = await api.agencyDashboard()
+        setData(res)
+        setUpdatedAt(new Date())
+      } catch (err) {
+        console.error('Failed to fetch agency dashboard:', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchData()
+    const interval = setInterval(fetchData, 60000)
+    return () => clearInterval(interval)
   }, [])
 
   if (loading) {
@@ -55,12 +67,20 @@ export default function AgencyDashboardPage() {
     <>
       <div className="space-y-6">
         {/* Agency Info */}
-        <div>
-          <h1 className="text-2xl font-bold">{data?.agency?.name}</h1>
-          <p className="text-muted-foreground">{data?.agency?.address}</p>
-          <Badge variant="outline" className="mt-1">
-            Hạng ký quỹ: {data?.agency?.depositTier}
-          </Badge>
+        <div className="flex items-start justify-between flex-wrap gap-2">
+          <div>
+            <h1 className="text-2xl font-bold">{data?.agency?.name}</h1>
+            <p className="text-muted-foreground">{data?.agency?.address}</p>
+            <Badge variant="outline" className="mt-1">
+              Hạng ký quỹ: {data?.agency?.depositTier}
+            </Badge>
+          </div>
+          {updatedAt && (
+            <p className="text-xs text-muted-foreground flex items-center gap-1">
+              <Clock className="w-3 h-3" />
+              Cập nhật lần cuối: {updatedAt.toLocaleString('vi-VN')}
+            </p>
+          )}
         </div>
 
         {/* Stat Cards */}

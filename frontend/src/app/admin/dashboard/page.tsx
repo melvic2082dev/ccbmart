@@ -201,6 +201,8 @@ export default function AdminDashboardPage() {
       }
     }
     fetchData()
+    const interval = setInterval(fetchData, 60000)
+    return () => clearInterval(interval)
   }, [])
 
   const mult = periodMultiplier(period)

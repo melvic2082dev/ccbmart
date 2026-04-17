@@ -6,7 +6,7 @@ import { api, formatVND } from '@/lib/api'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
-import { TrendingUp, Users, ShoppingCart, Wallet, Award, Gift, Star, ArrowUpCircle } from 'lucide-react'
+import { TrendingUp, Users, ShoppingCart, Wallet, Award, Gift, Star, ArrowUpCircle, Clock } from 'lucide-react'
 
 interface Commission {
   selfCommission: number
@@ -75,12 +75,14 @@ export default function CTVDashboardPage() {
   const [tree, setTree] = useState<TreeMember[]>([])
   const [loading, setLoading] = useState(true)
   const [treeLoading, setTreeLoading] = useState(true)
+  const [updatedAt, setUpdatedAt] = useState<Date | null>(null)
 
   useEffect(() => {
     async function fetchData() {
       try {
         const result = await api.ctvDashboard()
         setData(result)
+        setUpdatedAt(new Date())
       } catch (err) {
         console.error('Failed to fetch CTV dashboard:', err)
       } finally {
@@ -101,6 +103,8 @@ export default function CTVDashboardPage() {
 
     fetchData()
     fetchTree()
+    const interval = setInterval(fetchData, 60000)
+    return () => clearInterval(interval)
   }, [])
 
   return (
@@ -109,6 +113,12 @@ export default function CTVDashboardPage() {
         <div className="flex items-center justify-between flex-wrap gap-2">
           <h1 className="text-2xl font-bold text-gray-900">Dashboard CTV</h1>
           <div className="flex items-center gap-2">
+            {updatedAt && (
+              <p className="text-xs text-gray-500 flex items-center gap-1">
+                <Clock className="w-3 h-3" />
+                Cập nhật lần cuối: {updatedAt.toLocaleString('vi-VN')}
+              </p>
+            )}
             {data?.promotionStatus && (
               <Badge className="bg-amber-500 text-white text-sm px-3 py-1">
                 <ArrowUpCircle className="w-4 h-4 mr-1 inline" />
