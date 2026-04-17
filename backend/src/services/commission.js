@@ -1,30 +1,69 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
-// Commission rates by professional title (V12.1: F1/F2/F3 removed, replaced by training fees)
+// Commission rates by rank
 const COMMISSION_RATES = {
-  CTV:  { selfSale: 0.20, fixedSalary: 0,        isSoftSalary: false },
-  PP:   { selfSale: 0.20, fixedSalary: 5000000,  isSoftSalary: true },
-  TP:   { selfSale: 0.30, fixedSalary: 10000000, isSoftSalary: true },
-  GDV:  { selfSale: 0.35, fixedSalary: 18000000, isSoftSalary: true },
-  GDKD: { selfSale: 0.38, fixedSalary: 30000000, isSoftSalary: true },
-};
-
-// Team bonus thresholds (based on total team revenue)
-const TEAM_BONUS_TIERS = {
-  bronze: { threshold: 300000000, bonusPct: 0.01 }, // 300M+: 1% of team revenue
-  silver: { threshold: 600000000, bonusPct: 0.01 }, // 600M+: 1% of team revenue
-  gold:   { threshold: 1000000000, bonusPct: 0.01 }, // 1B+: 1% of team revenue
+  CTV:  { selfSale: 0.20, direct: 0,    indirect2: 0,    indirect3: 0,    fixedSalary: 0 },
+  PP:   { selfSale: 0.20, direct: 0,    indirect2: 0,    indirect3: 0,    fixedSalary: 5000000 },
+  TP:   { selfSale: 0.30, direct: 0.10, indirect2: 0,    indirect3: 0,    fixedSalary: 10000000 },
+  GDV:  { selfSale: 0.35, direct: 0.10, indirect2: 0.05, indirect3: 0,    fixedSalary: 18000000 },
+  GDKD: { selfSale: 0.38, direct: 0.10, indirect2: 0.05, indirect3: 0.03, fixedSalary: 30000000 },
 };
 
 // Agency commission by product group
 const AGENCY_COMMISSION = {
-  A: { commission: 0.08, bonus: 0.02 }, // Thiết yếu (nông sản)
-  B: { commission: 0.15, bonus: 0.03 }, // Core (FMCG, gia vị)
-  C: { commission: 0.20, bonus: 0.05 }, // Lợi nhuận cao (TPCN, combo)
+  A: { commission: 0.08, bonus: 0.02 },
+  B: { commission: 0.15, bonus: 0.03 },
+  C: { commission: 0.20, bonus: 0.05 },
 };
 
+// LRU Cache for commission results (max 1000 entries)
+class LRUCache {
+  constructor(maxSize = 1000) {
+    this.maxSize = maxSize;
+    this.cache = new Map();
+  }
+
+  get(key) {
+    if (!this.cache.has(key)) return undefined;
+    const value = this.cache.get(key);
+    this.cache.delete(key);
+    this.cache.set(key, value);
+    return value;
+  }
+
+  set(key, value) {
+    if (this.cache.has(key)) this.cache.delete(key);
+    if (this.cache.size >= this.maxSize) {
+      const firstKey = this.cache.keys().next().value;
+      this.cache.delete(firstKey);
+    }
+    this.cache.set(key, value);
+  }
+
+  clear() {
+    this.cache.clear();
+  }
+
+  invalidatePattern(pattern) {
+    for (const key of this.cache.keys()) {
+      if (key.includes(pattern)) {
+        this.cache.delete(key);
+      }
+    }
+  }
+}
+
+const commissionCache = new LRUCache(1000);
+
+/**
+ * Optimized commission calculator - uses only 2-3 queries instead of N+1
+ */
 async function calculateCtvCommission(ctvId, month) {
+  const cacheKey = `commission:${ctvId}:${month}`;
+  const cached = commissionCache.get(cacheKey);
+  if (cached) return cached;
+
   const user = await prisma.user.findUnique({ where: { id: ctvId } });
   if (!user || user.role !== 'ctv') return null;
 
@@ -36,97 +75,180 @@ async function calculateCtvCommission(ctvId, month) {
   const endDate = new Date(startDate);
   endDate.setMonth(endDate.getMonth() + 1);
 
-  // Self sales
-  const selfTransactions = await prisma.transaction.findMany({
+  // Query 1: Get ALL CONFIRMED CTV channel transactions for the month
+  const allTransactions = await prisma.transaction.findMany({
     where: {
-      ctvId: ctvId,
       channel: 'ctv',
+      status: 'CONFIRMED',
       createdAt: { gte: startDate, lt: endDate },
     },
+    select: {
+      id: true,
+      totalAmount: true,
+      ctvId: true,
+    },
   });
-  const selfSalesAmount = selfTransactions.reduce((sum, t) => sum + t.totalAmount, 0);
-  const selfCommission = selfSalesAmount * rates.selfSale;
 
-  // V12.2: Validation - cap 5% fixed salary vs total CTV channel revenue.
-  // If the sum of all fixed salaries in the salary pool exceeds 5% of total
-  // CTV channel revenue, we proportionally scale down this user's fixedSalary.
-  const fundStatusForCap = await calculateSalaryFundStatus(month);
-  let capFactor = 1;
-  if (
-    fundStatusForCap.totalFixedSalary > 0 &&
-    fundStatusForCap.totalFixedSalary > fundStatusForCap.salaryFundCap
-  ) {
-    capFactor = fundStatusForCap.salaryFundCap / fundStatusForCap.totalFixedSalary;
-    try {
-      await prisma.syncLog.create({
-        data: {
-          source: 'commission-5pct-cap',
-          recordsSynced: 1,
-          status: 'warning',
-        },
-      });
-    } catch {}
+  // Query 2: Get ALL active CTVs to build the tree in memory
+  const allCtv = await prisma.user.findMany({
+    where: { role: 'ctv', isActive: true },
+    select: { id: true, parentId: true, rank: true, name: true },
+  });
+
+  // Build revenue map: ctvId -> total revenue
+  const revenueMap = new Map();
+  for (const tx of allTransactions) {
+    revenueMap.set(tx.ctvId, (revenueMap.get(tx.ctvId) || 0) + tx.totalAmount);
   }
 
-  // Calculate team revenue (for team bonus)
-  let teamRevenue = selfSalesAmount;
-  const directReports = await prisma.user.findMany({
-    where: { parentId: ctvId, role: 'ctv', isActive: true },
-  });
-  for (const f1 of directReports) {
-    const f1Txns = await prisma.transaction.findMany({
-      where: { ctvId: f1.id, channel: 'ctv', createdAt: { gte: startDate, lt: endDate } },
-    });
-    teamRevenue += f1Txns.reduce((sum, t) => sum + t.totalAmount, 0);
-
-    const level2 = await prisma.user.findMany({
-      where: { parentId: f1.id, role: 'ctv', isActive: true },
-    });
-    for (const f2 of level2) {
-      const f2Txns = await prisma.transaction.findMany({
-        where: { ctvId: f2.id, channel: 'ctv', createdAt: { gte: startDate, lt: endDate } },
-      });
-      teamRevenue += f2Txns.reduce((sum, t) => sum + t.totalAmount, 0);
+  // Build children map: parentId -> [childIds]
+  const childrenMap = new Map();
+  for (const ctv of allCtv) {
+    if (ctv.parentId !== null) {
+      if (!childrenMap.has(ctv.parentId)) childrenMap.set(ctv.parentId, []);
+      childrenMap.get(ctv.parentId).push(ctv.id);
     }
   }
 
-  // Soft salary: only paid if salary fund has capacity.
-  // V12.2: always apply 5% cap factor (capFactor <= 1 when over cap).
-  let effectiveSalary = rates.fixedSalary;
-  if (rates.isSoftSalary && rates.fixedSalary > 0) {
-    effectiveSalary = Math.floor(rates.fixedSalary * capFactor);
+  // Calculate commission using in-memory tree traversal
+  const selfSalesAmount = revenueMap.get(ctvId) || 0;
+  const selfCommission = selfSalesAmount * rates.selfSale;
+
+  let directCommission = 0;
+  let indirect2Commission = 0;
+  let indirect3Commission = 0;
+
+  // Direct: direct children (thanh vien truc tiep)
+  const directIds = childrenMap.get(ctvId) || [];
+  if (rates.direct > 0) {
+    for (const directId of directIds) {
+      const directRevenue = revenueMap.get(directId) || 0;
+      directCommission += directRevenue * rates.direct;
+
+      // Indirect level 2: children of direct members (gian tiep cap 2)
+      if (rates.indirect2 > 0) {
+        const indirect2Ids = childrenMap.get(directId) || [];
+        for (const ind2Id of indirect2Ids) {
+          const ind2Revenue = revenueMap.get(ind2Id) || 0;
+          indirect2Commission += ind2Revenue * rates.indirect2;
+
+          // Indirect level 3: children of indirect2 (gian tiep cap 3)
+          if (rates.indirect3 > 0) {
+            const indirect3Ids = childrenMap.get(ind2Id) || [];
+            for (const ind3Id of indirect3Ids) {
+              const ind3Revenue = revenueMap.get(ind3Id) || 0;
+              indirect3Commission += ind3Revenue * rates.indirect3;
+            }
+          }
+        }
+      }
+    }
   }
 
-  // Training fee (V12.1: Phí DV đào tạo - replaces F1/F2/F3)
-  let trainingFee = 0;
-  try {
-    const { calculateTrainingFee, calculateKFactor } = require('./trainingFee');
-    const feeResult = await calculateTrainingFee(ctvId, month);
-    const kResult = await calculateKFactor(month);
-    trainingFee = Math.floor(feeResult.feeAmount * kResult.kFactor);
-  } catch {
-    // trainingFee service not available, skip
-  }
-
-  // Team bonus
-  let teamBonusAmount = 0;
-  if (teamRevenue >= TEAM_BONUS_TIERS.bronze.threshold) {
-    const tier = teamRevenue >= TEAM_BONUS_TIERS.gold.threshold ? 'gold'
-      : teamRevenue >= TEAM_BONUS_TIERS.silver.threshold ? 'silver' : 'bronze';
-    teamBonusAmount = Math.floor(teamRevenue * TEAM_BONUS_TIERS[tier].bonusPct);
-  }
-
-  return {
+  const result = {
     ctvId,
     rank,
     month,
     selfSalesAmount,
     selfCommission,
-    trainingFee,
-    fixedSalary: effectiveSalary,
-    teamBonus: teamBonusAmount,
-    totalIncome: selfCommission + trainingFee + effectiveSalary + teamBonusAmount,
+    directCommission,
+    indirect2Commission,
+    indirect3Commission,
+    fixedSalary: rates.fixedSalary,
+    totalIncome: selfCommission + directCommission + indirect2Commission + indirect3Commission + rates.fixedSalary,
   };
+
+  commissionCache.set(cacheKey, result);
+
+  return result;
+}
+
+/**
+ * Calculate all CTV commissions in batch - single pass for admin dashboard
+ */
+async function calculateAllCtvCommissions(month) {
+  const cacheKey = `all-commissions:${month}`;
+  const cached = commissionCache.get(cacheKey);
+  if (cached) return cached;
+
+  const startDate = new Date(`${month}-01`);
+  const endDate = new Date(startDate);
+  endDate.setMonth(endDate.getMonth() + 1);
+
+  // Only 2 queries for ALL CTVs (CONFIRMED only)
+  const [allTransactions, allCtv] = await Promise.all([
+    prisma.transaction.findMany({
+      where: {
+        channel: 'ctv',
+        status: 'CONFIRMED',
+        createdAt: { gte: startDate, lt: endDate },
+      },
+      select: { id: true, totalAmount: true, ctvId: true },
+    }),
+    prisma.user.findMany({
+      where: { role: 'ctv', isActive: true },
+      select: { id: true, parentId: true, rank: true, name: true },
+    }),
+  ]);
+
+  const revenueMap = new Map();
+  for (const tx of allTransactions) {
+    revenueMap.set(tx.ctvId, (revenueMap.get(tx.ctvId) || 0) + tx.totalAmount);
+  }
+
+  const childrenMap = new Map();
+  for (const ctv of allCtv) {
+    if (ctv.parentId !== null) {
+      if (!childrenMap.has(ctv.parentId)) childrenMap.set(ctv.parentId, []);
+      childrenMap.get(ctv.parentId).push(ctv.id);
+    }
+  }
+
+  const results = new Map();
+  for (const ctv of allCtv) {
+    const rates = COMMISSION_RATES[ctv.rank || 'CTV'];
+    if (!rates) continue;
+
+    const selfSalesAmount = revenueMap.get(ctv.id) || 0;
+    const selfCommission = selfSalesAmount * rates.selfSale;
+    let directCommission = 0, indirect2Commission = 0, indirect3Commission = 0;
+
+    const directIds = childrenMap.get(ctv.id) || [];
+    if (rates.direct > 0) {
+      for (const directId of directIds) {
+        directCommission += (revenueMap.get(directId) || 0) * rates.direct;
+        if (rates.indirect2 > 0) {
+          const ind2Ids = childrenMap.get(directId) || [];
+          for (const ind2Id of ind2Ids) {
+            indirect2Commission += (revenueMap.get(ind2Id) || 0) * rates.indirect2;
+            if (rates.indirect3 > 0) {
+              const ind3Ids = childrenMap.get(ind2Id) || [];
+              for (const ind3Id of ind3Ids) {
+                indirect3Commission += (revenueMap.get(ind3Id) || 0) * rates.indirect3;
+              }
+            }
+          }
+        }
+      }
+    }
+
+    results.set(ctv.id, {
+      ctvId: ctv.id,
+      name: ctv.name,
+      rank: ctv.rank || 'CTV',
+      month,
+      selfSalesAmount,
+      selfCommission,
+      directCommission,
+      indirect2Commission,
+      indirect3Commission,
+      fixedSalary: rates.fixedSalary,
+      totalIncome: selfCommission + directCommission + indirect2Commission + indirect3Commission + rates.fixedSalary,
+    });
+  }
+
+  commissionCache.set(cacheKey, results);
+  return results;
 }
 
 async function calculateSalaryFundStatus(month) {
@@ -134,15 +256,28 @@ async function calculateSalaryFundStatus(month) {
   const endDate = new Date(startDate);
   endDate.setMonth(endDate.getMonth() + 1);
 
-  const ctvTransactions = await prisma.transaction.findMany({
-    where: { channel: 'ctv', createdAt: { gte: startDate, lt: endDate } },
+  // Single aggregation query - CONFIRMED only
+  const ctvRevenueResult = await prisma.transaction.aggregate({
+    where: {
+      channel: 'ctv',
+      status: 'CONFIRMED',
+      createdAt: { gte: startDate, lt: endDate },
+    },
+    _sum: { totalAmount: true },
   });
-  const ctvRevenue = ctvTransactions.reduce((sum, t) => sum + t.totalAmount, 0);
-  const salaryFundCap = ctvRevenue * 0.05; // 5% of CTV channel revenue
+
+  const ctvRevenue = ctvRevenueResult._sum.totalAmount || 0;
+  const salaryFundCap = ctvRevenue * 0.05;
 
   const managers = await prisma.user.findMany({
-    where: { role: 'ctv', isActive: true, rank: { in: ['PP', 'TP', 'GDV', 'GDKD'] } },
+    where: {
+      role: 'ctv',
+      isActive: true,
+      rank: { in: ['PP', 'TP', 'GDV', 'GDKD'] },
+    },
+    select: { id: true, name: true, rank: true },
   });
+
   let totalFixedSalary = 0;
   for (const m of managers) {
     totalFixedSalary += COMMISSION_RATES[m.rank]?.fixedSalary || 0;
@@ -161,38 +296,29 @@ async function calculateSalaryFundStatus(month) {
       id: m.id,
       name: m.name,
       rank: m.rank,
-      fixedSalary: COMMISSION_RATES[m.rank]?.fixedSalary || 0,
+      salary: COMMISSION_RATES[m.rank]?.fixedSalary || 0,
     })),
   };
 }
 
-// T+1 promotion: queue promotion for next month
-async function queuePromotion(ctvId, currentRank, targetRank) {
-  const nextMonth = new Date();
-  nextMonth.setMonth(nextMonth.getMonth() + 1);
-  const effectiveMonth = `${nextMonth.getFullYear()}-${String(nextMonth.getMonth() + 1).padStart(2, '0')}`;
-
-  return prisma.promotionEligibility.upsert({
-    where: { id: -1 }, // force create
-    create: { ctvId, currentRank, targetRank, effectiveMonth, status: 'pending' },
-    update: {},
-  }).catch(() =>
-    prisma.promotionEligibility.create({
-      data: { ctvId, currentRank, targetRank, effectiveMonth, status: 'pending' },
-    })
-  );
-}
-
-function invalidateCommissionCache() {
-  // placeholder for cache invalidation
+/**
+ * Invalidate commission cache when data changes
+ */
+function invalidateCommissionCache(ctvId = null) {
+  if (ctvId) {
+    commissionCache.invalidatePattern(`commission:${ctvId}`);
+    commissionCache.invalidatePattern('all-commissions');
+  } else {
+    commissionCache.clear();
+  }
+  console.log(`[Cache] Commission cache invalidated${ctvId ? ` for CTV ${ctvId}` : ' (all)'}`);
 }
 
 module.exports = {
   calculateCtvCommission,
+  calculateAllCtvCommissions,
   calculateSalaryFundStatus,
-  queuePromotion,
   invalidateCommissionCache,
   COMMISSION_RATES,
   AGENCY_COMMISSION,
-  TEAM_BONUS_TIERS,
 };

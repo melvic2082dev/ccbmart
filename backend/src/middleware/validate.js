@@ -31,7 +31,6 @@ const schemas = {
 
   reassignCtv: Joi.object({
     newParentId: Joi.number().integer().allow(null).required(),
-    reason: Joi.string().max(500).optional().allow(''),
   }),
 
   changeRank: Joi.object({
@@ -41,6 +40,9 @@ const schemas = {
 
   updateCommission: Joi.object({
     selfSalePct: Joi.number().min(0).max(1).optional(),
+    directPct: Joi.number().min(0).max(1).optional(),
+    indirect2Pct: Joi.number().min(0).max(1).optional(),
+    indirect3Pct: Joi.number().min(0).max(1).optional(),
     fixedSalary: Joi.number().min(0).optional(),
   }),
 
@@ -81,31 +83,7 @@ const schemas = {
 
   memberDeposit: Joi.object({
     amount: Joi.number().min(10000).required(),
-    method: Joi.string().valid('bank_transfer', 'cash', 'momo', 'zalopay').default('bank_transfer'),
-  }),
-
-  // Admin: create CTV manually
-  createCtv: Joi.object({
-    name: Joi.string().min(2).max(100).required(),
-    email: Joi.string().email().required(),
-    phone: Joi.string().min(9).max(15).optional().allow(''),
-    rank: Joi.string().valid('CTV', 'PP', 'TP', 'GDV', 'GDKD').default('CTV'),
-    parentId: Joi.number().integer().allow(null).optional(),
-    password: Joi.string().min(3).max(100).default('ctv123'),
-  }),
-
-  // Admin: toggle active / deactivate CTV with reason
-  toggleActiveCtv: Joi.object({
-    isActive: Joi.boolean().required(),
-    reason: Joi.string().max(500).optional().allow(''),
-  }),
-
-  // Admin: bulk notify a list of users
-  bulkNotify: Joi.object({
-    userIds: Joi.array().items(Joi.number().integer().positive()).min(1).max(1000).required(),
-    title: Joi.string().min(1).max(200).required(),
-    content: Joi.string().min(1).max(2000).required(),
-    type: Joi.string().max(50).default('ADMIN_BROADCAST'),
+    method: Joi.string().valid('bank_transfer', 'cash').default('bank_transfer'),
   }),
 };
 

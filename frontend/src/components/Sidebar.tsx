@@ -7,148 +7,76 @@ import {
   Settings, FileText, LogOut, Building2, Bell,
   PlusCircle, Banknote, ClipboardCheck, Wallet, Award, CreditCard,
   ChevronLeft, ChevronRight, Sun, Moon, Menu, X, FileSpreadsheet,
-  GraduationCap, BookOpen, ShieldCheck, Calculator, FileBarChart, Receipt,
-  Coins, Network, ScrollText
+  Scale, Calculator, Gift
 } from 'lucide-react';
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { api } from '@/lib/api';
 
-type NavItem = {
-  label: string;
-  href: string;
-  icon: React.ReactNode;
-  /** If true, renders Bell icon with unread-count badge (used for "Thông báo") */
-  isNotificationLink?: boolean;
-};
-type NavGroup = { title: string; items: NavItem[] };
-
-// Admin: grouped sidebar (6 groups, Vietnamese labels)
-const adminGroups: NavGroup[] = [
-  {
-    title: 'Vận hành',
-    items: [
-      { label: 'Dashboard', href: '/admin/dashboard',      icon: <LayoutDashboard size={20} /> },
-      { label: 'Đối soát',  href: '/admin/reconciliation', icon: <ClipboardCheck size={20} /> },
-    ],
-  },
-  {
-    title: 'Nhân sự & đối tác',
-    items: [
-      { label: 'CTV',      href: '/admin/ctv',                icon: <Users size={20} /> },
-      { label: 'Đại lý',   href: '/admin/agencies',           icon: <Building2 size={20} /> },
-      { label: 'HKD',      href: '/admin/business-household', icon: <Building2 size={20} /> },
-      { label: 'Team vượt cấp', href: '/admin/breakaway-logs', icon: <Network size={20} /> },
-    ],
-  },
-  {
-    title: 'Thành viên',
-    items: [
-      { label: 'Thành viên',  href: '/admin/membership/wallets',  icon: <Award size={20} /> },
-      { label: 'Nạp tiền TV', href: '/admin/membership/deposits', icon: <CreditCard size={20} /> },
-      { label: 'Hạng thẻ',    href: '/admin/membership/tiers',    icon: <Wallet size={20} /> },
-    ],
-  },
-  {
-    title: 'Đào tạo & phí',
-    items: [
-      { label: 'Phí đào tạo', href: '/admin/fee-config',      icon: <GraduationCap size={20} /> },
-      { label: 'Log đào tạo', href: '/admin/training-logs',   icon: <BookOpen size={20} /> },
-      { label: 'Phí quản lý', href: '/admin/management-fees', icon: <Coins size={20} /> },
-      { label: 'Báo cáo lương cứng', href: '/admin/salary-report', icon: <Wallet size={20} /> },
-    ],
-  },
-  {
-    title: 'Tài chính & thuế',
-    items: [
-      { label: 'Hóa đơn',      href: '/admin/invoices',  icon: <Receipt size={20} /> },
-      { label: 'Auto Transfer', href: '/admin/transfers', icon: <Banknote size={20} /> },
-      { label: 'Thuế TNCN',    href: '/admin/tax',       icon: <Calculator size={20} /> },
-    ],
-  },
-  {
-    title: 'Cấu hình & báo cáo',
-    items: [
-      { label: 'eKYC',      href: '/admin/kyc',           icon: <ShieldCheck size={20} /> },
-      { label: 'Import',    href: '/admin/import',        icon: <FileSpreadsheet size={20} /> },
-      { label: 'Cấu hình',  href: '/admin/config',        icon: <Settings size={20} /> },
-      { label: 'Báo cáo',   href: '/admin/reports',       icon: <FileText size={20} /> },
-      { label: 'Nhật ký hệ thống', href: '/admin/audit-logs', icon: <ScrollText size={20} /> },
-      { label: 'Thông báo', href: '/admin/notifications', icon: <Bell size={20} />, isNotificationLink: true },
-    ],
-  },
-];
+type NavItem = { label: string; href: string; icon: React.ReactNode };
 
 const navByRole: Record<string, NavItem[]> = {
   ctv: [
-    { label: 'Dashboard',      href: '/ctv/dashboard',        icon: <LayoutDashboard size={20} /> },
-    { label: 'Tạo đơn',        href: '/ctv/sales/create',     icon: <PlusCircle size={20} /> },
-    { label: 'Giao dịch',      href: '/ctv/transactions',     icon: <ShoppingCart size={20} /> },
-    { label: 'Nộp tiền',       href: '/ctv/cash',             icon: <Banknote size={20} /> },
-    { label: 'Khách hàng',     href: '/ctv/customers',        icon: <Users size={20} /> },
-    { label: 'Sản phẩm',       href: '/ctv/products',         icon: <Package size={20} /> },
-    { label: 'eKYC',           href: '/ctv/kyc',              icon: <ShieldCheck size={20} /> },
-    { label: 'Hóa đơn',        href: '/ctv/invoices',         icon: <Receipt size={20} /> },
-    { label: 'Phí quản lý',    href: '/ctv/management-fees',  icon: <Coins size={20} /> },
-    { label: 'Phí thoát ly',   href: '/ctv/breakaway-fees',   icon: <Network size={20} /> },
-    { label: 'Báo cáo tháng',  href: '/ctv/monthly-report',   icon: <FileBarChart size={20} /> },
+    { label: 'Dashboard', href: '/ctv/dashboard', icon: <LayoutDashboard size={20} /> },
+    { label: 'Tao don', href: '/ctv/sales/create', icon: <PlusCircle size={20} /> },
+    { label: 'Giao dich', href: '/ctv/transactions', icon: <ShoppingCart size={20} /> },
+    { label: 'Nop tien', href: '/ctv/cash', icon: <Banknote size={20} /> },
+    { label: 'Khach hang', href: '/ctv/customers', icon: <Users size={20} /> },
+    { label: 'San pham', href: '/ctv/products', icon: <Package size={20} /> },
   ],
   agency: [
-    { label: 'Dashboard', href: '/agency/dashboard',    icon: <LayoutDashboard size={20} /> },
-    { label: 'Tồn kho',   href: '/agency/inventory',    icon: <Warehouse size={20} /> },
-    { label: 'Giao dịch', href: '/agency/transactions', icon: <ShoppingCart size={20} /> },
+    { label: 'Dashboard', href: '/agency/dashboard', icon: <LayoutDashboard size={20} /> },
+    { label: 'Ton kho', href: '/agency/inventory', icon: <Warehouse size={20} /> },
+    { label: 'Giao dich', href: '/agency/transactions', icon: <ShoppingCart size={20} /> },
   ],
-  // Admin is handled via adminGroups (grouped)
-  admin: [],
+  admin: [
+    { label: 'Dashboard', href: '/admin/dashboard', icon: <LayoutDashboard size={20} /> },
+    { label: 'Doi soat', href: '/admin/reconciliation', icon: <ClipboardCheck size={20} /> },
+    { label: 'CTV', href: '/admin/ctv', icon: <Users size={20} /> },
+    { label: 'Dai ly', href: '/admin/agencies', icon: <Building2 size={20} /> },
+    { label: 'Bo nhiem', href: '/admin/promotions', icon: <Scale size={20} /> },
+    { label: 'Luong linh hoat', href: '/admin/soft-salary', icon: <Calculator size={20} /> },
+    { label: 'Thuong dan dat', href: '/admin/team-bonus', icon: <Gift size={20} /> },
+    { label: 'Danh hieu', href: '/admin/titles', icon: <Award size={20} /> },
+    { label: 'Thanh vien', href: '/admin/membership/wallets', icon: <Users size={20} /> },
+    { label: 'Nap tien TV', href: '/admin/membership/deposits', icon: <CreditCard size={20} /> },
+    { label: 'Hang the', href: '/admin/membership/tiers', icon: <Wallet size={20} /> },
+    { label: 'Import', href: '/admin/import', icon: <FileSpreadsheet size={20} /> },
+    { label: 'Cau hinh', href: '/admin/config', icon: <Settings size={20} /> },
+    { label: 'Bao cao', href: '/admin/reports', icon: <FileText size={20} /> },
+  ],
   member: [
-    { label: 'Dashboard',   href: '/member/dashboard',    icon: <LayoutDashboard size={20} /> },
-    { label: 'Nạp tiền',    href: '/member/topup',        icon: <Banknote size={20} /> },
-    { label: 'Lịch sử',     href: '/member/transactions', icon: <ShoppingCart size={20} /> },
-    { label: 'Giới thiệu',  href: '/member/referral',     icon: <Users size={20} /> },
+    { label: 'Dashboard', href: '/member/dashboard', icon: <LayoutDashboard size={20} /> },
+    { label: 'Nap tien', href: '/member/topup', icon: <Banknote size={20} /> },
+    { label: 'Lich su', href: '/member/transactions', icon: <ShoppingCart size={20} /> },
+    { label: 'Gioi thieu', href: '/member/referral', icon: <Users size={20} /> },
   ],
 };
 
 const ROLE_LABELS: Record<string, string> = {
-  ctv: 'CTV', agency: 'Đại lý', admin: 'Admin', member: 'Thành viên',
+  ctv: 'CTV Panel', agency: 'Dai ly', admin: 'Admin', member: 'Thanh vien',
 };
+
+function readLS(key: string, fallback: string): string {
+  if (typeof window === 'undefined') return fallback;
+  return localStorage.getItem(key) || fallback;
+}
 
 export default function Sidebar({ role }: { role: string }) {
   const pathname = usePathname();
-  const isAdmin = role === 'admin';
-  const items = navByRole[role] || [];
+  const items = navByRole[role] || navByRole.admin;
 
-  // SSR-safe defaults; sync with localStorage after mount to avoid hydration mismatch.
-  const [expanded, setExpanded] = useState(false);
-  const [dark, setDark] = useState(false);
+  const [expanded, setExpanded] = useState(() => readLS('sidebar-expanded', 'false') === 'true');
+  const [dark, setDark] = useState(() => readLS('theme', 'light') === 'dark');
   const [mobileOpen, setMobileOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
-
-  useEffect(() => {
-    setExpanded(localStorage.getItem('sidebar-expanded') === 'true');
-    setDark(localStorage.getItem('theme') === 'dark');
-  }, []);
 
   useEffect(() => {
     if (dark) document.documentElement.classList.add('dark');
     else document.documentElement.classList.remove('dark');
   }, [dark]);
 
-  // Persist `expanded` + notify layout — skip the first render (initial false) and
-  // the mount-sync render. Only dispatch when the user actually toggles.
-  const isInitialExpandRender = useRef(true);
-  useEffect(() => {
-    if (isInitialExpandRender.current) {
-      isInitialExpandRender.current = false;
-      return;
-    }
-    localStorage.setItem('sidebar-expanded', String(expanded));
-    window.dispatchEvent(new CustomEvent('sidebar-toggle', { detail: { expanded } }));
-  }, [expanded]);
-
-  // Close mobile drawer on route change
-  // eslint-disable-next-line react-hooks/set-state-in-effect -- reset side-effect on nav
   useEffect(() => { setMobileOpen(false); }, [pathname]);
 
-  // Poll notifications
   useEffect(() => {
     let mounted = true;
     const fn = async () => {
@@ -160,7 +88,12 @@ export default function Sidebar({ role }: { role: string }) {
   }, []);
 
   const toggleExpand = useCallback(() => {
-    setExpanded(prev => !prev);
+    setExpanded(prev => {
+      const next = !prev;
+      localStorage.setItem('sidebar-expanded', String(next));
+      window.dispatchEvent(new CustomEvent('sidebar-toggle', { detail: { expanded: next } }));
+      return next;
+    });
   }, []);
 
   const toggleDark = useCallback(() => {
@@ -171,8 +104,7 @@ export default function Sidebar({ role }: { role: string }) {
     });
   }, []);
 
-  const handleLogout = async () => {
-    try { await api.logout(); } catch { /* ignore */ }
+  const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     window.location.href = '/login';
@@ -186,7 +118,7 @@ export default function Sidebar({ role }: { role: string }) {
         key={item.href}
         href={item.href}
         onClick={() => isMobile && setMobileOpen(false)}
-        className={`${showLabel ? 'px-3 py-2.5 flex items-center gap-3' : 'w-12 h-12 flex items-center justify-center'} rounded-xl text-sm font-medium relative`}
+        className={`${showLabel ? 'px-3 py-2.5 flex items-center gap-3' : 'w-12 h-12 flex items-center justify-center'} rounded-xl text-sm font-medium`}
         style={{
           background: active ? 'var(--sidebar-active-bg)' : undefined,
           color: active ? '#fff' : 'var(--sidebar-foreground)',
@@ -195,20 +127,12 @@ export default function Sidebar({ role }: { role: string }) {
         onMouseLeave={(e) => { e.currentTarget.style.background = active ? 'var(--sidebar-active-bg)' : 'transparent'; }}
         title={!showLabel ? item.label : undefined}
       >
-        <span className="shrink-0 relative">
-          {item.icon}
-          {item.isNotificationLink && unreadCount > 0 && (
-            <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-red-500 text-white text-[9px] rounded-full flex items-center justify-center font-medium">
-              {unreadCount > 9 ? '9+' : unreadCount}
-            </span>
-          )}
-        </span>
+        <span className="shrink-0">{item.icon}</span>
         {showLabel && <span className="truncate">{item.label}</span>}
       </Link>
     );
   };
 
-  // Bell link kept for non-admin roles (admin has Thông báo inside group 6)
   const bellLink = (isMobile: boolean) => {
     const active = pathname?.includes('/notifications');
     const showLabel = isMobile || expanded;
@@ -230,38 +154,9 @@ export default function Sidebar({ role }: { role: string }) {
             <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-red-500 text-white text-[9px] rounded-full flex items-center justify-center font-medium">{unreadCount > 9 ? '9+' : unreadCount}</span>
           )}
         </span>
-        {showLabel && <span className="truncate">Thông báo</span>}
+        {showLabel && <span className="truncate">Thong bao</span>}
       </Link>
     );
-  };
-
-  const groupTitle = (title: string) => (
-    <p
-      key={`g-${title}`}
-      className="px-3 pt-3 pb-1 text-[10px] font-semibold uppercase tracking-wider"
-      style={{ color: 'var(--sidebar-foreground)', opacity: 0.55 }}
-    >
-      {title}
-    </p>
-  );
-  const groupDivider = () => (
-    <div
-      className="my-2 mx-auto w-8 h-px"
-      style={{ background: 'var(--sidebar-border)' }}
-    />
-  );
-
-  const renderNav = (isMobile: boolean) => {
-    const showLabel = isMobile || expanded;
-    if (isAdmin) {
-      return adminGroups.flatMap((g, gIdx) => {
-        const header = showLabel
-          ? [groupTitle(g.title)]
-          : gIdx > 0 ? [<div key={`d-${gIdx}`}>{groupDivider()}</div>] : [];
-        return [...header, ...g.items.map(it => navLink(it, isMobile))];
-      });
-    }
-    return [...items.map(it => navLink(it, isMobile)), bellLink(isMobile)];
   };
 
   const themeBtn = (isMobile: boolean) => {
@@ -307,14 +202,15 @@ export default function Sidebar({ role }: { role: string }) {
           <button onClick={() => setMobileOpen(false)} className="text-gray-400 hover:text-white"><X size={20} /></button>
         </div>
         <nav className="flex-1 flex flex-col gap-1 px-3 py-2 overflow-y-auto">
-          {renderNav(true)}
+          {items.map(item => navLink(item, true))}
+          {bellLink(true)}
         </nav>
         <div className="px-3 py-3 flex flex-col gap-1" style={{ borderTop: '1px solid var(--sidebar-border)' }}>
           {themeBtn(true)}
           <button onClick={handleLogout} className="px-3 py-2.5 rounded-xl flex items-center gap-3 w-full text-red-400"
             onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(239,68,68,0.15)'; }}
             onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
-          ><LogOut size={18} /><span className="text-sm font-medium">Đăng xuất</span></button>
+          ><LogOut size={18} /><span className="text-sm font-medium">Dang xuat</span></button>
         </div>
       </aside>
 
@@ -332,7 +228,8 @@ export default function Sidebar({ role }: { role: string }) {
         </div>
 
         <nav className={`flex-1 flex flex-col ${expanded ? 'px-3' : 'items-center'} gap-1 py-2 overflow-y-auto`}>
-          {renderNav(false)}
+          {items.map(item => navLink(item, false))}
+          {bellLink(false)}
         </nav>
 
         <div className={`${expanded ? 'px-3' : ''} py-3 flex flex-col ${expanded ? '' : 'items-center'} gap-1`} style={{ borderTop: '1px solid var(--sidebar-border)' }}>
@@ -341,7 +238,7 @@ export default function Sidebar({ role }: { role: string }) {
             <button onClick={toggleExpand} className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ color: 'var(--sidebar-foreground)' }}
               onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--sidebar-hover-bg)'; }}
               onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
-              title="Mở rộng"
+              title="Mo rong"
             ><ChevronRight size={20} /></button>
           )}
           <div className={`flex ${expanded ? 'items-center gap-3 px-3 py-2' : 'flex-col items-center gap-1'}`}>
@@ -350,7 +247,7 @@ export default function Sidebar({ role }: { role: string }) {
             <button onClick={handleLogout} className={`${expanded ? '' : 'w-12 h-12'} rounded-xl flex items-center justify-center`} style={{ color: 'var(--sidebar-foreground)' }}
               onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(239,68,68,0.15)'; e.currentTarget.style.color = '#f87171'; }}
               onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--sidebar-foreground)'; }}
-              title="Đăng xuất"
+              title="Dang xuat"
             ><LogOut size={18} /></button>
           </div>
         </div>

@@ -2,7 +2,6 @@ const express = require('express');
 const { PrismaClient } = require('@prisma/client');
 const { authenticate, authorize } = require('../middleware/auth');
 const { COMMISSION_RATES, AGENCY_COMMISSION, invalidateCommissionCache } = require('../services/commission');
-const { auditLog } = require('../middleware/auditLog');
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -22,31 +21,31 @@ router.get('/commission', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.put('/commission/:tier', auditLog('CONFIG_CHANGE', 'CommissionConfig'), async (req, res) => {
+router.put('/commission/:tier', async (req, res) => {
   try {
-    const { selfSalePct, fixedSalary } = req.body;
+    const { selfSalePct, directPct, indirect2Pct, indirect3Pct, fixedSalary } = req.body;
     const config = await prisma.commissionConfig.update({
       where: { tier: req.params.tier },
-      data: { selfSalePct, fixedSalary },
+      data: { selfSalePct, directPct, indirect2Pct, indirect3Pct, fixedSalary },
     });
     invalidateCommissionCache();
     res.json(config);
   } catch (err) { res.status(400).json({ error: err.message }); }
 });
 
-router.post('/commission', auditLog('CONFIG_CHANGE', 'CommissionConfig'), async (req, res) => {
+router.post('/commission', async (req, res) => {
   try {
-    const { tier, selfSalePct, fixedSalary } = req.body;
+    const { tier, selfSalePct, directPct, indirect2Pct, indirect3Pct, fixedSalary } = req.body;
     if (!tier) return res.status(400).json({ error: 'Tier is required' });
     const config = await prisma.commissionConfig.create({
-      data: { tier, selfSalePct: selfSalePct || 0, fixedSalary: fixedSalary || 0 },
+      data: { tier, selfSalePct: selfSalePct || 0, directPct: directPct || 0, indirect2Pct: indirect2Pct || 0, indirect3Pct: indirect3Pct || 0, fixedSalary: fixedSalary || 0 },
     });
     invalidateCommissionCache();
     res.json(config);
   } catch (err) { res.status(400).json({ error: err.message }); }
 });
 
-router.delete('/commission/:tier', auditLog('CONFIG_CHANGE', 'CommissionConfig'), async (req, res) => {
+router.delete('/commission/:tier', async (req, res) => {
   try {
     if (['CTV', 'GDKD'].includes(req.params.tier)) {
       return res.status(400).json({ error: 'Khong the xoa cap bac CTV hoac GDKD' });
@@ -66,7 +65,7 @@ router.get('/kpi', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.put('/kpi/:rank', auditLog('CONFIG_CHANGE', 'Kpi'), async (req, res) => {
+router.put('/kpi/:rank', async (req, res) => {
   try {
     const { minSelfCombo, minPortfolio, fallbackRank } = req.body;
     const config = await prisma.kpiConfig.upsert({
@@ -87,7 +86,7 @@ router.get('/agency', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.put('/agency/:group', auditLog('CONFIG_CHANGE', 'AgencyCommissionConfig'), async (req, res) => {
+router.put('/agency/:group', async (req, res) => {
   try {
     const { commissionPct, bonusPct } = req.body;
     if ((commissionPct || 0) + (bonusPct || 0) > 0.30) {
@@ -110,7 +109,7 @@ router.get('/cogs', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.put('/cogs/:phase', auditLog('CONFIG_CHANGE', 'CogsConfig'), async (req, res) => {
+router.put('/cogs/:phase', async (req, res) => {
   try {
     const { name, cogsPct, description } = req.body;
     const config = await prisma.cogsConfig.upsert({
@@ -124,17 +123,17 @@ router.put('/cogs/:phase', auditLog('CONFIG_CHANGE', 'CogsConfig'), async (req, 
 
 // ========== RESET DEFAULT ==========
 
-router.post('/reset-default', auditLog('CONFIG_CHANGE', 'Config'), async (req, res) => {
+router.post('/reset-default', async (req, res) => {
   try {
-    // Reset CTV Commission (V12.1: F1/F2/F3 removed)
+    // Reset CTV Commission
     await prisma.commissionConfig.deleteMany();
     await prisma.commissionConfig.createMany({
       data: [
-        { tier: 'CTV',  selfSalePct: 0.20, fixedSalary: 0 },
-        { tier: 'PP',   selfSalePct: 0.20, fixedSalary: 5000000 },
-        { tier: 'TP',   selfSalePct: 0.30, fixedSalary: 10000000 },
-        { tier: 'GDV',  selfSalePct: 0.35, fixedSalary: 18000000 },
-        { tier: 'GDKD', selfSalePct: 0.38, fixedSalary: 30000000 },
+        { tier: 'CTV',  selfSalePct: 0.20, directPct: 0,    indirect2Pct: 0,    indirect3Pct: 0,    fixedSalary: 0 },
+        { tier: 'PP',   selfSalePct: 0.20, directPct: 0,    indirect2Pct: 0,    indirect3Pct: 0,    fixedSalary: 5000000 },
+        { tier: 'TP',   selfSalePct: 0.30, directPct: 0.10, indirect2Pct: 0,    indirect3Pct: 0,    fixedSalary: 10000000 },
+        { tier: 'GDV',  selfSalePct: 0.35, directPct: 0.10, indirect2Pct: 0.05, indirect3Pct: 0,    fixedSalary: 18000000 },
+        { tier: 'GDKD', selfSalePct: 0.38, directPct: 0.10, indirect2Pct: 0.05, indirect3Pct: 0.03, fixedSalary: 30000000 },
       ],
     });
 
