@@ -49,7 +49,7 @@ export default function CtvManagementFeesPage() {
   }, [month]);
 
   return (
-    <DashboardLayout role="ctv">
+    <>
       <h2 className="text-2xl font-bold mb-2 flex items-center gap-2">
         <Coins size={24} /> Phí quản lý trong nhóm (C12.4)
       </h2>
@@ -143,6 +143,6 @@ export default function CtvManagementFeesPage() {
       ) : (
         <p className="text-slate-500">Không có dữ liệu</p>
       )}
-    </DashboardLayout>
+    </>
   );
 }

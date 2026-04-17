@@ -34,10 +34,10 @@ export default function MemberReferral() {
     } catch (err: any) { setRedeemMsg(err.message); }
   };
 
-  if (loading) return <DashboardLayout role="member"><div className="h-48 bg-gray-200 animate-pulse rounded-xl" /></DashboardLayout>;
+  if (loading) return <><div className="h-48 bg-gray-200 animate-pulse rounded-xl" /></>;
 
   return (
-    <DashboardLayout role="member">
+    <>
       <h2 className="text-2xl font-bold mb-6 flex items-center gap-2"><Users size={24} /> Gioi thieu ban be</h2>
 
       {/* My referral code */}
@@ -109,6 +109,6 @@ export default function MemberReferral() {
           {redeemMsg && <p className="text-sm mt-2 text-blue-600">{redeemMsg}</p>}
         </CardContent>
       </Card>
-    </DashboardLayout>
+    </>
   );
 }

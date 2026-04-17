@@ -59,7 +59,7 @@ export default function AdminReports() {
   const totalTransactions = reports.reduce((s, r) => s + r.transactionCount, 0);
 
   return (
-    <DashboardLayout role="admin">
+    <>
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-bold flex items-center gap-2">
           <FileText size={24} /> Báo cáo Tài chính
@@ -226,6 +226,6 @@ export default function AdminReports() {
           </Card>
         </>
       )}
-    </DashboardLayout>
+    </>
   );
 }

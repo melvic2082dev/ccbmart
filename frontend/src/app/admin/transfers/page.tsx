@@ -71,7 +71,7 @@ export default function AdminTransfersPage() {
   const failedCount = transfers.filter((t) => t.status === 'FAILED').length;
 
   return (
-    <DashboardLayout role="admin">
+    <>
       <h2 className="text-2xl font-bold mb-3 flex items-center gap-2">
         <Banknote size={24} /> Nhật ký Auto Transfer
       </h2>
@@ -188,6 +188,6 @@ export default function AdminTransfersPage() {
           </CardContent>
         </Card>
       )}
-    </DashboardLayout>
+    </>
   );
 }

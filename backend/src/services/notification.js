@@ -2,30 +2,44 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 /**
- * Create a notification for a user
+ * Create a notification for a user.
+ * Returns null on failure so callers never crash — notifications are non-critical side effects.
  */
 async function createNotification(userId, type, title, content, metadata = {}) {
-  return prisma.notification.create({
-    data: { userId, type, title, content, metadata: JSON.stringify(metadata) },
-  });
+  try {
+    return await prisma.notification.create({
+      data: { userId, type, title, content, metadata: JSON.stringify(metadata) },
+    });
+  } catch (err) {
+    console.error('[Notification] createNotification failed:', err.message);
+    return null;
+  }
 }
 
 /**
- * Send notifications to all admins
+ * Send notifications to all admins.
+ * Swallows errors — notification failures must not break the calling request.
  */
 async function notifyAdmins(type, title, content, metadata = {}) {
-  const admins = await prisma.user.findMany({
-    where: { role: 'admin', isActive: true },
-    select: { id: true },
-  });
-
-  const notifications = admins.map(admin =>
-    prisma.notification.create({
-      data: { userId: admin.id, type, title, content, metadata: JSON.stringify(metadata) },
-    })
-  );
-
-  return Promise.all(notifications);
+  try {
+    const admins = await prisma.user.findMany({
+      where: { role: 'admin', isActive: true },
+      select: { id: true },
+    });
+    const results = await Promise.allSettled(
+      admins.map(admin =>
+        prisma.notification.create({
+          data: { userId: admin.id, type, title, content, metadata: JSON.stringify(metadata) },
+        })
+      )
+    );
+    const failed = results.filter(r => r.status === 'rejected').length;
+    if (failed > 0) console.error(`[Notification] notifyAdmins: ${failed}/${results.length} failed`);
+    return results;
+  } catch (err) {
+    console.error('[Notification] notifyAdmins failed:', err.message);
+    return [];
+  }
 }
 
 /**

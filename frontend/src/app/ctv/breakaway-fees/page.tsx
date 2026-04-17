@@ -53,7 +53,7 @@ export default function CtvBreakawayFeesPage() {
   }, [month]);
 
   return (
-    <DashboardLayout role="ctv">
+    <>
       <h2 className="text-2xl font-bold mb-2 flex items-center gap-2">
         <Network size={24} /> Phí sau thoát ly (C12.4 — Giai đoạn 1)
       </h2>
@@ -149,6 +149,6 @@ export default function CtvBreakawayFeesPage() {
       ) : (
         <p className="text-slate-500">Không có dữ liệu</p>
       )}
-    </DashboardLayout>
+    </>
   );
 }

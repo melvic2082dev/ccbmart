@@ -38,7 +38,7 @@ export default function CtvTransactions() {
   useEffect(() => { fetchData(1, tab); }, [tab]);
 
   return (
-    <DashboardLayout role="ctv">
+    <>
       <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
         <ShoppingCart size={24} /> Giao dịch ({total})
       </h2>
@@ -113,6 +113,6 @@ export default function CtvTransactions() {
           <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => fetchData(page + 1)}>Sau</Button>
         </div>
       )}
-    </DashboardLayout>
+    </>
   );
 }

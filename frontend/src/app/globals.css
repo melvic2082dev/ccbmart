@@ -178,6 +178,48 @@
 .dark .hover\:bg-gray-50:hover {
   background-color: #1e293b !important;
 }
+
+/* Pastel-50 backgrounds — common tints used in cards/highlights. In dark mode they
+   would show as near-white surfaces hiding the auto-lightened text. Replace with
+   low-opacity dark tints that preserve the accent hue. */
+.dark .bg-emerald-50, .dark .bg-emerald-50\/40, .dark .bg-emerald-50\/60 {
+  background-color: rgba(6, 95, 70, 0.2) !important;
+}
+.dark .bg-blue-50, .dark .bg-blue-50\/40, .dark .bg-blue-50\/60 {
+  background-color: rgba(30, 58, 138, 0.25) !important;
+}
+.dark .bg-green-50, .dark .bg-green-50\/40, .dark .bg-green-50\/60 {
+  background-color: rgba(6, 78, 59, 0.25) !important;
+}
+.dark .bg-yellow-50, .dark .bg-yellow-50\/40, .dark .bg-yellow-50\/60 {
+  background-color: rgba(113, 63, 18, 0.25) !important;
+}
+.dark .bg-red-50, .dark .bg-red-50\/40, .dark .bg-red-50\/60 {
+  background-color: rgba(127, 29, 29, 0.25) !important;
+}
+.dark .bg-amber-50, .dark .bg-amber-50\/40, .dark .bg-amber-50\/60 {
+  background-color: rgba(120, 53, 15, 0.25) !important;
+}
+.dark .bg-purple-50 { background-color: rgba(76, 29, 149, 0.25) !important; }
+.dark .bg-orange-50 { background-color: rgba(124, 45, 18, 0.25) !important; }
+.dark .bg-indigo-50 { background-color: rgba(49, 46, 129, 0.25) !important; }
+.dark .bg-pink-50   { background-color: rgba(131, 24, 67, 0.25) !important; }
+.dark .bg-teal-50   { background-color: rgba(19, 78, 74, 0.25) !important; }
+
+/* Badge-style 100-level backgrounds: keep hue but darken so light text remains legible */
+.dark .bg-emerald-100 { background-color: rgba(6, 95, 70, 0.35) !important; color: #86efac !important; }
+.dark .bg-blue-100    { background-color: rgba(30, 64, 175, 0.35) !important; color: #93c5fd !important; }
+.dark .bg-green-100   { background-color: rgba(6, 95, 70, 0.35) !important; color: #86efac !important; }
+.dark .bg-yellow-100  { background-color: rgba(113, 63, 18, 0.4) !important; color: #fde68a !important; }
+.dark .bg-red-100     { background-color: rgba(127, 29, 29, 0.4) !important; color: #fca5a5 !important; }
+.dark .bg-amber-100   { background-color: rgba(120, 53, 15, 0.4) !important; color: #fcd34d !important; }
+.dark .bg-purple-100  { background-color: rgba(76, 29, 149, 0.4) !important; color: #c4b5fd !important; }
+.dark .bg-orange-100  { background-color: rgba(124, 45, 18, 0.4) !important; color: #fdba74 !important; }
+
+/* Table striping: the /50 opacity variant on bg-gray-50 also needs a dark equivalent */
+.dark .bg-gray-50\/50, .dark .bg-slate-50\/50 {
+  background-color: rgba(15, 23, 42, 0.5) !important;
+}
 .dark .ring-blue-200 {
   --tw-ring-color: #1e3a5f !important;
 }

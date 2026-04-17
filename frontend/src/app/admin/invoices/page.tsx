@@ -121,7 +121,7 @@ export default function AdminInvoicesPage() {
   };
 
   return (
-    <DashboardLayout role="admin">
+    <>
       <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
         <FileText size={24} /> Hóa đơn điện tử
       </h2>
@@ -260,6 +260,6 @@ export default function AdminInvoicesPage() {
           </CardContent>
         </Card>
       )}
-    </DashboardLayout>
+    </>
   );
 }

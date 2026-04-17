@@ -41,7 +41,7 @@ export default function CtvCustomersPage() {
   }, [])
 
   return (
-    <DashboardLayout role="ctv">
+    <>
       <div className="p-6">
         <h1 className="text-2xl font-bold mb-6">Khách hàng của tôi</h1>
         <Card>
@@ -87,6 +87,6 @@ export default function CtvCustomersPage() {
           </CardContent>
         </Card>
       </div>
-    </DashboardLayout>
+    </>
   )
 }

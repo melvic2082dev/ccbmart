@@ -54,16 +54,16 @@ export default function AgencyInventoryPage() {
 
   if (loading) {
     return (
-      <DashboardLayout role="agency">
+      <>
         <div className="flex items-center justify-center h-64">
           <p className="text-muted-foreground">Đang tải...</p>
         </div>
-      </DashboardLayout>
+      </>
     )
   }
 
   return (
-    <DashboardLayout role="agency">
+    <>
       <div className="space-y-6">
         <h1 className="text-2xl font-bold">Quản lý tồn kho</h1>
 
@@ -150,6 +150,6 @@ export default function AgencyInventoryPage() {
           </CardContent>
         </Card>
       </div>
-    </DashboardLayout>
+    </>
   )
 }

@@ -40,7 +40,7 @@ export default function AdminImport() {
   };
 
   return (
-    <DashboardLayout role="admin">
+    <>
       <h2 className="text-2xl font-bold mb-6 flex items-center gap-2"><FileSpreadsheet size={24} /> Import dữ liệu</h2>
 
       {/* Tabs */}
@@ -105,6 +105,6 @@ export default function AdminImport() {
           {result?.error && <div className="bg-red-50 dark:bg-red-500/10 text-red-600 p-3 rounded-xl text-sm">{result.error}</div>}
         </CardContent>
       </Card>
-    </DashboardLayout>
+    </>
   );
 }

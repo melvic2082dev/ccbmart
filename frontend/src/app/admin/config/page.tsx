@@ -72,7 +72,7 @@ export default function AdminConfig() {
   }, []);
 
   return (
-    <DashboardLayout role="admin">
+    <>
       <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
         <Settings size={24} /> Cấu hình hệ thống
       </h2>
@@ -393,6 +393,6 @@ export default function AdminConfig() {
           </Card>
         </>
       )}
-    </DashboardLayout>
+    </>
   );
 }

@@ -127,7 +127,7 @@ export default function AdminAgencies() {
   };
 
   return (
-    <DashboardLayout role="admin">
+    <>
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-bold">Quản lý Đại lý</h2>
         <Badge className="bg-emerald-500 text-white text-sm px-3 py-1">CCB Mart Admin</Badge>
@@ -338,7 +338,7 @@ export default function AdminAgencies() {
           {toast}
         </div>
       )}
-    </DashboardLayout>
+    </>
   );
 }
 

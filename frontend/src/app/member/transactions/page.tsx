@@ -24,7 +24,7 @@ export default function MemberTransactions() {
   };
 
   return (
-    <DashboardLayout role="member">
+    <>
       <h2 className="text-2xl font-bold mb-6 flex items-center gap-2"><ShoppingCart size={24} /> Lịch sử giao dịch</h2>
       {loading ? <div className="h-48 bg-gray-200 animate-pulse rounded-xl" /> : (
         <>
@@ -93,6 +93,6 @@ export default function MemberTransactions() {
           )}
         </>
       )}
-    </DashboardLayout>
+    </>
   );
 }

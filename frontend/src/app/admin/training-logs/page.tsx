@@ -86,7 +86,7 @@ export default function TrainingLogsPage() {
   };
 
   return (
-    <DashboardLayout role="admin">
+    <>
       <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
         <ClipboardCheck size={24} /> Nhật ký đào tạo
       </h2>
@@ -244,6 +244,6 @@ export default function TrainingLogsPage() {
           </CardContent>
         </Card>
       )}
-    </DashboardLayout>
+    </>
   );
 }

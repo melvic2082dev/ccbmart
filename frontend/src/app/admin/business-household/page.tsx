@@ -64,7 +64,7 @@ export default function BusinessHouseholdPage() {
   };
 
   return (
-    <DashboardLayout role="admin">
+    <>
       <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
         <Building2 size={24} /> Hộ kinh doanh (HKD)
       </h2>
@@ -194,6 +194,6 @@ export default function BusinessHouseholdPage() {
         hkdId={detailId}
         onChanged={fetchData}
       />
-    </DashboardLayout>
+    </>
   );
 }

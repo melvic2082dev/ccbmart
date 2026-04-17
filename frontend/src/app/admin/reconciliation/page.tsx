@@ -70,7 +70,7 @@ export default function AdminReconciliation() {
   };
 
   return (
-    <DashboardLayout role="admin">
+    <>
       <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
         <ClipboardCheck size={24} /> Đối soát giao dịch
       </h2>
@@ -249,6 +249,6 @@ export default function AdminReconciliation() {
           </div>
         </div>
       )}
-    </DashboardLayout>
+    </>
   );
 }

@@ -29,7 +29,7 @@ export default function MemberTopup() {
 
   if (result) {
     return (
-      <DashboardLayout role="member">
+      <>
         <Card className="max-w-md mx-auto">
           <CardContent className="py-12 text-center">
             <CheckCircle size={48} className="mx-auto text-green-500 mb-4" />
@@ -48,12 +48,12 @@ export default function MemberTopup() {
             <Button onClick={() => { setResult(null); setAmount(0); }} variant="outline" className="mt-4">Nạp thêm</Button>
           </CardContent>
         </Card>
-      </DashboardLayout>
+      </>
     );
   }
 
   return (
-    <DashboardLayout role="member">
+    <>
       <h2 className="text-2xl font-bold mb-6 flex items-center gap-2"><Banknote size={24} /> Nạp tiền vào ví</h2>
       {error && <div className="bg-red-50 text-red-600 p-3 rounded-lg mb-4 text-sm">{error}</div>}
       <Card className="max-w-md mx-auto">
@@ -81,6 +81,6 @@ export default function MemberTopup() {
           </Button>
         </CardContent>
       </Card>
-    </DashboardLayout>
+    </>
   );
 }

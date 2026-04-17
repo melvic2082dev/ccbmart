@@ -49,7 +49,7 @@ export default function CtvInvoicesPage() {
   const totalPaid = paid.reduce((s, i) => s + i.amount, 0);
 
   return (
-    <DashboardLayout role="ctv">
+    <>
       <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
         <FileText size={24} /> Hóa đơn của tôi (V12.2)
       </h2>
@@ -130,6 +130,6 @@ export default function CtvInvoicesPage() {
           </CardContent>
         </Card>
       )}
-    </DashboardLayout>
+    </>
   );
 }

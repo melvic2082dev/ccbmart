@@ -68,7 +68,7 @@ export default function AdminKycPage() {
   };
 
   return (
-    <DashboardLayout role="admin">
+    <>
       <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
         <ShieldCheck size={24} /> eKYC — Xác minh danh tính
       </h2>
@@ -197,7 +197,7 @@ export default function AdminKycPage() {
           </div>
         </div>
       )}
-    </DashboardLayout>
+    </>
   );
 }
 

@@ -96,7 +96,7 @@ export default function AdminTaxPage() {
   };
 
   return (
-    <DashboardLayout role="admin">
+    <>
       <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
         <Calculator size={24} /> Thuế TNCN 10%
       </h2>
@@ -265,6 +265,6 @@ export default function AdminTaxPage() {
           </div>
         </div>
       )}
-    </DashboardLayout>
+    </>
   );
 }

@@ -68,7 +68,7 @@ export default function CtvProductsPage() {
   ]
 
   return (
-    <DashboardLayout role="ctv">
+    <>
       <div className="p-6">
         <h1 className="text-2xl font-bold mb-6">Danh sách sản phẩm</h1>
 
@@ -121,6 +121,6 @@ export default function CtvProductsPage() {
           </div>
         )}
       </div>
-    </DashboardLayout>
+    </>
   )
 }

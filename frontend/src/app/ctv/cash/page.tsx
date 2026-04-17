@@ -63,7 +63,7 @@ export default function CtvCashDeposit() {
   };
 
   return (
-    <DashboardLayout role="ctv">
+    <>
       <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
         <Banknote size={24} /> Nộp tiền mặt
       </h2>
@@ -154,6 +154,6 @@ export default function CtvCashDeposit() {
           )}
         </>
       )}
-    </DashboardLayout>
+    </>
   );
 }

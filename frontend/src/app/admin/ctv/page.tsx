@@ -312,7 +312,7 @@ export default function AdminCtvPage() {
   };
 
   return (
-    <DashboardLayout role="admin">
+    <>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold text-gray-900">Quản lý CTV</h1>
@@ -607,7 +607,7 @@ export default function AdminCtvPage() {
           clearSelection();
         }}
       />
-    </DashboardLayout>
+    </>
   );
 }
 

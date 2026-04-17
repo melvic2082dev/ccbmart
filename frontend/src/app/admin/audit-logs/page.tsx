@@ -113,7 +113,7 @@ export default function AuditLogsPage() {
   }, [page, totalPages]);
 
   return (
-    <DashboardLayout role="admin">
+    <>
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-bold flex items-center gap-2">
           <ScrollText size={24} /> Nhật ký hệ thống
@@ -283,6 +283,6 @@ export default function AuditLogsPage() {
           </Button>
         </div>
       )}
-    </DashboardLayout>
+    </>
   );
 }

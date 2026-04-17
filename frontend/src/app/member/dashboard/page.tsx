@@ -34,10 +34,10 @@ export default function MemberDashboard() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  if (loading) return <DashboardLayout role="member"><div className="space-y-4">{[1,2,3].map(i => <div key={i} className="h-32 bg-gray-200 animate-pulse rounded-xl" />)}</div></DashboardLayout>;
+  if (loading) return <><div className="space-y-4">{[1,2,3].map(i => <div key={i} className="h-32 bg-gray-200 animate-pulse rounded-xl" />)}</div></>;
 
   return (
-    <DashboardLayout role="member">
+    <>
       <h2 className="text-2xl font-bold mb-6 flex items-center gap-2"><Wallet size={24} /> Vi thanh vien</h2>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <Card className="gradient-border floating-card">
@@ -94,6 +94,6 @@ export default function MemberDashboard() {
           </CardContent>
         </Card>
       )}
-    </DashboardLayout>
+    </>
   );
 }

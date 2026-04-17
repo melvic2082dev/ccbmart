@@ -100,7 +100,7 @@ export default function AdminManagementFeesPage() {
   };
 
   return (
-    <DashboardLayout role="admin">
+    <>
       <h2 className="text-2xl font-bold mb-3 flex items-center gap-2">
         <Coins size={24} /> Phí quản lý theo cấp dẫn dắt
       </h2>
@@ -232,6 +232,6 @@ export default function AdminManagementFeesPage() {
           </div>
         </div>
       )}
-    </DashboardLayout>
+    </>
   );
 }

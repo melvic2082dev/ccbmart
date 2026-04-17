@@ -143,6 +143,7 @@ function periodLabel(p: Period) {
 export default function AdminDashboardPage() {
   const [data, setData] = useState<AdminDashboardData | null>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [period, setPeriod] = useState<Period>('month')
   const [updatedAt, setUpdatedAt] = useState<Date | null>(null)
 
@@ -152,8 +153,10 @@ export default function AdminDashboardPage() {
         const result = await api.adminDashboard()
         setData(result)
         setUpdatedAt(new Date())
-      } catch (err) {
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : 'Không tải được dữ liệu dashboard'
         console.error('Failed to fetch admin dashboard:', err)
+        setError(msg)
       } finally {
         setLoading(false)
       }
@@ -194,7 +197,7 @@ export default function AdminDashboardPage() {
   }
 
   return (
-    <DashboardLayout role="admin">
+    <>
       <div className="space-y-6">
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
@@ -208,6 +211,18 @@ export default function AdminDashboardPage() {
           </div>
           <Badge className="bg-emerald-500 text-white text-sm px-3 py-1">CCB Mart Admin</Badge>
         </div>
+
+        {error && (
+          <div className="p-4 rounded-xl border border-red-300 bg-red-50 text-red-700 text-sm">
+            <p className="font-semibold mb-1">Lỗi tải dữ liệu dashboard</p>
+            <p>{error}</p>
+            <p className="mt-1 text-xs text-red-600">
+              Có thể backend (port 4000) chưa chạy, hoặc Prisma client chưa đồng bộ. Chạy
+              <code className="mx-1 px-1 bg-red-100 rounded">cd backend && npx prisma generate && npx prisma db push</code>
+              rồi khởi động lại backend.
+            </p>
+          </div>
+        )}
 
         {/* Stat cards */}
         {loading ? (
@@ -608,6 +623,6 @@ export default function AdminDashboardPage() {
           </>
         )}
       </div>
-    </DashboardLayout>
+    </>
   )
 }

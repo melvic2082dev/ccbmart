@@ -111,7 +111,7 @@ export default function AdminBreakawayLogsPage() {
   };
 
   return (
-    <DashboardLayout role="admin">
+    <>
       <h2 className="text-2xl font-bold mb-2 flex items-center gap-2">
         <Network size={24} /> Team vượt cấp — Quản lý vượt cấp (C12.4)
       </h2>
@@ -314,6 +314,6 @@ export default function AdminBreakawayLogsPage() {
           </div>
         </div>
       )}
-    </DashboardLayout>
+    </>
   );
 }

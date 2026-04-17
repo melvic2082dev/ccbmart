@@ -122,13 +122,17 @@ router.get('/dashboard', async (req, res) => {
       };
     });
 
-    // Check salary warning
+    // Check salary warning — best-effort, never fail the request on notify error
     if (dashboard.salaryFund && dashboard.salaryFund.warning !== 'OK') {
-      await sendSalaryWarning(
-        dashboard.salaryFund.usagePercent,
-        dashboard.salaryFund.totalFixedSalary,
-        dashboard.salaryFund.salaryFundCap
-      );
+      try {
+        await sendSalaryWarning(
+          dashboard.salaryFund.usagePercent,
+          dashboard.salaryFund.totalFixedSalary,
+          dashboard.salaryFund.salaryFundCap
+        );
+      } catch (notifyErr) {
+        console.error('[admin/dashboard] sendSalaryWarning failed:', notifyErr.message);
+      }
     }
 
     res.json(dashboard);

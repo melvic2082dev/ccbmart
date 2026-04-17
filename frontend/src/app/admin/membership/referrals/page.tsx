@@ -13,7 +13,7 @@ export default function AdminReferralReport() {
   useEffect(() => { api.adminReferralReport().then(setData).catch(() => {}).finally(() => setLoading(false)); }, []);
 
   return (
-    <DashboardLayout role="admin">
+    <>
       <h2 className="text-2xl font-bold mb-6 flex items-center gap-2"><Users size={24} /> Báo cáo Referral</h2>
       <div className="grid grid-cols-2 gap-4 mb-6">
         <Card className="floating-card"><CardContent className="pt-6 text-center">
@@ -53,6 +53,6 @@ export default function AdminReferralReport() {
           </CardContent>
         </Card>
       )}
-    </DashboardLayout>
+    </>
   );
 }

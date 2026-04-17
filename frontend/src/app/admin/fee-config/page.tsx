@@ -31,7 +31,7 @@ export default function FeeConfigPage() {
   }, []);
 
   return (
-    <DashboardLayout role="admin">
+    <>
       <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
         <GraduationCap size={24} /> Phí DV Đào tạo
       </h2>
@@ -112,6 +112,6 @@ export default function FeeConfigPage() {
           </Card>
         </>
       )}
-    </DashboardLayout>
+    </>
   );
 }

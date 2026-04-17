@@ -27,7 +27,7 @@ export default function AgencyTransactionsPage() {
   const totalPages = data?.totalPages ?? 1
 
   return (
-    <DashboardLayout role="agency">
+    <>
       <div className="space-y-6">
         <h1 className="text-2xl font-bold">Lịch sử giao dịch</h1>
 
@@ -119,6 +119,6 @@ export default function AgencyTransactionsPage() {
           </CardContent>
         </Card>
       </div>
-    </DashboardLayout>
+    </>
   )
 }

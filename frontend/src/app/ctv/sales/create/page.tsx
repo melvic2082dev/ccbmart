@@ -71,7 +71,7 @@ export default function CtvCreateSale() {
   };
 
   return (
-    <DashboardLayout role="ctv">
+    <>
       <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
         <ShoppingCart size={24} /> Tạo đơn bán hàng
       </h2>
@@ -252,6 +252,6 @@ export default function CtvCreateSale() {
           </CardContent>
         </Card>
       )}
-    </DashboardLayout>
+    </>
   );
 }

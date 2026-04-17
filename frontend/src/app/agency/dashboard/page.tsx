@@ -29,11 +29,11 @@ export default function AgencyDashboardPage() {
 
   if (loading) {
     return (
-      <DashboardLayout role="agency">
+      <>
         <div className="flex items-center justify-center h-64">
           <p className="text-muted-foreground">Đang tải...</p>
         </div>
-      </DashboardLayout>
+      </>
     )
   }
 
@@ -52,7 +52,7 @@ export default function AgencyDashboardPage() {
   }
 
   return (
-    <DashboardLayout role="agency">
+    <>
       <div className="space-y-6">
         {/* Agency Info */}
         <div>
@@ -199,6 +199,6 @@ export default function AgencyDashboardPage() {
           </CardContent>
         </Card>
       </div>
-    </DashboardLayout>
+    </>
   )
 }

@@ -73,7 +73,7 @@ export default function CtvKycPage() {
   const canResubmit = !status || status.kycStatus === 'PENDING' || status.kycStatus === 'REJECTED';
 
   return (
-    <DashboardLayout role="ctv">
+    <>
       <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
         <ShieldCheck size={24} /> Xác minh danh tính (eKYC)
       </h2>
@@ -169,6 +169,6 @@ export default function CtvKycPage() {
           )}
         </>
       )}
-    </DashboardLayout>
+    </>
   );
 }
