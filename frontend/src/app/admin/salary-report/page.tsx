@@ -59,17 +59,14 @@ function managerStatus(pct: number) {
 export default function SalaryReportPage() {
   const [data, setData] = useState<AdminDashboardData | null>(null)
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     async function fetchData() {
       try {
         const result = await api.adminDashboard()
         setData(result)
-      } catch (err: unknown) {
-        const msg = err instanceof Error ? err.message : 'Không tải được báo cáo lương'
+      } catch (err) {
         console.error('Failed to fetch admin dashboard:', err)
-        setError(msg)
       } finally {
         setLoading(false)
       }
@@ -91,7 +88,7 @@ export default function SalaryReportPage() {
   const overallPct = sf?.usagePercent ?? 0
 
   return (
-    <>
+    <DashboardLayout role="admin">
       <div className="space-y-6">
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
@@ -109,13 +106,6 @@ export default function SalaryReportPage() {
           </div>
         </div>
 
-        {error && (
-          <div className="mb-4 p-4 rounded-xl border border-red-300 bg-red-50 text-red-700 text-sm">
-            <p className="font-semibold mb-1">Không tải được dữ liệu lương</p>
-            <p>{error}</p>
-            <p className="mt-1 text-xs text-red-600">Kiểm tra backend đã chạy và đã có dữ liệu CTV cấp quản lý (PP/TP/GDV/GDKD).</p>
-          </div>
-        )}
         {loading ? (
           <Card className="animate-pulse">
             <CardContent className="p-6">
@@ -188,7 +178,7 @@ export default function SalaryReportPage() {
                             <tr
                               key={idx}
                               className={`border-b border-gray-50 hover:bg-emerald-50 transition-colors ${
-                                idx % 2 === 0 ? 'bg-white dark:bg-slate-800' : 'bg-gray-50/50'
+                                idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'
                               }`}
                             >
                               <td className="py-2.5 px-3 text-gray-500">{idx + 1}</td>
@@ -238,6 +228,6 @@ export default function SalaryReportPage() {
           </Card>
         )}
       </div>
-    </>
+    </DashboardLayout>
   )
 }
