@@ -30,7 +30,7 @@ export default function AdminTiers() {
   return (
     <>
       <h2 className="text-2xl font-bold mb-2 flex items-center gap-2"><Award size={24} /> Hạng thẻ thành viên</h2>
-      <p className="text-sm text-slate-500 mb-6">V13.3 · 4 hạng: Green / Basic / Standard / VIP Gold · Cap referral 2.000.000đ/tháng</p>
+      <p className="text-sm text-slate-500 mb-6">4 hạng: Green / Basic / Standard / VIP Gold · Cap referral 2.000.000đ/tháng</p>
       {loading ? <div className="h-48 bg-gray-200 animate-pulse rounded-xl" /> : (
         <Card>
           <CardContent className="overflow-x-auto p-0">

@@ -1,6 +1,5 @@
 'use client';
 import { useEffect, useState } from 'react';
-import DashboardLayout from '@/components/DashboardLayout';
 import { api, formatVND } from '@/lib/api';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -44,14 +43,14 @@ export default function AdminMemberWallets() {
           <CardContent className="overflow-x-auto p-0">
             <Table>
               <TableHeader><TableRow>
-                <TableHead>Ten</TableHead>
+                <TableHead>Tên</TableHead>
                 <TableHead>Email</TableHead>
-                <TableHead>SDT</TableHead>
-                <TableHead>Hang</TableHead>
-                <TableHead className="text-right">So du</TableHead>
-                <TableHead className="text-right">Tong nap</TableHead>
-                <TableHead className="text-right">Referrals</TableHead>
-                <TableHead>Trang thai</TableHead>
+                <TableHead>SĐT</TableHead>
+                <TableHead>Hạng</TableHead>
+                <TableHead className="text-right">Số dư</TableHead>
+                <TableHead className="text-right">Tổng nạp</TableHead>
+                <TableHead className="text-right">Giới thiệu</TableHead>
+                <TableHead>Trạng thái</TableHead>
               </TableRow></TableHeader>
               <TableBody>
                 {(data?.wallets || []).map((w: any) => (
@@ -60,8 +59,8 @@ export default function AdminMemberWallets() {
                     <TableCell className="text-xs">{w.user?.email}</TableCell>
                     <TableCell className="text-xs">{w.user?.phone}</TableCell>
                     <TableCell><Badge className={tierColor[w.tier?.color] || 'bg-gray-100'} variant="outline">{w.tier?.name}</Badge></TableCell>
-                    <TableCell className="text-right font-semibold">{formatVND(w.balance)}</TableCell>
-                    <TableCell className="text-right">{formatVND(w.totalDeposit)}</TableCell>
+                    <TableCell className="text-right font-semibold">{formatVND(w.balance ?? 0)}</TableCell>
+                    <TableCell className="text-right">{formatVND(w.totalDeposit ?? 0)}</TableCell>
                     <TableCell className="text-right">{w._count?.referrals || 0}</TableCell>
                     <TableCell><Badge className={w.user?.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'} variant="outline">{w.user?.isActive ? 'Active' : 'Locked'}</Badge></TableCell>
                   </TableRow>
@@ -73,7 +72,7 @@ export default function AdminMemberWallets() {
       ) : null}
       {(data?.totalPages || 1) > 1 && (
         <div className="flex justify-center gap-2 mt-4">
-          <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage(p => p - 1)}>Truoc</Button>
+          <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage(p => p - 1)}>Trước</Button>
           <span className="flex items-center text-sm text-gray-500">Trang {page}/{data?.totalPages}</span>
           <Button variant="outline" size="sm" disabled={page >= (data?.totalPages || 1)} onClick={() => setPage(p => p + 1)}>Sau</Button>
         </div>

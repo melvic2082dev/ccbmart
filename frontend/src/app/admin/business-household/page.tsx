@@ -76,7 +76,7 @@ export default function BusinessHouseholdPage() {
           <CardHeader>
             <CardTitle>Danh sách HKD ({households.length})</CardTitle>
             <p className="text-sm text-slate-500">
-              CTV đạt cấp PP trở lên đăng ký HKD để ký HĐ Đại lý bán lẻ + HĐ Dịch vụ đào tạo (V13.1 Mục 5.3)
+              CTV đạt cấp PP trở lên đăng ký HKD để ký HĐ Đại lý bán lẻ + HĐ Dịch vụ đào tạo
             </p>
           </CardHeader>
           <CardContent className="p-0">

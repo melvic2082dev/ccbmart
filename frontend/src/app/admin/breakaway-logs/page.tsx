@@ -113,7 +113,7 @@ export default function AdminBreakawayLogsPage() {
   return (
     <>
       <h2 className="text-2xl font-bold mb-2 flex items-center gap-2">
-        <Network size={24} /> Team vượt cấp — Quản lý vượt cấp (C12.4)
+        <Network size={24} /> Team vượt cấp — Quản lý vượt cấp
       </h2>
       <p className="text-sm text-slate-500 mb-6">
         Khi người được dẫn dắt vượt cấp: parent trực tiếp chuyển lên grand-parent. Phí quản lý sau vượt cấp (12 tháng):

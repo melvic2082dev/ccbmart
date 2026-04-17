@@ -802,7 +802,7 @@ export function CtvDetailsModal({
               </div>
             </TabsContent>
 
-            {/* Tab 6: Hoạt động thành viên (V13.1 — multi-role capability) */}
+            {/* Tab 6: Hoạt động thành viên */}
             <TabsContent value="member" className="pt-4 space-y-4">
               {!data.memberActivity?.isMember ? (
                 <div className="rounded-md border border-gray-200 bg-gray-50 p-4 text-sm text-gray-600">

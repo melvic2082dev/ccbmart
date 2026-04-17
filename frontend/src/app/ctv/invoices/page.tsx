@@ -51,7 +51,7 @@ export default function CtvInvoicesPage() {
   return (
     <>
       <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
-        <FileText size={24} /> Hóa đơn của tôi (V12.2)
+        <FileText size={24} /> Hóa đơn của tôi
       </h2>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">

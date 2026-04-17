@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import DashboardLayout from '@/components/DashboardLayout';
 import { api } from '@/lib/api';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -39,7 +38,8 @@ const typeLabels: Record<string, string> = {
   CASH_DEPOSIT: 'Nộp tiền mặt',
 };
 
-export default function NotificationsPage({ role }: { role: string }) {
+export default function NotificationsPage({ role: _role }: { role: string }) {
+  void _role;
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -75,7 +75,7 @@ export default function NotificationsPage({ role }: { role: string }) {
   };
 
   return (
-    <DashboardLayout role={role}>
+    <>
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-bold flex items-center gap-2">
           <Bell size={24} /> Thông báo
@@ -145,6 +145,6 @@ export default function NotificationsPage({ role }: { role: string }) {
           )}
         </div>
       )}
-    </DashboardLayout>
+    </>
   );
 }

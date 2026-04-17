@@ -51,7 +51,7 @@ export default function CtvManagementFeesPage() {
   return (
     <>
       <h2 className="text-2xl font-bold mb-2 flex items-center gap-2">
-        <Coins size={24} /> Phí quản lý trong nhóm (C12.4)
+        <Coins size={24} /> Phí quản lý trong nhóm
       </h2>
       <p className="text-sm text-slate-500 mb-6">
         Phí quản lý F1/F2/F3 trên combo bán lẻ trực tiếp của cấp dưới.

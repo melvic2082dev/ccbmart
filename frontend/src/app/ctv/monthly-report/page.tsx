@@ -46,7 +46,7 @@ export default function CtvMonthlyReportPage() {
   return (
     <>
       <h2 className="text-2xl font-bold mb-2 flex items-center gap-2">
-        <FileBarChart size={24} /> Báo cáo tháng (C12.4)
+        <FileBarChart size={24} /> Báo cáo tháng
       </h2>
       <p className="text-sm text-slate-500 mb-6">
         Tất cả các khoản thu nhập do CCB Mart chi trả từ doanh thu bán hàng.

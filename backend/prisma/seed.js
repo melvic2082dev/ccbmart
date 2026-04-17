@@ -25,6 +25,13 @@ async function main() {
   // Clean existing data (order matters for foreign keys)
   // C13.3.1
   if (prisma.auditLog) await prisma.auditLog.deleteMany();
+  if (prisma.notification) await prisma.notification.deleteMany();
+  // Member-related tables (reference User) — delete BEFORE user.deleteMany below
+  if (prisma.referralCommission) await prisma.referralCommission.deleteMany();
+  if (prisma.depositHistory) await prisma.depositHistory.deleteMany();
+  if (prisma.referralLog) await prisma.referralLog.deleteMany();
+  if (prisma.memberWallet) await prisma.memberWallet.deleteMany();
+  if (prisma.membershipTier) await prisma.membershipTier.deleteMany();
   // C12.4 new tables first
   if (prisma.breakawayFee) await prisma.breakawayFee.deleteMany();
   if (prisma.breakawayLog) await prisma.breakawayLog.deleteMany();
@@ -37,8 +44,10 @@ async function main() {
   await prisma.b2BContract.deleteMany();
   await prisma.businessHousehold.deleteMany();
   await prisma.feeConfig.deleteMany();
+  if (prisma.paymentProof) await prisma.paymentProof.deleteMany();
   await prisma.transactionItem.deleteMany();
   await prisma.transaction.deleteMany();
+  if (prisma.cashDeposit) await prisma.cashDeposit.deleteMany();
   await prisma.customer.deleteMany();
   await prisma.inventoryWarning.deleteMany();
   await prisma.kpiLog.deleteMany();

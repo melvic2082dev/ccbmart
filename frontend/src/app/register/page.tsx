@@ -28,7 +28,6 @@ export default function RegisterPage() {
     setLoading(false);
   };
 
-  // V13.3: 4 hạng Green / Basic / Standard / VIP Gold
   const tiers = [
     { name: 'Green', min: 0, discount: '0%' },
     { name: 'Basic', min: 2_000_000, discount: '2%' },

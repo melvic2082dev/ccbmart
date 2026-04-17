@@ -83,13 +83,13 @@ export default function AdminConfig() {
         </div>
       ) : (
         <>
-          {/* CTV Commission Config (V12.1: No F1/F2/F3) */}
+          {/* CTV Commission Config */}
           <Card className="mb-6">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Users size={20} /> Hoa hồng CTV theo cấp bậc
               </CardTitle>
-              <p className="text-sm text-slate-500">Hoa hồng cá nhân + Thù lao DV duy trì (theo V13.2.1)</p>
+              <p className="text-sm text-slate-500">Hoa hồng cá nhân + Thù lao DV duy trì</p>
             </CardHeader>
             <CardContent>
               <Table>
@@ -117,7 +117,7 @@ export default function AdminConfig() {
             </CardContent>
           </Card>
 
-          {/* Fee Config (V12.1: Phí DV đào tạo) */}
+          {/* Fee Config: Phí DV đào tạo */}
           <Card className="mb-6">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -244,7 +244,7 @@ export default function AdminConfig() {
                   <TableRow>
                     <TableCell className="font-medium">Referral (giới thiệu thành viên)</TableCell>
                     <TableCell><Badge variant="outline">Cap 2.000.000đ/tháng · Sunset 12 tháng</Badge></TableCell>
-                    <TableCell className="text-sm text-gray-600">V13.3 · Thưởng giới thiệu tối đa 2.000.000đ/người giới thiệu/tháng · hết hiệu lực sau 12 tháng kể từ ngày giới thiệu thành công</TableCell>
+                    <TableCell className="text-sm text-gray-600">Thưởng giới thiệu tối đa 2.000.000đ/người giới thiệu/tháng · hết hiệu lực sau 12 tháng kể từ ngày giới thiệu thành công</TableCell>
                   </TableRow>
                 </TableBody>
               </Table>

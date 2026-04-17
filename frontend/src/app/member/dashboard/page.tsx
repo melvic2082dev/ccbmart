@@ -6,7 +6,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Wallet, Award, Users, Copy } from 'lucide-react';
 
-// V13.3: 4 hạng Green/Basic/Standard/VIP_GOLD (DB code) — label + màu riêng
 const tierColors: Record<string, string> = {
   GREEN: 'bg-green-100 text-green-700', Green: 'bg-green-100 text-green-700',
   BASIC: 'bg-slate-100 text-slate-700', Basic: 'bg-slate-100 text-slate-700',

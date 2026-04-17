@@ -55,7 +55,7 @@ export default function CtvBreakawayFeesPage() {
   return (
     <>
       <h2 className="text-2xl font-bold mb-2 flex items-center gap-2">
-        <Network size={24} /> Phí sau thoát ly (C12.4 — Giai đoạn 1)
+        <Network size={24} /> Phí sau thoát ly
       </h2>
       <p className="text-sm text-slate-500 mb-6">
         Trong 12 tháng sau khi mentee thoát ly: F1 cũ nhận 3%, F2 cũ nhận 2%, GĐKD nhận 1% (nếu không phải F1/F2 cũ).

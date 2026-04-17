@@ -44,7 +44,7 @@ export default function FeeConfigPage() {
             <CardHeader>
               <CardTitle>Bảng mốc phí DV đào tạo cố định (M0–M5)</CardTitle>
               <p className="text-sm text-slate-500">
-                V13.3 · Phí DV đào tạo cố định theo mốc combo nhánh (CCB Mart chi trả).
+                Phí DV đào tạo cố định theo mốc combo nhánh (CCB Mart chi trả).
                 Phí quản lý trong nhóm (F1 10% / F2 5% / F3 3%) được tính riêng từ quỹ hiện có.
               </p>
             </CardHeader>

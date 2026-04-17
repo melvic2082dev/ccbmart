@@ -220,7 +220,7 @@ export default function AdminManagementFeesPage() {
               Mentor/Tháng: <b>{openTrainingLogsFor}</b>
             </p>
             <div className="rounded-md border border-gray-100 bg-gray-50 p-3 text-sm text-gray-700 space-y-1">
-              <p>Phí quản lý chỉ được chi trả nếu mentor có đủ <b>20 giờ log đào tạo</b> trong tháng (V13.1 Mục 7.4).</p>
+              <p>Phí quản lý chỉ được chi trả nếu mentor có đủ <b>20 giờ log đào tạo</b> trong tháng.</p>
               <p className="text-xs text-gray-500">Chi tiết log đầy đủ có ở màn hình <a className="underline text-blue-600" href="/admin/training-logs">Log đào tạo</a>.</p>
             </div>
             <button
