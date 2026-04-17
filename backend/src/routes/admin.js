@@ -10,6 +10,7 @@ const { sendRankChangeNotification, sendSalaryWarning } = require('../services/n
 const { runRankEvaluation } = require('../jobs/autoRankUpdate');
 const { calculateMonthlyManagementFees } = require('../services/managementFee');
 const { processMonthlyBreakawayFees } = require('../services/breakaway');
+const { auditLog } = require('../middleware/auditLog');
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -238,7 +239,7 @@ router.get('/ctv-tree', async (req, res) => {
 });
 
 // Reassign CTV (with circular reference validation + audit trail)
-router.post('/ctv/:id/reassign', validate(schemas.reassignCtv), async (req, res) => {
+router.post('/ctv/:id/reassign', auditLog('REASSIGN', 'User'), validate(schemas.reassignCtv), async (req, res) => {
   try {
     const { newParentId, reason } = req.body;
     const ctvId = parseInt(req.params.id);
@@ -287,7 +288,7 @@ router.post('/ctv/:id/reassign', validate(schemas.reassignCtv), async (req, res)
 });
 
 // Change rank (with notification)
-router.post('/ctv/:id/rank', validate(schemas.changeRank), async (req, res) => {
+router.post('/ctv/:id/rank', auditLog('RANK_CHANGE', 'User'), validate(schemas.changeRank), async (req, res) => {
   try {
     const { newRank, reason } = req.body;
     const ctvId = parseInt(req.params.id);
@@ -323,7 +324,7 @@ router.post('/ctv/:id/rank', validate(schemas.changeRank), async (req, res) => {
 });
 
 // Create CTV manually (admin-only onboarding for offline signups)
-router.post('/ctv', validate(schemas.createCtv), async (req, res) => {
+router.post('/ctv', auditLog('CTV_CREATE', 'User'), validate(schemas.createCtv), async (req, res) => {
   try {
     const bcrypt = require('bcryptjs');
     const { name, email, phone, rank, parentId, password } = req.body;
@@ -410,7 +411,7 @@ router.post('/notifications/bulk', validate(schemas.bulkNotify), async (req, res
 });
 
 // Toggle active / deactivate CTV
-router.post('/ctv/:id/toggle-active', validate(schemas.toggleActiveCtv), async (req, res) => {
+router.post('/ctv/:id/toggle-active', auditLog('CTV_TOGGLE_ACTIVE', 'User'), validate(schemas.toggleActiveCtv), async (req, res) => {
   try {
     const ctvId = parseInt(req.params.id);
     const { isActive, reason } = req.body;
@@ -1037,7 +1038,7 @@ router.get('/config/commission', async (req, res) => {
 });
 
 // Update commission config (V12.1: F1/F2/F3 removed)
-router.put('/config/commission/:tier', validate(schemas.updateCommission), async (req, res) => {
+router.put('/config/commission/:tier', auditLog('CONFIG_CHANGE', 'CommissionConfig'), validate(schemas.updateCommission), async (req, res) => {
   try {
     const { selfSalePct, fixedSalary } = req.body;
     const config = await prisma.commissionConfig.update({

@@ -2,6 +2,7 @@ const express = require('express');
 const { PrismaClient } = require('@prisma/client');
 const { authenticate, authorize } = require('../middleware/auth');
 const { confirmDeposit, rejectDeposit } = require('../services/membership');
+const { auditLog } = require('../middleware/auditLog');
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -23,7 +24,7 @@ router.get('/tiers', async (req, res) => {
 });
 
 // PUT /tiers/:id - Update a tier
-router.put('/tiers/:id', async (req, res) => {
+router.put('/tiers/:id', auditLog('CONFIG_CHANGE', 'MembershipTier'), async (req, res) => {
   try {
     const { name, minDeposit, discountPct, referralPct, monthlyReferralCap, color } = req.body;
     const tier = await prisma.membershipTier.update({
@@ -69,7 +70,7 @@ router.get('/deposits', async (req, res) => {
 });
 
 // POST /deposits/:id/confirm - Confirm a deposit
-router.post('/deposits/:id/confirm', async (req, res) => {
+router.post('/deposits/:id/confirm', auditLog('DEPOSIT_CONFIRM', 'DepositHistory'), async (req, res) => {
   try {
     const result = await confirmDeposit(parseInt(req.params.id), req.user.id);
     res.json({ success: true, ...result });
@@ -79,7 +80,7 @@ router.post('/deposits/:id/confirm', async (req, res) => {
 });
 
 // POST /deposits/:id/reject - Reject a deposit
-router.post('/deposits/:id/reject', async (req, res) => {
+router.post('/deposits/:id/reject', auditLog('DEPOSIT_REJECT', 'DepositHistory'), async (req, res) => {
   try {
     if (!req.body.reason) return res.status(400).json({ error: 'Can ly do tu choi' });
     await rejectDeposit(parseInt(req.params.id), req.user.id, req.body.reason);

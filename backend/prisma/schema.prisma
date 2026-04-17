@@ -85,6 +85,9 @@ model User {
   referralsGiven      ReferralLog[] @relation("ReferrerUser")
   referralsReceived   ReferralLog[] @relation("RefereeUser")
 
+  // C13.3.1: Audit log
+  auditLogs           AuditLog[]    @relation("AuditLogs")
+
   @@map("users")
 }
 
@@ -700,6 +703,32 @@ model DepositHistory {
 
   @@index([walletId, status])
   @@map("deposit_history")
+}
+
+// =======================================================================
+// C13.3.1: Audit Log — mọi hành vi quan trọng (login, mutation, cron…)
+// =======================================================================
+model AuditLog {
+  id          Int      @id @default(autoincrement())
+  userId      Int?     @map("user_id")     // null = system action
+  action      String   // LOGIN, LOGOUT, LOGIN_FAILED, RANK_CHANGE, REASSIGN, DEPOSIT_CONFIRM, DEPOSIT_REJECT, CONFIG_CHANGE, DATA_EXPORT, CRON_JOB, CTV_ACTIVATE, CTV_DEACTIVATE
+  targetType  String?  @map("target_type") // User, Transaction, CommissionConfig, MembershipTier, DepositHistory, etc.
+  targetId    Int?     @map("target_id")
+  oldValue    String?  @map("old_value")   // JSON string (sanitized)
+  newValue    String?  @map("new_value")   // JSON string
+  ipAddress   String?  @map("ip_address")
+  userAgent   String?  @map("user_agent")
+  status      String   @default("SUCCESS") // SUCCESS, FAILURE
+  metadata    String?                      // Additional JSON context
+  createdAt   DateTime @default(now())     @map("created_at")
+
+  user        User?    @relation("AuditLogs", fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+  @@index([targetType, targetId])
+  @@map("audit_logs")
 }
 
 model ReferralLog {

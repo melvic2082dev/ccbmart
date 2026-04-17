@@ -357,6 +357,34 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(data),
     }),
+
+  // C13.3.1: Audit log viewer
+  adminAuditLogs: (params: {
+    page?: number;
+    limit?: number;
+    userId?: number;
+    action?: string;
+    targetType?: string;
+    status?: string;
+    dateFrom?: string;
+    dateTo?: string;
+    search?: string;
+  } = {}) => {
+    const qs = new URLSearchParams();
+    if (params.page) qs.set('page', String(params.page));
+    if (params.limit) qs.set('limit', String(params.limit));
+    if (params.userId) qs.set('userId', String(params.userId));
+    if (params.action) qs.set('action', params.action);
+    if (params.targetType) qs.set('targetType', params.targetType);
+    if (params.status) qs.set('status', params.status);
+    if (params.dateFrom) qs.set('dateFrom', params.dateFrom);
+    if (params.dateTo) qs.set('dateTo', params.dateTo);
+    if (params.search) qs.set('search', params.search);
+    const s = qs.toString();
+    return fetchAPI(`/admin/audit-logs${s ? `?${s}` : ''}`);
+  },
+  adminAuditLogActions: () => fetchAPI('/admin/audit-logs/actions'),
+  logout: () => fetchAPI('/auth/logout', { method: 'POST' }),
 };
 
 export function formatVND(amount: number): string {

@@ -23,6 +23,8 @@ async function main() {
   console.log('🌱 Seeding database (C12.4)...');
 
   // Clean existing data (order matters for foreign keys)
+  // C13.3.1
+  if (prisma.auditLog) await prisma.auditLog.deleteMany();
   // C12.4 new tables first
   if (prisma.breakawayFee) await prisma.breakawayFee.deleteMany();
   if (prisma.breakawayLog) await prisma.breakawayLog.deleteMany();
@@ -1135,7 +1137,69 @@ async function main() {
   }
   console.log(`✅ ${refCount} ReferralLog entries`);
 
-  console.log('\n🎉 Seed complete (C12.4)!');
+  // 25 — AuditLog mẫu (C13.3.1)
+  const auditActions = [
+    { action: 'LOGIN', targetType: 'User' },
+    { action: 'LOGIN', targetType: 'User' },
+    { action: 'LOGOUT', targetType: 'User' },
+    { action: 'LOGIN_FAILED', targetType: 'User', status: 'FAILURE' },
+    { action: 'RANK_CHANGE', targetType: 'User' },
+    { action: 'REASSIGN', targetType: 'User' },
+    { action: 'DEPOSIT_CONFIRM', targetType: 'DepositHistory' },
+    { action: 'DEPOSIT_CONFIRM', targetType: 'DepositHistory' },
+    { action: 'DEPOSIT_REJECT', targetType: 'DepositHistory' },
+    { action: 'CONFIG_CHANGE', targetType: 'CommissionConfig' },
+    { action: 'CONFIG_CHANGE', targetType: 'MembershipTier' },
+    { action: 'CONFIG_CHANGE', targetType: 'FeeConfig' },
+    { action: 'CTV_TOGGLE_ACTIVE', targetType: 'User' },
+    { action: 'CTV_CREATE', targetType: 'User' },
+    { action: 'CRON_JOB', targetType: 'AuditLog', userId: null },
+    { action: 'CRON_JOB', targetType: 'Rank', userId: null },
+    { action: 'CRON_JOB', targetType: 'ReferralCap', userId: null },
+    { action: 'DATA_EXPORT', targetType: 'Report' },
+    { action: 'DATA_EXPORT', targetType: 'Invoice' },
+    { action: 'LOGIN_FAILED', targetType: 'User', status: 'FAILURE' },
+  ];
+  const sampleIps = ['118.69.45.12', '113.160.22.5', '42.116.88.77', '14.232.164.91', '171.224.180.4'];
+  const sampleUAs = [
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/131.0.0.0',
+    'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) Safari/604.1',
+  ];
+  let auditCount = 0;
+  for (let i = 0; i < auditActions.length; i++) {
+    const a = auditActions[i];
+    const uid = a.userId !== undefined ? a.userId : (i % 3 === 0 ? admin.id : gdkd.id);
+    const createdAt = new Date(now.getTime() - (i * 3 + Math.random() * 12) * 60 * 60 * 1000);
+    await prisma.auditLog.create({
+      data: {
+        userId: uid,
+        action: a.action,
+        targetType: a.targetType,
+        targetId: a.targetType === 'User' ? gdkd.id : (i + 1),
+        newValue: a.action === 'RANK_CHANGE'
+          ? JSON.stringify({ newRank: 'GDV', reason: 'Đạt KPI tháng 3' })
+          : a.action === 'CONFIG_CHANGE'
+            ? JSON.stringify({ fixedSalary: 8000000 })
+            : a.action === 'DEPOSIT_CONFIRM'
+              ? JSON.stringify({ amount: 5000000, method: 'bank_transfer' })
+              : null,
+        ipAddress: a.action === 'CRON_JOB' ? null : sampleIps[i % sampleIps.length],
+        userAgent: a.action === 'CRON_JOB' ? null : sampleUAs[i % sampleUAs.length],
+        status: a.status || 'SUCCESS',
+        metadata: JSON.stringify({
+          method: a.action === 'CRON_JOB' ? 'cron' : 'POST',
+          path: `/api/admin/...`,
+          ...(a.status === 'FAILURE' ? { error: 'Invalid credentials' } : {}),
+        }),
+        createdAt,
+      },
+    });
+    auditCount++;
+  }
+  console.log(`✅ ${auditCount} AuditLog entries`);
+
+  console.log('\n🎉 Seed complete (C13.3.1)!');
   console.log('📧 Login credentials:');
   console.log('   admin@ccbmart.vn / admin123');
   console.log('   ctv1@ccbmart.vn / ctv123 (GĐKD, KYC VERIFIED)');

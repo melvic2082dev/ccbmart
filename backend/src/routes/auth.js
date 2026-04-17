@@ -5,21 +5,42 @@ const { PrismaClient } = require('@prisma/client');
 const { JWT_SECRET } = require('../middleware/auth');
 const { loginLimiter } = require('../middleware/rateLimiter');
 const { validate, schemas } = require('../middleware/validate');
+const { logAudit } = require('../middleware/auditLog');
 
 const router = express.Router();
 const prisma = new PrismaClient();
 
 router.post('/login', loginLimiter, validate(schemas.login), async (req, res) => {
+  const ip = req.ip || req.headers['x-forwarded-for'] || req.socket?.remoteAddress || null;
+  const userAgent = req.headers['user-agent'] || null;
   try {
     const { email, password } = req.body;
 
     const user = await prisma.user.findUnique({ where: { email } });
     if (!user) {
+      logAudit({
+        action: 'LOGIN_FAILED',
+        targetType: 'User',
+        ipAddress: ip,
+        userAgent,
+        status: 'FAILURE',
+        metadata: { email, reason: 'user_not_found' },
+      });
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
     const valid = await bcrypt.compare(password, user.passwordHash);
     if (!valid) {
+      logAudit({
+        userId: user.id,
+        action: 'LOGIN_FAILED',
+        targetType: 'User',
+        targetId: user.id,
+        ipAddress: ip,
+        userAgent,
+        status: 'FAILURE',
+        metadata: { email, reason: 'bad_password' },
+      });
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
@@ -28,6 +49,17 @@ router.post('/login', loginLimiter, validate(schemas.login), async (req, res) =>
       JWT_SECRET,
       { expiresIn: '7d' }
     );
+
+    logAudit({
+      userId: user.id,
+      action: 'LOGIN',
+      targetType: 'User',
+      targetId: user.id,
+      ipAddress: ip,
+      userAgent,
+      status: 'SUCCESS',
+      metadata: { role: user.role, rank: user.rank },
+    });
 
     res.json({
       token,
@@ -42,6 +74,29 @@ router.post('/login', loginLimiter, validate(schemas.login), async (req, res) =>
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
+});
+
+router.post('/logout', async (req, res) => {
+  const authHeader = req.headers.authorization;
+  let userId = null;
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    try {
+      const decoded = jwt.verify(authHeader.split(' ')[1], JWT_SECRET);
+      userId = decoded.id;
+    } catch { /* ignore */ }
+  }
+  if (userId) {
+    logAudit({
+      userId,
+      action: 'LOGOUT',
+      targetType: 'User',
+      targetId: userId,
+      ipAddress: req.ip || req.headers['x-forwarded-for'] || req.socket?.remoteAddress || null,
+      userAgent: req.headers['user-agent'] || null,
+      status: 'SUCCESS',
+    });
+  }
+  res.json({ success: true });
 });
 
 router.get('/me', async (req, res) => {
