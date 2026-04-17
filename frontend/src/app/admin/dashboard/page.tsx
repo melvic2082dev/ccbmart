@@ -321,9 +321,11 @@ export default function AdminDashboardPage() {
     showroom: '#f59e0b',
   }
 
-  const handleBarClick = (payload: { month?: string } | undefined) => {
-    if (!payload?.month) return
-    setSelectedMonth((prev) => (prev === payload.month ? null : payload.month ?? null))
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const handleBarClick = (payload: any) => {
+    const month = payload?.payload?.month ?? payload?.month
+    if (!month || typeof month !== 'string') return
+    setSelectedMonth((prev) => (prev === month ? null : month))
   }
 
   const exportExcel = () => {
