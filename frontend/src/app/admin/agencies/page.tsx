@@ -64,7 +64,7 @@ export default function AdminAgencies() {
 
   // Derived options
   const regionOptions = useMemo(() => {
-    const set = new Set(agencies.map((a) => a.region));
+    const set = new Set(agencies.map((a) => a.region).filter(Boolean));
     return Array.from(set).sort();
   }, [agencies]);
 

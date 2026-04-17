@@ -710,7 +710,254 @@ async function main() {
   });
   console.log('2 ProfessionalTitle records created');
 
-  console.log('\nSeed complete! (V10)');
+  // ============================================================
+  // V13 RESTORED MODELS: FeeConfig, BusinessHousehold, B2BContract,
+  // TrainingLog, Invoice, AutoTransferLog, TaxRecord, ManagementFee,
+  // BreakawayLog, BreakawayFee, AuditLog, ReferralLog, AdminManualAction
+  // ============================================================
+
+  // 16. FeeConfig (training fee tiers M0-M5)
+  await prisma.feeConfig.createMany({
+    data: [
+      { tier: 'M0', minCombo: 0,  maxCombo: 0,  feeAmount: 0,       description: 'Chưa đạt' },
+      { tier: 'M1', minCombo: 1,  maxCombo: 5,  feeAmount: 500000,  description: 'Mốc 1' },
+      { tier: 'M2', minCombo: 6,  maxCombo: 10, feeAmount: 1000000, description: 'Mốc 2' },
+      { tier: 'M3', minCombo: 11, maxCombo: 20, feeAmount: 2000000, description: 'Mốc 3' },
+      { tier: 'M4', minCombo: 21, maxCombo: 50, feeAmount: 3500000, description: 'Mốc 4' },
+      { tier: 'M5', minCombo: 51, maxCombo: null, feeAmount: 5000000, description: 'Mốc cao nhất' },
+    ],
+  });
+  console.log('6 FeeConfig records created');
+
+  // 17. BusinessHousehold (5 HKD for GDKD/GDV/TP level users)
+  const hkdUsers = [gdkd, gdv1, gdv2, tp1, tp2];
+  for (let i = 0; i < hkdUsers.length; i++) {
+    const u = hkdUsers[i];
+    const signed = new Date(now); signed.setMonth(signed.getMonth() - 6);
+    const expired = new Date(signed); expired.setFullYear(expired.getFullYear() + 1);
+    await prisma.businessHousehold.create({
+      data: {
+        userId: u.id,
+        businessName: `HKD ${u.name}`,
+        taxCode: `010${100000 + i}`,
+        businessLicense: `BL-${2025}${String(i + 1).padStart(4, '0')}`,
+        status: 'active',
+        dealerContractNo: `DL-2025-${String(i + 1).padStart(3, '0')}`,
+        dealerSignedAt: signed,
+        dealerExpiredAt: expired,
+        dealerTermMonths: 12,
+        trainingContractNo: `DT-2025-${String(i + 1).padStart(3, '0')}`,
+        trainingSignedAt: signed,
+        trainingExpiredAt: expired,
+        trainingTermMonths: 12,
+        bankName: 'Vietcombank',
+        bankAccountNo: `00710${String(i).padStart(7, '0')}`,
+        bankAccountHolder: u.name.toUpperCase(),
+        trainingLineRegistered: i < 3,
+      },
+    });
+    await prisma.user.update({ where: { id: u.id }, data: { isBusinessHousehold: true } });
+  }
+  console.log('5 BusinessHousehold records created');
+
+  // 18. B2BContract (5 contracts: GDKD<->GDV, GDV<->TP, TP<->PP)
+  const contractPairs = [
+    { trainer: gdkd, trainee: gdv1 },
+    { trainer: gdkd, trainee: gdv2 },
+    { trainer: gdv1, trainee: tp1 },
+    { trainer: gdv2, trainee: tp2 },
+    { trainer: tp1,  trainee: pps[0] },
+  ];
+  const contracts = [];
+  for (let i = 0; i < contractPairs.length; i++) {
+    const p = contractPairs[i];
+    const signed = new Date(now); signed.setMonth(signed.getMonth() - 4);
+    const expired = new Date(signed); expired.setFullYear(expired.getFullYear() + 1);
+    const c = await prisma.b2BContract.create({
+      data: {
+        contractNo: `B2B-2025-${String(i + 1).padStart(4, '0')}`,
+        trainerId: p.trainer.id,
+        traineeId: p.trainee.id,
+        signedAt: signed,
+        expiredAt: expired,
+        status: 'active',
+      },
+    });
+    contracts.push(c);
+  }
+  console.log('5 B2BContract records created');
+
+  // 19. TrainingLog (10 logs: various statuses)
+  for (let i = 0; i < 10; i++) {
+    const p = contractPairs[i % contractPairs.length];
+    const sessionDate = new Date(now);
+    sessionDate.setDate(sessionDate.getDate() - (30 - i * 2));
+    await prisma.trainingLog.create({
+      data: {
+        trainerId: p.trainer.id,
+        traineeId: p.trainee.id,
+        sessionDate,
+        durationMinutes: 60 + (i % 3) * 30,
+        content: `Buổi đào tạo #${i + 1}: Kỹ năng tư vấn sản phẩm và xử lý phản đối khách hàng`,
+        menteeConfirmed: i % 3 !== 0,
+        mentorConfirmed: true,
+        status: i < 6 ? 'VERIFIED' : (i < 9 ? 'PENDING' : 'REJECTED'),
+        verifiedBy: i < 6 ? admin.id : null,
+        verifiedAt: i < 6 ? sessionDate : null,
+      },
+    });
+  }
+  console.log('10 TrainingLog records created');
+
+  // 20. Invoice (8 invoices tied to contracts)
+  const invTiers = ['M1', 'M2', 'M3', 'M2', 'M4', 'M1', 'M3', 'M2'];
+  const amounts = [500000, 1000000, 2000000, 1000000, 3500000, 500000, 2000000, 1000000];
+  for (let i = 0; i < 8; i++) {
+    const c = contracts[i % contracts.length];
+    const issued = new Date(now);
+    issued.setDate(issued.getDate() - (20 - i * 2));
+    await prisma.invoice.create({
+      data: {
+        contractId: c.id,
+        fromUserId: c.traineeId,
+        toUserId: c.trainerId,
+        amount: amounts[i],
+        feeTier: invTiers[i],
+        invoiceNumber: `INV-2025-${String(i + 1).padStart(5, '0')}`,
+        issuedAt: issued,
+        status: i < 5 ? 'PAID' : (i < 7 ? 'SENT' : 'DRAFT'),
+      },
+    });
+  }
+  console.log('8 Invoice records created');
+
+  // 21. AutoTransferLog (6 transfers)
+  for (let i = 0; i < 6; i++) {
+    const c = contracts[i % contracts.length];
+    const d = new Date(now); d.setDate(d.getDate() - (15 - i * 2));
+    await prisma.autoTransferLog.create({
+      data: {
+        fromUserId: c.traineeId,
+        toUserId: c.trainerId,
+        amount: amounts[i],
+        transferDate: d,
+        reference: i + 1,
+        status: i < 4 ? 'SUCCESS' : (i === 4 ? 'FAILED' : 'PENDING'),
+        errorMessage: i === 4 ? 'Bank timeout — retry scheduled' : null,
+        retryCount: i === 4 ? 2 : 0,
+      },
+    });
+  }
+  console.log('6 AutoTransferLog records created');
+
+  // 22. TaxRecord (TNCN 10% monthly for GDKD/GDV/TP)
+  const taxUsers = [gdkd, gdv1, gdv2, tp1, tp2];
+  const curMonthStr = currentMonth;
+  const _prev = new Date(now); _prev.setMonth(_prev.getMonth() - 1);
+  const prevMonthStr = `${_prev.getFullYear()}-${String(_prev.getMonth() + 1).padStart(2, '0')}`;
+  for (const u of taxUsers) {
+    const income = 15000000 + Math.floor(Math.random() * 25000000);
+    await prisma.taxRecord.create({
+      data: { userId: u.id, month: prevMonthStr, taxableIncome: income, taxAmount: income * 0.1, status: 'PAID' },
+    });
+    const income2 = 15000000 + Math.floor(Math.random() * 25000000);
+    await prisma.taxRecord.create({
+      data: { userId: u.id, month: curMonthStr, taxableIncome: income2, taxAmount: income2 * 0.1, status: 'PENDING' },
+    });
+  }
+  console.log(`${taxUsers.length * 2} TaxRecord records created`);
+
+  // 23. ManagementFee (F1/F2/F3 fees flowing up the hierarchy)
+  const mgmtPairs = [
+    { from: pps[0], to: tp1,  level: 1, amt: 500000 },
+    { from: pps[0], to: gdv1, level: 2, amt: 300000 },
+    { from: pps[0], to: gdkd, level: 3, amt: 150000 },
+    { from: pps[1], to: tp1,  level: 1, amt: 450000 },
+    { from: pps[2], to: tp2,  level: 1, amt: 600000 },
+    { from: pps[2], to: gdv2, level: 2, amt: 350000 },
+    { from: ctvs[0], to: pps[0], level: 1, amt: 200000 },
+    { from: ctvs[0], to: tp1,  level: 2, amt: 120000 },
+  ];
+  for (const p of mgmtPairs) {
+    await prisma.managementFee.create({
+      data: {
+        fromUserId: p.from.id,
+        toUserId: p.to.id,
+        level: p.level,
+        amount: p.amt,
+        month: curMonthStr,
+        status: 'PENDING',
+      },
+    });
+  }
+  console.log(`${mgmtPairs.length} ManagementFee records created`);
+
+  // 24. BreakawayLog + BreakawayFee (2 breakaways with fees)
+  const expireAt = new Date(now); expireAt.setFullYear(expireAt.getFullYear() + 1);
+  const bLog1 = await prisma.breakawayLog.create({
+    data: { userId: pps[3].id, oldParentId: tp2.id, newParentId: gdv2.id, expireAt, status: 'ACTIVE' },
+  });
+  const bLog2 = await prisma.breakawayLog.create({
+    data: { userId: pps[5].id, oldParentId: tp3.id, newParentId: gdv2.id, expireAt, status: 'ACTIVE' },
+  });
+  const bFees = [
+    { logId: bLog1.id, from: pps[3].id, to: tp2.id,  level: 1, amt: 300000 },
+    { logId: bLog1.id, from: pps[3].id, to: gdv2.id, level: 2, amt: 200000 },
+    { logId: bLog1.id, from: pps[3].id, to: gdkd.id, level: 3, amt: 100000 },
+    { logId: bLog2.id, from: pps[5].id, to: tp3.id,  level: 1, amt: 250000 },
+  ];
+  for (const f of bFees) {
+    await prisma.breakawayFee.create({
+      data: {
+        breakawayLogId: f.logId, fromUserId: f.from, toUserId: f.to, level: f.level, amount: f.amt,
+        month: curMonthStr, status: 'PENDING',
+      },
+    });
+  }
+  console.log('2 BreakawayLog + 4 BreakawayFee records created');
+
+  // 25. AuditLog (15 diverse audit entries)
+  const auditActions = [
+    { userId: admin.id, action: 'LOGIN', targetType: null, targetId: null, status: 'SUCCESS' },
+    { userId: admin.id, action: 'CONFIG_CHANGE', targetType: 'CommissionConfig', targetId: 1, status: 'SUCCESS', oldValue: '{"rate":0.1}', newValue: '{"rate":0.12}' },
+    { userId: admin.id, action: 'DEPOSIT_CONFIRM', targetType: 'DepositHistory', targetId: 1, status: 'SUCCESS' },
+    { userId: gdkd.id, action: 'LOGIN', targetType: null, targetId: null, status: 'SUCCESS' },
+    { userId: gdkd.id, action: 'LOGIN_FAILED', targetType: null, targetId: null, status: 'FAILURE', metadata: '{"reason":"wrong_password"}' },
+    { userId: admin.id, action: 'RANK_CHANGE', targetType: 'User', targetId: pps[0].id, oldValue: '"PP"', newValue: '"TP"', status: 'SUCCESS' },
+    { userId: admin.id, action: 'CTV_ACTIVATE', targetType: 'User', targetId: ctvs[0].id, status: 'SUCCESS' },
+    { userId: admin.id, action: 'DATA_EXPORT', targetType: 'Transaction', targetId: null, status: 'SUCCESS', metadata: '{"count":120}' },
+    { userId: null, action: 'CRON_JOB', targetType: 'AuditLogCleanup', targetId: null, status: 'SUCCESS' },
+    { userId: null, action: 'CRON_JOB', targetType: 'AutoRank', targetId: null, status: 'SUCCESS' },
+    { userId: admin.id, action: 'REASSIGN', targetType: 'User', targetId: pps[3].id, oldValue: `{"parentId":${tp2.id}}`, newValue: `{"parentId":${gdv2.id}}`, status: 'SUCCESS' },
+    { userId: admin.id, action: 'DEPOSIT_REJECT', targetType: 'DepositHistory', targetId: 2, status: 'SUCCESS', metadata: '{"reason":"invalid_proof"}' },
+    { userId: gdv1.id, action: 'LOGOUT', targetType: null, targetId: null, status: 'SUCCESS' },
+    { userId: admin.id, action: 'CTV_DEACTIVATE', targetType: 'User', targetId: ctvs[5].id, status: 'SUCCESS', metadata: '{"reason":"inactive_90d"}' },
+    { userId: admin.id, action: 'CONFIG_CHANGE', targetType: 'MembershipTier', targetId: 1, status: 'SUCCESS' },
+  ];
+  for (let i = 0; i < auditActions.length; i++) {
+    const d = new Date(now); d.setHours(d.getHours() - (auditActions.length - i) * 3);
+    await prisma.auditLog.create({
+      data: {
+        ...auditActions[i],
+        ipAddress: '192.168.1.' + (10 + i),
+        userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15) Safari/537.36',
+        createdAt: d,
+      },
+    });
+  }
+  console.log(`${auditActions.length} AuditLog records created`);
+
+  // 26. AdminManualAction (3 actions)
+  await prisma.adminManualAction.createMany({
+    data: [
+      { adminId: admin.id, actionType: 'VERIFY_TRAINING', targetType: 'TrainingLog', targetId: 1, oldStatus: 'PENDING', newStatus: 'VERIFIED', reason: 'OTP timeout — xác minh thủ công' },
+      { adminId: admin.id, actionType: 'MARK_TRANSFER_SUCCESS', targetType: 'AutoTransferLog', targetId: 5, oldStatus: 'FAILED', newStatus: 'MANUAL_RESOLVED', reason: 'Ngân hàng xác nhận đã chuyển' },
+      { adminId: admin.id, actionType: 'ISSUE_INVOICE', targetType: 'Invoice', targetId: 8, oldStatus: 'DRAFT', newStatus: 'SENT', reason: 'Phát hành thủ công sau khi sửa thông tin' },
+    ],
+  });
+  console.log('3 AdminManualAction records created');
+
+  console.log('\nSeed complete! (V13 full)');
   console.log('Login credentials:');
   console.log('   admin@ccbmart.vn / admin123');
   console.log('   ctv1@ccbmart.vn / ctv123 (GDKD)');

@@ -20,6 +20,22 @@ model User {
   isActive      Boolean  @default(true) @map("is_active")
   createdAt     DateTime @default(now()) @map("created_at")
 
+  isBusinessHousehold Boolean @default(false) @map("is_business_household")
+
+  // V12.2 + V13.3: eKYC
+  kycStatus       String    @default("PENDING") @map("kyc_status")
+  kycSubmittedAt  DateTime? @map("kyc_submitted_at")
+  kycVerifiedAt   DateTime? @map("kyc_verified_at")
+  kycRejectReason String?   @map("kyc_reject_reason")
+  idNumber        String?   @unique @map("id_number")
+  idFrontImage    String?   @map("id_front_image")
+  idBackImage     String?   @map("id_back_image")
+  kycMethod       String    @default("AUTO") @map("kyc_method")
+  kycManualNote   String?   @map("kyc_manual_note")
+  kycVerifiedBy   Int?      @map("kyc_verified_by")
+  kycDeviceId     String?   @map("kyc_device_id")
+  kycIpAddress    String?   @map("kyc_ip_address")
+
   parent        User?    @relation("UserHierarchy", fields: [parentId], references: [id])
   children      User[]   @relation("UserHierarchy")
   agency        Agency?  @relation("AgencyUser", fields: [agencyId], references: [id])
@@ -41,6 +57,26 @@ model User {
   teamBonuses         TeamBonus[]    @relation("CtvTeamBonuses")
   loyaltyPoints       LoyaltyPoint[] @relation("UserLoyaltyPoints")
   professionalTitle   ProfessionalTitle?
+
+  // V13 restored relations
+  businessHousehold   BusinessHousehold?
+  trainerContracts    B2BContract[]        @relation("Trainer")
+  traineeContracts    B2BContract[]        @relation("Trainee")
+  trainerLogs         TrainingLog[]        @relation("TrainerLogs")
+  traineeLogs         TrainingLog[]        @relation("TraineeLogs")
+  invoicesFrom        Invoice[]            @relation("InvoicesFrom")
+  invoicesTo          Invoice[]            @relation("InvoicesTo")
+  transfersFrom       AutoTransferLog[]    @relation("TransfersFrom")
+  transfersTo         AutoTransferLog[]    @relation("TransfersTo")
+  taxRecords          TaxRecord[]
+  mgmtFeesFrom        ManagementFee[]      @relation("MgmtFeeFrom")
+  mgmtFeesTo          ManagementFee[]      @relation("MgmtFeeTo")
+  breakawayLog        BreakawayLog?        @relation("BreakawayUser")
+  breakawayOldParent  BreakawayLog[]       @relation("BreakawayOldParent")
+  breakawayNewParent  BreakawayLog[]       @relation("BreakawayNewParent")
+  breakawayFeesFrom   BreakawayFee[]       @relation("BreakFeeFrom")
+  breakawayFeesTo     BreakawayFee[]       @relation("BreakFeeTo")
+  auditLogs           AuditLog[]           @relation("AuditLogs")
 
   @@index([parentId])
   @@index([rank])
@@ -484,4 +520,274 @@ model ProfessionalTitle {
   user        User      @relation(fields: [userId], references: [id])
 
   @@map("professional_titles")
+}
+
+// ============================================================
+// V13 restored models (FeeConfig, BusinessHousehold, B2BContract,
+// TrainingLog, Invoice, AutoTransferLog, TaxRecord, ManagementFee,
+// BreakawayLog, BreakawayFee, AuditLog, AdminManualAction)
+// ============================================================
+
+model FeeConfig {
+  id          Int      @id @default(autoincrement())
+  tier        String   @unique
+  minCombo    Int      @map("min_combo")
+  maxCombo    Int?     @map("max_combo")
+  feeAmount   Float    @map("fee_amount")
+  description String?
+  isActive    Boolean  @default(true) @map("is_active")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("fee_config")
+}
+
+model BusinessHousehold {
+  id              Int      @id @default(autoincrement())
+  userId          Int      @unique @map("user_id")
+  businessName    String   @map("business_name")
+  taxCode         String?  @map("tax_code")
+  businessLicense String?  @map("business_license")
+  registeredAt    DateTime @default(now()) @map("registered_at")
+  status          String   @default("active")
+
+  dealerContractNo   String?   @map("dealer_contract_no")
+  dealerSignedAt     DateTime? @map("dealer_signed_at")
+  dealerExpiredAt    DateTime? @map("dealer_expired_at")
+  dealerTermMonths   Int?      @default(12) @map("dealer_term_months")
+  dealerPdfUrl       String?   @map("dealer_pdf_url")
+
+  trainingContractNo   String?   @map("training_contract_no")
+  trainingSignedAt     DateTime? @map("training_signed_at")
+  trainingExpiredAt    DateTime? @map("training_expired_at")
+  trainingTermMonths   Int?      @default(12) @map("training_term_months")
+  trainingPdfUrl       String?   @map("training_pdf_url")
+
+  bankName           String?   @map("bank_name")
+  bankAccountNo      String?   @map("bank_account_no")
+  bankAccountHolder  String?   @map("bank_account_holder")
+
+  trainingLineRegistered Boolean @default(false) @map("training_line_registered")
+
+  user            User     @relation(fields: [userId], references: [id])
+
+  @@map("business_households")
+}
+
+model B2BContract {
+  id                  Int       @id @default(autoincrement())
+  contractNo          String    @unique @map("contract_no")
+  trainerId           Int       @map("trainer_id")
+  traineeId           Int       @map("trainee_id")
+  signedAt            DateTime  @default(now()) @map("signed_at")
+  expiredAt           DateTime? @map("expired_at")
+  status              String    @default("active")
+  terminatedAt        DateTime? @map("terminated_at")
+  terminationReason   String?   @map("termination_reason")
+  terminatedBy        Int?      @map("terminated_by")
+
+  trainer             User      @relation("Trainer", fields: [trainerId], references: [id])
+  trainee             User      @relation("Trainee", fields: [traineeId], references: [id])
+  invoices            Invoice[]
+
+  @@map("b2b_contracts")
+}
+
+model TrainingLog {
+  id              Int       @id @default(autoincrement())
+  trainerId       Int       @map("trainer_id")
+  traineeId       Int       @map("trainee_id")
+  sessionDate     DateTime  @map("session_date")
+  durationMinutes Int       @map("duration_minutes")
+  content         String
+  menteeConfirmed Boolean   @default(false) @map("mentee_confirmed")
+  mentorConfirmed Boolean   @default(true) @map("mentor_confirmed")
+  status          String    @default("PENDING")
+  verifiedBy      Int?      @map("verified_by")
+  verifiedAt      DateTime? @map("verified_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
+
+  otpCode         String?   @map("otp_code")
+  otpExpiresAt    DateTime? @map("otp_expires_at")
+  otpSentAt       DateTime? @map("otp_sent_at")
+  otpSentMethod   String?   @map("otp_sent_method")
+  otpRetryCount   Int       @default(0) @map("otp_retry_count")
+  otpFailCount    Int       @default(0) @map("otp_fail_count")
+  otpBlockedUntil DateTime? @map("otp_blocked_until")
+  adminVerified   Boolean   @default(false) @map("admin_verified")
+  adminVerifiedBy Int?      @map("admin_verified_by")
+  adminVerifiedAt DateTime? @map("admin_verified_at")
+
+  trainer         User      @relation("TrainerLogs", fields: [trainerId], references: [id])
+  trainee         User      @relation("TraineeLogs", fields: [traineeId], references: [id])
+
+  @@map("training_logs")
+}
+
+model Invoice {
+  id            Int      @id @default(autoincrement())
+  contractId    Int?     @map("contract_id")
+  fromUserId    Int      @map("from_user_id")
+  toUserId      Int      @map("to_user_id")
+  amount        Float
+  feeTier       String   @map("fee_tier")
+  invoiceNumber String   @unique @map("invoice_number")
+  issuedAt      DateTime @default(now()) @map("issued_at")
+  pdfUrl        String?  @map("pdf_url")
+  status        String   @default("DRAFT")
+
+  externalId     String?   @map("external_id")
+  retryCount     Int       @default(0) @map("retry_count")
+  lastRetryAt    DateTime? @map("last_retry_at")
+  manualIssued   Boolean   @default(false) @map("manual_issued")
+  issuedBy       Int?      @map("issued_by")
+  issuedAtManual DateTime? @map("issued_at_manual")
+
+  contract      B2BContract? @relation(fields: [contractId], references: [id])
+  fromUser      User         @relation("InvoicesFrom", fields: [fromUserId], references: [id])
+  toUser        User         @relation("InvoicesTo", fields: [toUserId], references: [id])
+
+  @@index([fromUserId])
+  @@index([toUserId])
+  @@index([status])
+  @@map("invoices")
+}
+
+model AutoTransferLog {
+  id           Int      @id @default(autoincrement())
+  fromUserId   Int      @map("from_user_id")
+  toUserId     Int      @map("to_user_id")
+  amount       Float
+  transferDate DateTime @default(now()) @map("transfer_date")
+  reference    Int?
+  status       String   @default("PENDING")
+  errorMessage String?  @map("error_message")
+
+  retryCount     Int       @default(0) @map("retry_count")
+  maxRetry       Int       @default(3) @map("max_retry")
+  lastRetryAt    DateTime? @map("last_retry_at")
+  manualResolved Boolean   @default(false) @map("manual_resolved")
+  resolvedBy     Int?      @map("resolved_by")
+  resolvedAt     DateTime? @map("resolved_at")
+  adminNote      String?   @map("admin_note")
+
+  fromUser     User     @relation("TransfersFrom", fields: [fromUserId], references: [id])
+  toUser       User     @relation("TransfersTo", fields: [toUserId], references: [id])
+
+  @@index([fromUserId])
+  @@index([status])
+  @@map("auto_transfer_logs")
+}
+
+model TaxRecord {
+  id             Int      @id @default(autoincrement())
+  userId         Int      @map("user_id")
+  month          String
+  taxableIncome  Float    @map("taxable_income")
+  taxAmount      Float    @map("tax_amount")
+  status         String   @default("PENDING")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  user           User     @relation(fields: [userId], references: [id])
+
+  @@unique([userId, month])
+  @@map("tax_records")
+}
+
+model ManagementFee {
+  id         Int      @id @default(autoincrement())
+  fromUserId Int      @map("from_user_id")
+  toUserId   Int      @map("to_user_id")
+  level      Int
+  amount     Float
+  month      String
+  status     String   @default("PENDING")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  fromUser   User     @relation("MgmtFeeFrom", fields: [fromUserId], references: [id])
+  toUser     User     @relation("MgmtFeeTo",   fields: [toUserId],   references: [id])
+
+  @@index([toUserId, month])
+  @@index([fromUserId, month])
+  @@map("management_fees")
+}
+
+model BreakawayLog {
+  id           Int      @id @default(autoincrement())
+  userId       Int      @unique @map("user_id")
+  oldParentId  Int      @map("old_parent_id")
+  newParentId  Int      @map("new_parent_id")
+  breakawayAt  DateTime @default(now()) @map("breakaway_at")
+  expireAt     DateTime @map("expire_at")
+  status       String   @default("ACTIVE")
+
+  user         User         @relation("BreakawayUser",      fields: [userId],       references: [id])
+  oldParent    User         @relation("BreakawayOldParent", fields: [oldParentId],  references: [id])
+  newParent    User         @relation("BreakawayNewParent", fields: [newParentId],  references: [id])
+  breakawayFees BreakawayFee[]
+
+  @@index([status, expireAt])
+  @@index([oldParentId])
+  @@index([newParentId])
+  @@index([status])
+  @@map("breakaway_logs")
+}
+
+model BreakawayFee {
+  id             Int      @id @default(autoincrement())
+  breakawayLogId Int      @map("breakaway_log_id")
+  fromUserId     Int      @map("from_user_id")
+  toUserId       Int      @map("to_user_id")
+  level          Int
+  amount         Float
+  month          String
+  status         String   @default("PENDING")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  breakawayLog   BreakawayLog @relation(fields: [breakawayLogId], references: [id])
+  fromUser       User         @relation("BreakFeeFrom", fields: [fromUserId], references: [id])
+  toUser         User         @relation("BreakFeeTo",   fields: [toUserId],   references: [id])
+
+  @@index([toUserId, month])
+  @@index([breakawayLogId, month])
+  @@map("breakaway_fees")
+}
+
+model AuditLog {
+  id          Int      @id @default(autoincrement())
+  userId      Int?     @map("user_id")
+  action      String
+  targetType  String?  @map("target_type")
+  targetId    Int?     @map("target_id")
+  oldValue    String?  @map("old_value")
+  newValue    String?  @map("new_value")
+  ipAddress   String?  @map("ip_address")
+  userAgent   String?  @map("user_agent")
+  status      String   @default("SUCCESS")
+  metadata    String?
+  createdAt   DateTime @default(now())     @map("created_at")
+
+  user        User?    @relation("AuditLogs", fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+  @@index([targetType, targetId])
+  @@map("audit_logs")
+}
+
+model AdminManualAction {
+  id          Int      @id @default(autoincrement())
+  adminId     Int      @map("admin_id")
+  actionType  String   @map("action_type")
+  targetType  String   @map("target_type")
+  targetId    Int      @map("target_id")
+  oldStatus   String?  @map("old_status")
+  newStatus   String?  @map("new_status")
+  reason      String?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([adminId])
+  @@index([actionType])
+  @@index([targetType, targetId])
+  @@map("admin_manual_actions")
 }
