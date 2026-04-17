@@ -54,6 +54,7 @@ const adminGroups: NavGroup[] = [
       { label: 'Phí đào tạo', href: '/admin/fee-config',      icon: <GraduationCap size={20} /> },
       { label: 'Log đào tạo', href: '/admin/training-logs',   icon: <BookOpen size={20} /> },
       { label: 'Phí quản lý', href: '/admin/management-fees', icon: <Coins size={20} /> },
+      { label: 'Báo cáo lương cứng', href: '/admin/salary-report', icon: <Wallet size={20} /> },
     ],
   },
   {

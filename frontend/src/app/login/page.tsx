@@ -28,9 +28,9 @@ export default function LoginPage() {
       else if (role === 'agency') router.push('/agency/dashboard');
       else if (role === 'admin') router.push('/admin/dashboard');
       else if (role === 'member') router.push('/member/dashboard');
-      else setError('Vai tro khong hop le.');
+      else setError('Vai trò không hợp lệ.');
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Dang nhap that bai.');
+      setError(err instanceof Error ? err.message : 'Đăng nhập thất bại.');
     } finally {
       setLoading(false);
     }
@@ -44,13 +44,13 @@ export default function LoginPage() {
             <span className="text-white text-2xl font-bold">C</span>
           </div>
           <h1 className="text-3xl font-extrabold text-white tracking-tight">CCB Mart</h1>
-          <p className="text-sm text-gray-400 mt-1">He thong quan ly chuoi ban le cong dong</p>
+          <p className="text-sm text-gray-400 mt-1">Hệ thống quản lý chuỗi bán lẻ cộng đồng</p>
         </div>
 
         <Card className="shadow-2xl border border-gray-800 rounded-2xl" style={{ background: 'rgba(30, 41, 59, 0.8)', backdropFilter: 'blur(12px)' }}>
           <CardHeader className="pb-4">
-            <CardTitle className="text-xl text-white">Dang nhap</CardTitle>
-            <CardDescription className="text-gray-400">Nhap thong tin tai khoan de tiep tuc</CardDescription>
+            <CardTitle className="text-xl text-white">Đăng nhập</CardTitle>
+            <CardDescription className="text-gray-400">Nhập thông tin tài khoản để tiếp tục</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-5">
@@ -59,7 +59,7 @@ export default function LoginPage() {
                 <Input id="email" type="email" placeholder="example@ccbmart.vn" value={email} onChange={(e) => setEmail(e.target.value)} required disabled={loading} className="bg-gray-800/50 border-gray-700 text-white placeholder:text-gray-500 rounded-xl focus:border-blue-500 focus:ring-blue-500" />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="password" className="text-gray-300 font-medium">Mat khau</Label>
+                <Label htmlFor="password" className="text-gray-300 font-medium">Mật khẩu</Label>
                 <Input id="password" type="password" placeholder="********" value={password} onChange={(e) => setPassword(e.target.value)} required disabled={loading} className="bg-gray-800/50 border-gray-700 text-white placeholder:text-gray-500 rounded-xl focus:border-blue-500 focus:ring-blue-500" />
               </div>
               {error && (
@@ -70,11 +70,11 @@ export default function LoginPage() {
                 disabled={loading}
                 className="w-full bg-gradient-to-r from-blue-500 to-blue-700 text-white font-semibold py-2.5 rounded-xl transition-all duration-200 shadow-lg shadow-blue-500/25 hover:shadow-xl hover:shadow-blue-500/30 active:scale-[0.98] disabled:opacity-50"
               >
-                {loading ? 'Dang dang nhap...' : 'Dang nhap'}
+                {loading ? 'Đang đăng nhập...' : 'Đăng nhập'}
               </button>
             </form>
             <p className="text-sm text-center text-gray-500 mt-4">
-              Chua co tai khoan? <Link href="/register" className="text-blue-400 hover:text-blue-300 font-medium">Dang ky thanh vien</Link>
+              Chưa có tài khoản? <Link href="/register" className="text-blue-400 hover:text-blue-300 font-medium">Đăng ký thành viên</Link>
             </p>
           </CardContent>
         </Card>
