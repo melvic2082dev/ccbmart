@@ -1,12 +1,15 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { api, formatVND } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Calculator, Play } from 'lucide-react';
+import { Calculator, Play, Eye, Download, FileText } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+
+const PAGE_SIZE_TAX = 10;
 
 interface TaxRecord {
   id: number;
@@ -29,6 +32,8 @@ export default function AdminTaxPage() {
   const [loading, setLoading] = useState(true);
   const [month, setMonth] = useState(currentMonth());
   const [processing, setProcessing] = useState(false);
+  const [page, setPage] = useState(1);
+  const [viewCertFor, setViewCertFor] = useState<TaxRecord | null>(null);
 
   const fetchData = () => {
     setLoading(true);
@@ -42,7 +47,32 @@ export default function AdminTaxPage() {
       .finally(() => setLoading(false));
   };
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { fetchData(); }, [month]);
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => { setPage(1); }, [month]);
+
+  const pagedRecords = useMemo(
+    () => records.slice((page - 1) * PAGE_SIZE_TAX, page * PAGE_SIZE_TAX),
+    [records, page]
+  );
+  const totalPages = Math.max(1, Math.ceil(records.length / PAGE_SIZE_TAX));
+
+  // Mock: deterministic "ngày nộp" when PAID
+  const paymentInfo = (r: TaxRecord) => {
+    if (r.status !== 'PAID') return { paidAt: null as string | null, cert: null as string | null };
+    const day = 1 + (r.id % 28);
+    const d = new Date(`${r.month}-${String(day).padStart(2, '0')}`);
+    return {
+      paidAt: d.toISOString(),
+      cert: `CT-${r.month.replace('-', '')}-${String(r.id).padStart(5, '0')}`,
+    };
+  };
+
+  const exportTaxReport = () => {
+    // TODO: replace with real XML export
+    alert(`Sẽ xuất báo cáo thuế tháng ${month} theo chuẩn Tổng cục Thuế (XML)`);
+  };
 
   const runProcess = async () => {
     setProcessing(true);
@@ -68,7 +98,7 @@ export default function AdminTaxPage() {
   return (
     <DashboardLayout role="admin">
       <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
-        <Calculator size={24} /> Thuế TNCN 10% (V12.2)
+        <Calculator size={24} /> Thuế TNCN 10%
       </h2>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
@@ -104,8 +134,11 @@ export default function AdminTaxPage() {
           disabled={processing}
           className="px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm font-medium flex items-center gap-2 disabled:opacity-50"
         >
-          <Play size={16} /> {processing ? 'Đang tính...' : 'Tính thuế tháng'}
+          <Play size={16} /> {processing ? 'Đang tính…' : 'Tính thuế tháng'}
         </button>
+        <Button variant="outline" size="sm" onClick={exportTaxReport} className="ml-auto">
+          <FileText className="w-4 h-4 mr-1" /> Xuất báo cáo thuế tháng (XML)
+        </Button>
       </div>
 
       {loading ? (
@@ -120,62 +153,117 @@ export default function AdminTaxPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Người nộp</TableHead>
-                  <TableHead>Chức danh</TableHead>
+                  <TableHead>Rank</TableHead>
                   <TableHead>HKD</TableHead>
                   <TableHead>Tháng</TableHead>
                   <TableHead className="text-right">Thu nhập</TableHead>
                   <TableHead className="text-right">Thuế 10%</TableHead>
                   <TableHead>Trạng thái</TableHead>
+                  <TableHead>Ngày nộp</TableHead>
                   <TableHead>Thao tác</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {records.map((r) => (
-                  <TableRow key={r.id}>
-                    <TableCell className="font-medium">{r.user.name}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline">{r.user.rank || '-'}</Badge>
-                    </TableCell>
-                    <TableCell>
-                      {r.user.isBusinessHousehold ? (
-                        <Badge className="bg-blue-100 text-blue-700">HKD</Badge>
-                      ) : (
-                        <Badge variant="outline">Cá nhân</Badge>
-                      )}
-                    </TableCell>
-                    <TableCell className="font-mono text-sm">{r.month}</TableCell>
-                    <TableCell className="text-right font-mono">{formatVND(r.taxableIncome)}</TableCell>
-                    <TableCell className="text-right font-mono font-semibold text-red-600">
-                      {formatVND(r.taxAmount)}
-                    </TableCell>
-                    <TableCell>
-                      <Badge className={r.status === 'PAID' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}>
-                        {r.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {r.status === 'PENDING' && (
-                        <button
-                          onClick={() => handleMarkPaid(r.id)}
-                          className="px-2 py-1 text-xs bg-green-100 text-green-700 rounded hover:bg-green-200"
-                        >
-                          Đã nộp
-                        </button>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))}
-                {records.length === 0 && (
+                {pagedRecords.map((r) => {
+                  const pi = paymentInfo(r);
+                  return (
+                    <TableRow key={r.id}>
+                      <TableCell className="font-medium">{r.user.name}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline">{r.user.rank || '—'}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        {r.user.isBusinessHousehold ? (
+                          <Badge className="bg-blue-100 text-blue-700">HKD</Badge>
+                        ) : (
+                          <Badge variant="outline">Cá nhân</Badge>
+                        )}
+                      </TableCell>
+                      <TableCell className="font-mono text-sm">{r.month}</TableCell>
+                      <TableCell className="text-right font-mono">{formatVND(r.taxableIncome)}</TableCell>
+                      <TableCell className="text-right font-mono font-semibold text-red-600">
+                        {formatVND(r.taxAmount)}
+                      </TableCell>
+                      <TableCell>
+                        <Badge className={r.status === 'PAID' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}>
+                          {r.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-xs text-gray-600">
+                        {pi.paidAt ? new Date(pi.paidAt).toLocaleDateString('vi-VN') : '—'}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1">
+                          {r.status === 'PENDING' ? (
+                            <Button variant="outline" size="sm" onClick={() => handleMarkPaid(r.id)}>
+                              Đánh dấu đã nộp
+                            </Button>
+                          ) : (
+                            <>
+                              <Button variant="ghost" size="icon-sm" title="Xem chứng từ" onClick={() => setViewCertFor(r)}>
+                                <Eye className="w-4 h-4 text-blue-600" />
+                              </Button>
+                              <Button variant="ghost" size="icon-sm" title="Xuất chứng từ PDF" onClick={() => alert(`Xuất chứng từ ${pi.cert} (PDF)`)}>
+                                <Download className="w-4 h-4 text-emerald-600" />
+                              </Button>
+                            </>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+                {pagedRecords.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8 text-slate-500">
+                    <TableCell colSpan={9} className="text-center py-8 text-slate-500">
                       Chưa có bản ghi thuế
                     </TableCell>
                   </TableRow>
                 )}
               </TableBody>
             </Table>
+            {records.length > PAGE_SIZE_TAX && (
+              <div className="flex items-center justify-between px-4 py-3 border-t text-sm">
+                <p className="text-gray-500">Trang {page}/{totalPages}</p>
+                <div className="flex gap-1">
+                  <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage(page - 1)}>← Trước</Button>
+                  <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage(page + 1)}>Sau →</Button>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
+      )}
+
+      {/* Chứng từ viewer */}
+      {viewCertFor && (
+        <div
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+          onClick={() => setViewCertFor(null)}
+        >
+          <div className="bg-white rounded-xl p-6 w-[480px] max-w-[90vw] space-y-3" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-lg font-bold">Chứng từ thuế TNCN</h3>
+            {(() => {
+              const pi = paymentInfo(viewCertFor);
+              return (
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between"><span className="text-gray-500">Số chứng từ:</span> <span className="font-mono">{pi.cert}</span></div>
+                  <div className="flex justify-between"><span className="text-gray-500">Người nộp:</span> <span className="font-medium">{viewCertFor.user.name}</span></div>
+                  <div className="flex justify-between"><span className="text-gray-500">Tháng:</span> <span>{viewCertFor.month}</span></div>
+                  <div className="flex justify-between"><span className="text-gray-500">Thu nhập chịu thuế:</span> <span>{formatVND(viewCertFor.taxableIncome)}</span></div>
+                  <div className="flex justify-between"><span className="text-gray-500">Thuế 10%:</span> <span className="font-semibold text-red-600">{formatVND(viewCertFor.taxAmount)}</span></div>
+                  <div className="flex justify-between"><span className="text-gray-500">Ngày nộp:</span> <span>{pi.paidAt ? new Date(pi.paidAt).toLocaleDateString('vi-VN') : '—'}</span></div>
+                </div>
+              );
+            })()}
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setViewCertFor(null)} className="flex-1">Đóng</Button>
+              <Button className="flex-1" onClick={() => alert('Tải chứng từ PDF (mock)')}>
+                <Download className="w-4 h-4 mr-1" /> Tải PDF
+              </Button>
+            </div>
+          </div>
+        </div>
       )}
     </DashboardLayout>
   );

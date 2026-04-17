@@ -51,11 +51,14 @@ interface AdminDashboardData {
 
 const COST_LABEL_MAP: Record<string, string> = {
   cogs: 'Giá vốn hàng bán',
-  commissions: 'Hoa hồng CTV',
-  agencyDiscounts: 'Chiết khấu đại lý',
-  fixedSalaries: 'Lương cứng quản lý',
-  operationalCosts: 'Chi phí vận hành',
-  otherCosts: 'Chi phí khác',
+  ctvCommissions: 'Hoa hồng CTV',
+  agencyCommissions: 'Chiết khấu đại lý',
+  xwiseFee: 'Phí Xwise (5%)',
+  e29Fee: 'Phí E29 (1%)',
+  logistics: 'Chi phí logistics',
+  marketing: 'Chi phí marketing',
+  opcoOverhead: 'Overhead OpCo',
+  fixedCosts: 'Chi phí cố định',
 }
 
 function getSalaryFundColor(pct: number) {

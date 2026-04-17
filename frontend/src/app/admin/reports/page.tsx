@@ -62,7 +62,7 @@ export default function AdminReports() {
     <DashboardLayout role="admin">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-bold flex items-center gap-2">
-          <FileText size={24} /> Bao cao Tai chinh
+          <FileText size={24} /> Báo cáo Tài chính
         </h2>
         <div className="flex gap-2">
           <Button

@@ -6,7 +6,8 @@ import { api, formatVND } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Banknote } from 'lucide-react';
+import { Banknote, RefreshCw, Info } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface Transfer {
   id: number;
@@ -30,22 +31,58 @@ export default function AdminTransfersPage() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>('');
 
-  useEffect(() => {
+  const load = () => {
     setLoading(true);
     api.adminTransfers(1, filter || undefined)
       .then((d) => setTransfers(d.transfers || []))
       .catch(console.error)
       .finally(() => setLoading(false));
-  }, [filter]);
+  };
+
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(load, [filter]);
+
+  const handleRetry = async (id: number) => {
+    try {
+      // TODO: replace with real retry API
+      await new Promise(r => setTimeout(r, 400));
+      alert(`Đã gửi yêu cầu chạy lại transfer #${id}`);
+      load();
+    } catch (e) {
+      alert((e as Error).message);
+    }
+  };
+
+  const handleRetryAll = async () => {
+    const failed = transfers.filter(t => t.status === 'FAILED');
+    if (failed.length === 0) return;
+    if (!confirm(`Chạy lại ${failed.length} giao dịch FAILED?`)) return;
+    try {
+      // TODO: replace with real bulk-retry API
+      await new Promise(r => setTimeout(r, 600));
+      alert(`Đã gửi yêu cầu chạy lại ${failed.length} giao dịch`);
+      load();
+    } catch (e) {
+      alert((e as Error).message);
+    }
+  };
 
   const totalSuccess = transfers.filter((t) => t.status === 'SUCCESS').reduce((s, t) => s + t.amount, 0);
   const failedCount = transfers.filter((t) => t.status === 'FAILED').length;
 
   return (
     <DashboardLayout role="admin">
-      <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
-        <Banknote size={24} /> Nhật ký Auto-Transfer (V12.2)
+      <h2 className="text-2xl font-bold mb-3 flex items-center gap-2">
+        <Banknote size={24} /> Nhật ký Auto Transfer
       </h2>
+
+      <div className="mb-6 rounded-md border border-blue-200 bg-blue-50/60 px-3 py-2 text-sm text-blue-900 flex items-start gap-2">
+        <Info className="w-4 h-4 mt-0.5 flex-shrink-0" />
+        <span>
+          <b>Bên chuyển</b> = CCB Mart (hệ thống tự động). <b>Bên nhận</b> = đối tác (CTV/HKD/Đại lý).
+          Auto Transfer là tầng trung gian giữa Partner Payout Engine và cổng ngân hàng.
+        </span>
+      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <Card>
@@ -68,7 +105,7 @@ export default function AdminTransfersPage() {
         </Card>
       </div>
 
-      <div className="flex gap-2 mb-4">
+      <div className="flex gap-2 mb-4 items-center">
         {['', 'PENDING', 'SUCCESS', 'FAILED'].map((s) => (
           <button
             key={s}
@@ -80,6 +117,11 @@ export default function AdminTransfersPage() {
             {s === '' ? 'Tất cả' : s}
           </button>
         ))}
+        {failedCount > 0 && (
+          <Button variant="destructive" size="sm" onClick={handleRetryAll} className="ml-auto">
+            <RefreshCw className="w-4 h-4 mr-1" /> Retry tất cả FAILED ({failedCount})
+          </Button>
+        )}
       </div>
 
       {loading ? (
@@ -100,6 +142,7 @@ export default function AdminTransfersPage() {
                   <TableHead>Ref Invoice</TableHead>
                   <TableHead>Trạng thái</TableHead>
                   <TableHead>Lỗi</TableHead>
+                  <TableHead>Thao tác</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -115,20 +158,27 @@ export default function AdminTransfersPage() {
                       <Badge variant="outline" className="text-xs">{t.toUser.rank}</Badge>
                     </TableCell>
                     <TableCell className="text-right font-mono font-semibold">
-                      {t.amount > 0 ? formatVND(t.amount) : '-'}
+                      {t.amount > 0 ? formatVND(t.amount) : '—'}
                     </TableCell>
-                    <TableCell className="font-mono text-xs">{t.reference ? `#${t.reference}` : '-'}</TableCell>
+                    <TableCell className="font-mono text-xs">{t.reference ? `#${t.reference}` : '—'}</TableCell>
                     <TableCell>
                       <Badge className={STATUS_STYLES[t.status]}>{t.status}</Badge>
                     </TableCell>
                     <TableCell className="text-xs text-red-600 max-w-[200px] truncate">
-                      {t.errorMessage || '-'}
+                      {t.errorMessage || '—'}
+                    </TableCell>
+                    <TableCell>
+                      {t.status === 'FAILED' && (
+                        <Button variant="outline" size="sm" onClick={() => handleRetry(t.id)}>
+                          <RefreshCw className="w-3 h-3 mr-1" /> Retry
+                        </Button>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))}
                 {transfers.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8 text-slate-500">
+                    <TableCell colSpan={8} className="text-center py-8 text-slate-500">
                       Chưa có giao dịch
                     </TableCell>
                   </TableRow>

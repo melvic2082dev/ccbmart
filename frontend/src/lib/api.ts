@@ -82,7 +82,26 @@ export const api = {
   adminDashboard: () => fetchAPI('/admin/dashboard'),
   adminCtvs: () => fetchAPI('/admin/ctvs'),
   adminCtvTree: () => fetchAPI('/admin/ctv-tree'),
+  adminCtvDetails: (id: number) => fetchAPI(`/admin/ctv/${id}/details`),
+  adminCtvReassign: (id: number, newParentId: number | null, reason?: string) =>
+    fetchAPI(`/admin/ctv/${id}/reassign`, { method: 'POST', body: JSON.stringify({ newParentId, reason }) }),
+  adminBulkNotify: (data: { userIds: number[]; title: string; content: string; type?: string }) =>
+    fetchAPI('/admin/notifications/bulk', { method: 'POST', body: JSON.stringify(data) }),
+  adminCtvChangeRank: (id: number, newRank: string, reason?: string) =>
+    fetchAPI(`/admin/ctv/${id}/rank`, { method: 'POST', body: JSON.stringify({ newRank, reason }) }),
+  adminCtvToggleActive: (id: number, isActive: boolean, reason?: string) =>
+    fetchAPI(`/admin/ctv/${id}/toggle-active`, { method: 'POST', body: JSON.stringify({ isActive, reason }) }),
+  adminCtvCreate: (data: Record<string, unknown>) =>
+    fetchAPI('/admin/ctv', { method: 'POST', body: JSON.stringify(data) }),
+  adminCtvExportUrl: () => `${API_BASE}/admin/ctv/export`,
   adminAgencies: () => fetchAPI('/admin/agencies'),
+  adminAgencyDetails: (id: number) => fetchAPI(`/admin/agencies/${id}/details`),
+  adminAgencyTransactions: (id: number, days = 30) =>
+    fetchAPI(`/admin/agencies/${id}/transactions?days=${days}`),
+  adminAgencyRestockSuggestions: (id: number) =>
+    fetchAPI(`/admin/agencies/${id}/restock-suggestions`),
+  adminAgencyExportUrl: (id: number, days = 30) =>
+    `${API_BASE}/admin/agencies/${id}/transactions/export?days=${days}`,
   adminCommissionConfig: () => fetchAPI('/admin/config/commission'),
   adminUpdateCommission: (tier: string, data: Record<string, number>) =>
     fetchAPI(`/admin/config/commission/${tier}`, { method: 'PUT', body: JSON.stringify(data) }),
@@ -100,6 +119,12 @@ export const api = {
   adminBusinessHouseholds: () => fetchAPI('/admin/business-household'),
   adminBusinessHouseholdAction: (data: Record<string, unknown>) =>
     fetchAPI('/admin/business-household', { method: 'POST', body: JSON.stringify(data) }),
+  adminBusinessHouseholdDetails: (id: number) =>
+    fetchAPI(`/admin/business-household/${id}/details`),
+  adminBusinessHouseholdRenew: (id: number, kind: 'dealer' | 'training', termMonths: number) =>
+    fetchAPI(`/admin/business-household/${id}/renew`, { method: 'POST', body: JSON.stringify({ kind, termMonths }) }),
+  adminBusinessHouseholdUpdateBank: (id: number, bankName: string, bankAccountNo: string, bankAccountHolder: string) =>
+    fetchAPI(`/admin/business-household/${id}/update-bank`, { method: 'POST', body: JSON.stringify({ bankName, bankAccountNo, bankAccountHolder }) }),
 
   // V12.1: Training Logs (admin)
   adminTrainingLogs: (page = 1, status?: string) =>

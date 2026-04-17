@@ -54,7 +54,7 @@ export default function DashboardLayout({ role, children }: { role: string; chil
         <style>{`@media (min-width: 1024px) { main { margin-left: ${desktopMl} !important; } }`}</style>
         <div className="mb-6 flex items-center justify-between">
           <div>
-            <p className="text-sm text-muted-foreground">Xin chao,</p>
+            <p className="text-sm text-muted-foreground">Xin chào,</p>
             <p className="text-lg font-semibold">{user.name} {user.rank ? `(${user.rank})` : ''}</p>
           </div>
         </div>

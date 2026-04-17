@@ -65,7 +65,7 @@ export default function CtvCashDeposit() {
   return (
     <DashboardLayout role="ctv">
       <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
-        <Banknote size={24} /> Nop tien mat
+        <Banknote size={24} /> Nộp tiền mặt
       </h2>
 
       {error && (
@@ -76,12 +76,12 @@ export default function CtvCashDeposit() {
         <Card>
           <CardContent className="py-12 text-center">
             <CheckCircle size={48} className="mx-auto text-emerald-500 mb-4" />
-            <h3 className="text-xl font-bold mb-2">Phieu nop tien da tao!</h3>
-            <p className="text-slate-500">Ma phieu: #{success.depositId}</p>
-            <p className="text-slate-500">Tong: {formatVND(success.totalAmount)} ({success.transactionCount} giao dich)</p>
-            <p className="text-slate-500 mt-2">Admin se xac nhan khi nhan duoc tien.</p>
+            <h3 className="text-xl font-bold mb-2">Phiếu nộp tiền đã tạo!</h3>
+            <p className="text-slate-500">Mã phiếu: #{success.depositId}</p>
+            <p className="text-slate-500">Tổng: {formatVND(success.totalAmount)} ({success.transactionCount} giao dịch)</p>
+            <p className="text-slate-500 mt-2">Admin sẽ xác nhận khi nhận được tiền.</p>
             <Button onClick={() => { setSuccess(null); setSelected(new Set()); fetchData(); }} className="mt-6">
-              Quay lai
+              Quay lại
             </Button>
           </CardContent>
         </Card>
@@ -92,7 +92,7 @@ export default function CtvCashDeposit() {
       ) : transactions.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center text-slate-500">
-            Khong co giao dich tien mat can nop
+            Không có giao dịch tiền mặt cần nộp
           </CardContent>
         </Card>
       ) : (
@@ -101,12 +101,12 @@ export default function CtvCashDeposit() {
           <Card className="mb-4">
             <CardContent className="pt-6 flex items-center justify-between">
               <div>
-                <p className="text-sm text-slate-500">Tong tien mat chua nop</p>
+                <p className="text-sm text-slate-500">Tổng tiền mặt chưa nộp</p>
                 <p className="text-2xl font-bold text-yellow-600">{formatVND(totalAmount)}</p>
-                <p className="text-sm text-slate-400">{transactions.length} giao dich</p>
+                <p className="text-sm text-slate-400">{transactions.length} giao dịch</p>
               </div>
               <Button variant="outline" onClick={selectAll}>
-                {selected.size === transactions.length ? 'Bo chon tat ca' : 'Chon tat ca'}
+                {selected.size === transactions.length ? 'Bỏ chọn tất cả' : 'Chọn tất cả'}
               </Button>
             </CardContent>
           </Card>
@@ -128,7 +128,7 @@ export default function CtvCashDeposit() {
                       className="w-5 h-5 rounded"
                     />
                     <div>
-                      <p className="font-semibold">#{tx.id} - {tx.customer?.name || 'Khach hang'}</p>
+                      <p className="font-semibold">#{tx.id} - {tx.customer?.name || 'Khách hàng'}</p>
                       <p className="text-xs text-slate-400">{new Date(tx.createdAt).toLocaleString('vi-VN')}</p>
                     </div>
                   </div>
@@ -143,11 +143,11 @@ export default function CtvCashDeposit() {
             <Card className="sticky bottom-4">
               <CardContent className="py-4 flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-slate-500">Da chon: {selected.size} giao dich</p>
+                  <p className="text-sm text-slate-500">Đã chọn: {selected.size} giao dịch</p>
                   <p className="text-xl font-bold text-emerald-600">{formatVND(selectedAmount)}</p>
                 </div>
                 <Button onClick={handleSubmit} disabled={submitting} size="lg">
-                  {submitting ? 'Dang gui...' : 'Xac nhan nop tien'}
+                  {submitting ? 'Đang gửi…' : 'Xác nhận nộp tiền'}
                 </Button>
               </CardContent>
             </Card>

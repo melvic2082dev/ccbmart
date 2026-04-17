@@ -161,7 +161,7 @@ async function calculateSalaryFundStatus(month) {
       id: m.id,
       name: m.name,
       rank: m.rank,
-      salary: COMMISSION_RATES[m.rank]?.fixedSalary || 0,
+      fixedSalary: COMMISSION_RATES[m.rank]?.fixedSalary || 0,
     })),
   };
 }

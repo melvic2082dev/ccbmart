@@ -14,14 +14,14 @@ export default function AdminReferralReport() {
 
   return (
     <DashboardLayout role="admin">
-      <h2 className="text-2xl font-bold mb-6 flex items-center gap-2"><Users size={24} /> Bao cao Referral</h2>
+      <h2 className="text-2xl font-bold mb-6 flex items-center gap-2"><Users size={24} /> Báo cáo Referral</h2>
       <div className="grid grid-cols-2 gap-4 mb-6">
         <Card className="floating-card"><CardContent className="pt-6 text-center">
-          <p className="text-sm text-gray-500">Tong hoa hong</p>
+          <p className="text-sm text-gray-500">Tổng hoa hồng</p>
           <p className="text-2xl font-bold text-green-600">{formatVND(data?.totalAmount || 0)}</p>
         </CardContent></Card>
         <Card className="floating-card"><CardContent className="pt-6 text-center">
-          <p className="text-sm text-gray-500">Tong giao dich</p>
+          <p className="text-sm text-gray-500">Tổng giao dịch</p>
           <p className="text-2xl font-bold">{data?.totalCount || 0}</p>
         </CardContent></Card>
       </div>
@@ -30,12 +30,12 @@ export default function AdminReferralReport() {
           <CardContent className="overflow-x-auto p-0">
             <Table>
               <TableHeader><TableRow>
-                <TableHead>Nguoi gioi thieu</TableHead>
-                <TableHead>Hang</TableHead>
-                <TableHead>Nguoi duoc GT</TableHead>
-                <TableHead className="text-right">Hoa hong</TableHead>
-                <TableHead>Ty le</TableHead>
-                <TableHead>Thang</TableHead>
+                <TableHead>Người giới thiệu</TableHead>
+                <TableHead>Hạng</TableHead>
+                <TableHead>Người được GT</TableHead>
+                <TableHead className="text-right">Hoa hồng</TableHead>
+                <TableHead>Tỷ lệ</TableHead>
+                <TableHead>Tháng</TableHead>
               </TableRow></TableHeader>
               <TableBody>
                 {(data?.commissions || []).map((c: any) => (

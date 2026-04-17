@@ -15,19 +15,19 @@ export default function AdminTiers() {
 
   return (
     <DashboardLayout role="admin">
-      <h2 className="text-2xl font-bold mb-6 flex items-center gap-2"><Award size={24} /> Hang the thanh vien</h2>
+      <h2 className="text-2xl font-bold mb-6 flex items-center gap-2"><Award size={24} /> Hạng thẻ thành viên</h2>
       {loading ? <div className="h-48 bg-gray-200 animate-pulse rounded-xl" /> : (
         <Card>
           <CardContent className="overflow-x-auto p-0">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Hang</TableHead>
-                  <TableHead className="text-right">Nap toi thieu</TableHead>
-                  <TableHead className="text-right">Giam gia</TableHead>
+                  <TableHead>Hạng</TableHead>
+                  <TableHead className="text-right">Nạp tối thiểu</TableHead>
+                  <TableHead className="text-right">Giảm giá</TableHead>
                   <TableHead className="text-right">Referral %</TableHead>
-                  <TableHead className="text-right">Cap/thang</TableHead>
-                  <TableHead className="text-right">So thanh vien</TableHead>
+                  <TableHead className="text-right">Cap/tháng</TableHead>
+                  <TableHead className="text-right">Số thành viên</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

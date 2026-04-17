@@ -44,6 +44,19 @@ async function createCtvTransaction(ctvId, { customerId, customerName, customerP
     throw new Error('CTV khong hop le hoac da bi khoa');
   }
 
+  // Self-referral guard: CTV không được tự bán cho chính mình
+  // Check phone match against CTV's own phone to prevent hoa hồng self-deal
+  if (customerPhone && ctv.phone && customerPhone === ctv.phone) {
+    throw new Error('Khong the tu ban cho chinh minh — neu mua ca nhan, hay su dung tai khoan Thanh vien');
+  }
+  if (customerId) {
+    const existingCustomer = await prisma.customer.findUnique({ where: { id: customerId } });
+    // Block if this customer's phone matches CTV's phone (they ARE the CTV)
+    if (existingCustomer && ctv.phone && existingCustomer.phone === ctv.phone) {
+      throw new Error('Khach hang nay chinh la CTV — khong duoc tu ban cho chinh minh');
+    }
+  }
+
   // Find or create customer
   let customer;
   if (customerId) {
@@ -350,11 +363,12 @@ async function getReconciliationStats() {
 
   const pendingCount = pendingTxns.length;
   const pendingAmount = pendingTxns.reduce((s, t) => s + t.totalAmount, 0);
-  const pendingByMethod = { bank_transfer: 0, cash: 0 };
+  const pendingByMethod = { bank_transfer: 0, cash: 0, momo: 0, zalopay: 0 };
   let totalWaitMs = 0;
 
   for (const t of pendingTxns) {
-    pendingByMethod[t.paymentMethod || 'cash']++;
+    const method = t.paymentMethod || 'cash';
+    pendingByMethod[method] = (pendingByMethod[method] || 0) + 1;
     if (t.ctvSubmittedAt) {
       totalWaitMs += Date.now() - new Date(t.ctvSubmittedAt).getTime();
     }

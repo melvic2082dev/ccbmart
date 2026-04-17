@@ -10,9 +10,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { ShoppingCart, Clock, CheckCircle, XCircle } from 'lucide-react';
 
 const statusConfig: Record<string, { label: string; color: string }> = {
-  PENDING: { label: 'Cho duyet', color: 'bg-yellow-100 text-yellow-700' },
-  CONFIRMED: { label: 'Da duyet', color: 'bg-emerald-100 text-emerald-700' },
-  REJECTED: { label: 'Tu choi', color: 'bg-red-100 text-red-700' },
+  PENDING: { label: 'Chờ duyệt', color: 'bg-yellow-100 text-yellow-700' },
+  CONFIRMED: { label: 'Đã duyệt', color: 'bg-emerald-100 text-emerald-700' },
+  REJECTED: { label: 'Từ chối', color: 'bg-red-100 text-red-700' },
 };
 
 export default function CtvTransactions() {
@@ -40,26 +40,26 @@ export default function CtvTransactions() {
   return (
     <DashboardLayout role="ctv">
       <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
-        <ShoppingCart size={24} /> Giao dich ({total})
+        <ShoppingCart size={24} /> Giao dịch ({total})
       </h2>
 
       <div className="flex gap-2 mb-4">
-        <Button variant={tab === '' ? 'default' : 'outline'} size="sm" onClick={() => setTab('')}>Tat ca</Button>
+        <Button variant={tab === '' ? 'default' : 'outline'} size="sm" onClick={() => setTab('')}>Tất cả</Button>
         <Button variant={tab === 'PENDING' ? 'default' : 'outline'} size="sm" onClick={() => setTab('PENDING')}>
-          <Clock size={14} className="mr-1" /> Cho duyet
+          <Clock size={14} className="mr-1" /> Chờ duyệt
         </Button>
         <Button variant={tab === 'CONFIRMED' ? 'default' : 'outline'} size="sm" onClick={() => setTab('CONFIRMED')}>
-          <CheckCircle size={14} className="mr-1" /> Da duyet
+          <CheckCircle size={14} className="mr-1" /> Đã duyệt
         </Button>
         <Button variant={tab === 'REJECTED' ? 'default' : 'outline'} size="sm" onClick={() => setTab('REJECTED')}>
-          <XCircle size={14} className="mr-1" /> Tu choi
+          <XCircle size={14} className="mr-1" /> Từ chối
         </Button>
       </div>
 
       {loading ? (
         <div className="space-y-3">{[1, 2, 3].map(i => <div key={i} className="h-16 bg-slate-200 animate-pulse rounded-xl" />)}</div>
       ) : transactions.length === 0 ? (
-        <Card><CardContent className="py-12 text-center text-slate-500">Khong co giao dich</CardContent></Card>
+        <Card><CardContent className="py-12 text-center text-slate-500">Không có giao dịch</CardContent></Card>
       ) : (
         <Card>
           <CardContent className="overflow-x-auto p-0">
@@ -67,12 +67,12 @@ export default function CtvTransactions() {
               <TableHeader>
                 <TableRow>
                   <TableHead>ID</TableHead>
-                  <TableHead>Khach hang</TableHead>
-                  <TableHead className="text-right">So tien</TableHead>
-                  <TableHead>PT thanh toan</TableHead>
-                  <TableHead>Trang thai</TableHead>
-                  <TableHead>Ngay tao</TableHead>
-                  <TableHead>Ghi chu</TableHead>
+                  <TableHead>Khách hàng</TableHead>
+                  <TableHead className="text-right">Số tiền</TableHead>
+                  <TableHead>PT thanh toán</TableHead>
+                  <TableHead>Trạng thái</TableHead>
+                  <TableHead>Ngày tạo</TableHead>
+                  <TableHead>Ghi chú</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -87,7 +87,7 @@ export default function CtvTransactions() {
                         {tx.paymentMethod === 'bank_transfer' ? (
                           <Badge variant="outline">CK {tx.bankCode ? `(${tx.bankCode})` : ''}</Badge>
                         ) : tx.paymentMethod === 'cash' ? (
-                          <Badge variant="secondary">Tien mat</Badge>
+                          <Badge variant="secondary">Tiền mặt</Badge>
                         ) : '-'}
                       </TableCell>
                       <TableCell>
@@ -95,7 +95,7 @@ export default function CtvTransactions() {
                       </TableCell>
                       <TableCell className="text-xs">{new Date(tx.createdAt).toLocaleString('vi-VN')}</TableCell>
                       <TableCell className="text-xs text-slate-500 max-w-[150px] truncate">
-                        {tx.rejectedReason || (tx.paymentProof ? 'Co bang chung' : '')}
+                        {tx.rejectedReason || (tx.paymentProof ? 'Có bằng chứng' : '')}
                       </TableCell>
                     </TableRow>
                   );
@@ -108,7 +108,7 @@ export default function CtvTransactions() {
 
       {totalPages > 1 && (
         <div className="flex justify-center gap-2 mt-4">
-          <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => fetchData(page - 1)}>Truoc</Button>
+          <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => fetchData(page - 1)}>Trước</Button>
           <span className="flex items-center text-sm text-slate-500">Trang {page}/{totalPages}</span>
           <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => fetchData(page + 1)}>Sau</Button>
         </div>

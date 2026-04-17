@@ -1,12 +1,16 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { api } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { ShieldCheck } from 'lucide-react';
+import { ShieldCheck, Search, Eye } from 'lucide-react';
+
+const PAGE_SIZE_KYC = 10;
 
 interface PendingKyc {
   id: number;
@@ -25,6 +29,9 @@ export default function AdminKycPage() {
   const [loading, setLoading] = useState(true);
   const [reason, setReason] = useState('');
   const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [viewUser, setViewUser] = useState<PendingKyc | null>(null);
 
   const fetchData = () => {
     setLoading(true);
@@ -34,7 +41,20 @@ export default function AdminKycPage() {
       .finally(() => setLoading(false));
   };
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { fetchData(); }, []);
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => { setPage(1); }, [search]);
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return list.filter((u) => !q
+      || u.name.toLowerCase().includes(q)
+      || u.email.toLowerCase().includes(q)
+      || (u.idNumber || '').toLowerCase().includes(q));
+  }, [list, search]);
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE_KYC));
+  const paged = filtered.slice((page - 1) * PAGE_SIZE_KYC, page * PAGE_SIZE_KYC);
 
   const handleVerify = async (userId: number, approved: boolean) => {
     try {
@@ -50,89 +70,149 @@ export default function AdminKycPage() {
   return (
     <DashboardLayout role="admin">
       <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
-        <ShieldCheck size={24} /> eKYC - Xác minh danh tính (V12.2)
+        <ShieldCheck size={24} /> eKYC — Xác minh danh tính
       </h2>
+
+      <div className="mb-4">
+        <div className="relative max-w-md">
+          <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Tìm theo tên / email / CCCD…"
+            className="pl-8"
+          />
+        </div>
+      </div>
 
       {loading ? (
         <div className="h-64 bg-slate-200 animate-pulse rounded-xl" />
       ) : (
         <Card>
           <CardHeader>
-            <CardTitle>Chờ xác minh ({list.length})</CardTitle>
+            <CardTitle>Chờ xác minh ({filtered.length}/{list.length})</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-0">
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Họ tên</TableHead>
                   <TableHead>Email</TableHead>
-                  <TableHead>Chức danh</TableHead>
+                  <TableHead>Rank</TableHead>
                   <TableHead>Số CCCD</TableHead>
                   <TableHead>Ngày nộp</TableHead>
-                  <TableHead>Thao tác</TableHead>
+                  <TableHead className="text-center">Thao tác</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {list.map((u) => (
+                {paged.map((u) => (
                   <TableRow key={u.id}>
                     <TableCell className="font-medium">{u.name}</TableCell>
                     <TableCell className="text-sm">{u.email}</TableCell>
                     <TableCell>
-                      <Badge variant="outline">{u.rank || '-'}</Badge>
+                      <Badge variant="outline">{u.rank || '—'}</Badge>
                     </TableCell>
-                    <TableCell className="font-mono text-sm">{u.idNumber || '-'}</TableCell>
+                    <TableCell className="font-mono text-sm">{u.idNumber || '—'}</TableCell>
                     <TableCell className="text-sm">
-                      {u.kycSubmittedAt ? new Date(u.kycSubmittedAt).toLocaleDateString('vi-VN') : '-'}
+                      {u.kycSubmittedAt ? new Date(u.kycSubmittedAt).toLocaleDateString('vi-VN') : '—'}
                     </TableCell>
                     <TableCell>
-                      <div className="flex flex-col gap-2">
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => handleVerify(u.id, true)}
-                            className="px-2 py-1 text-xs bg-green-100 text-green-700 rounded hover:bg-green-200"
-                          >
-                            Xác minh
-                          </button>
-                          <button
-                            onClick={() => setSelectedId(selectedId === u.id ? null : u.id)}
-                            className="px-2 py-1 text-xs bg-red-100 text-red-700 rounded hover:bg-red-200"
-                          >
-                            Từ chối
-                          </button>
-                        </div>
-                        {selectedId === u.id && (
-                          <div className="flex gap-1">
-                            <input
-                              type="text"
-                              value={reason}
-                              onChange={(e) => setReason(e.target.value)}
-                              placeholder="Lý do từ chối..."
-                              className="flex-1 px-2 py-1 text-xs border rounded"
-                            />
-                            <button
-                              onClick={() => handleVerify(u.id, false)}
-                              className="px-2 py-1 text-xs bg-red-600 text-white rounded"
-                            >
-                              OK
-                            </button>
-                          </div>
-                        )}
+                      <div className="flex items-center justify-center gap-1">
+                        <Button variant="ghost" size="icon-sm" title="Xem ảnh" onClick={() => setViewUser(u)}>
+                          <Eye className="w-4 h-4 text-blue-600" />
+                        </Button>
+                        <Button variant="outline" size="sm" className="text-xs text-emerald-700" onClick={() => handleVerify(u.id, true)}>
+                          Xác minh
+                        </Button>
+                        <Button variant="outline" size="sm" className="text-xs text-red-700"
+                          onClick={() => setSelectedId(selectedId === u.id ? null : u.id)}>
+                          Từ chối
+                        </Button>
                       </div>
+                      {selectedId === u.id && (
+                        <div className="flex gap-1 mt-2">
+                          <Input
+                            value={reason}
+                            onChange={(e) => setReason(e.target.value)}
+                            placeholder="Lý do từ chối…"
+                            className="text-xs"
+                          />
+                          <Button variant="destructive" size="sm" onClick={() => handleVerify(u.id, false)}>
+                            OK
+                          </Button>
+                        </div>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))}
-                {list.length === 0 && (
+                {paged.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={6} className="text-center py-8 text-slate-500">
-                      Không có hồ sơ KYC cần xác minh
+                      Không có hồ sơ KYC phù hợp
                     </TableCell>
                   </TableRow>
                 )}
               </TableBody>
             </Table>
+            {filtered.length > PAGE_SIZE_KYC && (
+              <div className="flex items-center justify-between px-4 py-3 border-t text-sm">
+                <p className="text-gray-500">Trang {page}/{totalPages}</p>
+                <div className="flex gap-1">
+                  <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage(page - 1)}>← Trước</Button>
+                  <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage(page + 1)}>Sau →</Button>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       )}
+
+      {/* KYC image viewer modal */}
+      {viewUser && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" onClick={() => setViewUser(null)}>
+          <div className="bg-white rounded-xl p-6 max-w-3xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-lg font-bold">Hồ sơ eKYC · {viewUser.name}</h3>
+              <Button variant="outline" size="sm" onClick={() => setViewUser(null)}>Đóng</Button>
+            </div>
+            <div className="grid grid-cols-2 gap-3 text-sm mb-4">
+              <div><span className="text-gray-500">Email:</span> <b>{viewUser.email}</b></div>
+              <div><span className="text-gray-500">SĐT:</span> <b>{viewUser.phone || '—'}</b></div>
+              <div><span className="text-gray-500">Rank:</span> <b>{viewUser.rank || '—'}</b></div>
+              <div><span className="text-gray-500">Số CCCD:</span> <b className="font-mono">{viewUser.idNumber || '—'}</b></div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <KycImageCard title="CCCD mặt trước" src={viewUser.idFrontImage} />
+              <KycImageCard title="CCCD mặt sau" src={viewUser.idBackImage} />
+            </div>
+            <div className="mt-4 flex items-center justify-end gap-2">
+              <Button variant="destructive"
+                onClick={() => { setSelectedId(viewUser.id); setViewUser(null); }}>
+                Từ chối
+              </Button>
+              <Button onClick={() => { handleVerify(viewUser.id, true); setViewUser(null); }}>
+                ✓ Xác minh
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </DashboardLayout>
+  );
+}
+
+function KycImageCard({ title, src }: { title: string; src: string | null }) {
+  return (
+    <div className="rounded-md border overflow-hidden">
+      <p className="px-3 py-2 text-xs font-semibold bg-gray-50 border-b">{title}</p>
+      {src ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={src} alt={title} className="w-full h-56 object-cover bg-gray-100" />
+      ) : (
+        <div className="h-56 bg-gray-100 flex items-center justify-center text-xs text-gray-400">
+          (Chưa upload ảnh)
+        </div>
+      )}
+    </div>
   );
 }

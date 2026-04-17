@@ -13,8 +13,8 @@ type Tab = 'ctv' | 'products' | 'members';
 
 const TAB_CONFIG: Record<Tab, { label: string; icon: React.ReactNode; importFn: (fd: FormData) => Promise<any> }> = {
   ctv: { label: 'CTV', icon: <Users size={16} />, importFn: api.adminImportCtv },
-  products: { label: 'San pham', icon: <Package size={16} />, importFn: api.adminImportProducts },
-  members: { label: 'Thanh vien', icon: <Award size={16} />, importFn: api.adminImportMembers },
+  products: { label: 'Sản phẩm', icon: <Package size={16} />, importFn: api.adminImportProducts },
+  members: { label: 'Thành viên', icon: <Award size={16} />, importFn: api.adminImportMembers },
 };
 
 export default function AdminImport() {
@@ -41,7 +41,7 @@ export default function AdminImport() {
 
   return (
     <DashboardLayout role="admin">
-      <h2 className="text-2xl font-bold mb-6 flex items-center gap-2"><FileSpreadsheet size={24} /> Import du lieu</h2>
+      <h2 className="text-2xl font-bold mb-6 flex items-center gap-2"><FileSpreadsheet size={24} /> Import dữ liệu</h2>
 
       {/* Tabs */}
       <div className="border-b border-border mb-6">
@@ -56,14 +56,14 @@ export default function AdminImport() {
 
       <Card className="rounded-2xl border border-border">
         <CardHeader>
-          <CardTitle>Import {TAB_CONFIG[tab].label} tu Excel</CardTitle>
-          <p className="text-sm text-muted-foreground">Tai file mau, dien du lieu, upload len he thong</p>
+          <CardTitle>Import {TAB_CONFIG[tab].label} từ Excel</CardTitle>
+          <p className="text-sm text-muted-foreground">Tải file mẫu, điền dữ liệu, upload lên hệ thống</p>
         </CardHeader>
         <CardContent className="space-y-4">
           {/* Actions */}
           <div className="flex gap-3 flex-wrap">
             <Button variant="outline" onClick={() => api.adminDownloadTemplate(tab)} className="flex items-center gap-2">
-              <Download size={16} /> Tai file mau (.xlsx)
+              <Download size={16} /> Tải file mẫu (.xlsx)
             </Button>
           </div>
 
@@ -72,13 +72,13 @@ export default function AdminImport() {
             <input type="file" accept=".xlsx,.xls" onChange={e => setFile(e.target.files?.[0] || null)} className="hidden" id="import-file" />
             <label htmlFor="import-file" className="cursor-pointer">
               <Upload size={32} className="mx-auto text-muted-foreground mb-2" />
-              <p className="text-sm text-muted-foreground">{file ? file.name : 'Chon file Excel (.xlsx)'}</p>
+              <p className="text-sm text-muted-foreground">{file ? file.name : 'Chọn file Excel (.xlsx)'}</p>
             </label>
           </div>
 
           {file && (
             <Button onClick={handleImport} disabled={loading} className="w-full">
-              {loading ? 'Dang import...' : `Import ${TAB_CONFIG[tab].label}`}
+              {loading ? 'Đang import…' : `Import ${TAB_CONFIG[tab].label}`}
             </Button>
           )}
 
@@ -86,13 +86,13 @@ export default function AdminImport() {
           {result && !result.error && (
             <div className="space-y-3">
               <div className="flex gap-4">
-                <div className="flex items-center gap-2 text-green-600"><CheckCircle size={18} /> Thanh cong: {result.success?.length || 0}</div>
-                <div className="flex items-center gap-2 text-red-500"><XCircle size={18} /> That bai: {result.failed?.length || 0}</div>
-                <div className="text-muted-foreground">Tong: {result.total || 0}</div>
+                <div className="flex items-center gap-2 text-green-600"><CheckCircle size={18} /> Thành công: {result.success?.length || 0}</div>
+                <div className="flex items-center gap-2 text-red-500"><XCircle size={18} /> Thất bại: {result.failed?.length || 0}</div>
+                <div className="text-muted-foreground">Tổng: {result.total || 0}</div>
               </div>
               {result.failed?.length > 0 && (
                 <Table>
-                  <TableHeader><TableRow><TableHead>Du lieu</TableHead><TableHead>Loi</TableHead></TableRow></TableHeader>
+                  <TableHeader><TableRow><TableHead>Dữ liệu</TableHead><TableHead>Lỗi</TableHead></TableRow></TableHeader>
                   <TableBody>
                     {result.failed.map((f: any, i: number) => (
                       <TableRow key={i}><TableCell>{f.email || f.name || 'N/A'}</TableCell><TableCell className="text-red-500 text-sm">{f.error}</TableCell></TableRow>

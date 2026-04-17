@@ -39,11 +39,11 @@ export default function AdminMemberDeposits() {
 
   return (
     <DashboardLayout role="admin">
-      <h2 className="text-2xl font-bold mb-6 flex items-center gap-2"><CreditCard size={24} /> Duyet nap tien thanh vien</h2>
+      <h2 className="text-2xl font-bold mb-6 flex items-center gap-2"><CreditCard size={24} /> Duyệt nạp tiền thành viên</h2>
       <div className="flex gap-2 mb-4">
         {['PENDING', 'CONFIRMED', 'REJECTED', ''].map(s => (
           <Button key={s} variant={filter === s ? 'default' : 'outline'} size="sm" onClick={() => setFilter(s)}>
-            {s || 'Tat ca'}
+            {s || 'Tất cả'}
           </Button>
         ))}
       </div>
@@ -54,13 +54,13 @@ export default function AdminMemberDeposits() {
               <TableHeader>
                 <TableRow>
                   <TableHead>ID</TableHead>
-                  <TableHead>Thanh vien</TableHead>
-                  <TableHead>Hang</TableHead>
-                  <TableHead className="text-right">So tien</TableHead>
+                  <TableHead>Thành viên</TableHead>
+                  <TableHead>Hạng</TableHead>
+                  <TableHead className="text-right">Số tiền</TableHead>
                   <TableHead>PT</TableHead>
-                  <TableHead>Trang thai</TableHead>
-                  <TableHead>Ngay</TableHead>
-                  <TableHead>Hanh dong</TableHead>
+                  <TableHead>Trạng thái</TableHead>
+                  <TableHead>Ngày</TableHead>
+                  <TableHead>Hành động</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -93,11 +93,11 @@ export default function AdminMemberDeposits() {
       {rejectId && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setRejectId(null)}>
           <div className="bg-white rounded-xl p-6 w-96" onClick={e => e.stopPropagation()}>
-            <h3 className="text-lg font-bold mb-4">Tu choi nap tien #{rejectId}</h3>
-            <Input placeholder="Ly do..." value={rejectReason} onChange={e => setRejectReason(e.target.value)} className="mb-4" />
+            <h3 className="text-lg font-bold mb-4">Từ chối nạp tiền #{rejectId}</h3>
+            <Input placeholder="Lý do…" value={rejectReason} onChange={e => setRejectReason(e.target.value)} className="mb-4" />
             <div className="flex gap-2">
-              <Button variant="outline" onClick={() => setRejectId(null)} className="flex-1">Huy</Button>
-              <Button variant="destructive" onClick={handleReject} disabled={!rejectReason} className="flex-1">Tu choi</Button>
+              <Button variant="outline" onClick={() => setRejectId(null)} className="flex-1">Huỷ</Button>
+              <Button variant="destructive" onClick={handleReject} disabled={!rejectReason} className="flex-1">Từ chối</Button>
             </div>
           </div>
         </div>

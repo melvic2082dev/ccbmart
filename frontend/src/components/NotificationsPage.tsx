@@ -27,11 +27,16 @@ const typeColors: Record<string, string> = {
 };
 
 const typeLabels: Record<string, string> = {
-  RANK_CHANGE: 'Thay doi hang',
-  TRANSACTION_CONFIRMED: 'Giao dich',
-  SALARY_WARNING: 'Quy luong',
-  INVENTORY_WARNING: 'Ton kho',
-  RANK_UPDATE_REPORT: 'Bao cao hang',
+  RANK_CHANGE: 'Thay đổi hạng',
+  TRANSACTION_CONFIRMED: 'Giao dịch',
+  SALARY_WARNING: 'Quỹ lương',
+  INVENTORY_WARNING: 'Tồn kho',
+  RANK_UPDATE_REPORT: 'Báo cáo hạng',
+  ADMIN_BROADCAST: 'Thông báo',
+  TRANSACTION_REJECTED: 'Giao dịch bị từ chối',
+  CASH_DEPOSIT_CONFIRMED: 'Nộp tiền đã xác nhận',
+  NEW_TRANSACTION: 'Giao dịch mới',
+  CASH_DEPOSIT: 'Nộp tiền mặt',
 };
 
 export default function NotificationsPage({ role }: { role: string }) {
@@ -73,14 +78,14 @@ export default function NotificationsPage({ role }: { role: string }) {
     <DashboardLayout role={role}>
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-bold flex items-center gap-2">
-          <Bell size={24} /> Thong bao
+          <Bell size={24} /> Thông báo
           {unreadCount > 0 && (
-            <Badge variant="destructive" className="ml-2">{unreadCount} chua doc</Badge>
+            <Badge variant="destructive" className="ml-2">{unreadCount} chưa đọc</Badge>
           )}
         </h2>
         {unreadCount > 0 && (
           <Button variant="outline" size="sm" onClick={handleMarkAllRead}>
-            <CheckCheck size={16} className="mr-1" /> Doc tat ca
+            <CheckCheck size={16} className="mr-1" /> Đọc tất cả
           </Button>
         )}
       </div>
@@ -92,7 +97,7 @@ export default function NotificationsPage({ role }: { role: string }) {
       ) : notifications.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center text-slate-500">
-            Khong co thong bao nao
+            Không có thông báo nào
           </CardContent>
         </Card>
       ) : (
@@ -128,7 +133,7 @@ export default function NotificationsPage({ role }: { role: string }) {
           {totalPages > 1 && (
             <div className="flex justify-center gap-2 pt-4">
               <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => fetchData(page - 1)}>
-                Truoc
+                Trước
               </Button>
               <span className="flex items-center text-sm text-slate-500">
                 Trang {page}/{totalPages}

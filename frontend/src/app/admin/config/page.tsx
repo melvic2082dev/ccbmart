@@ -89,7 +89,7 @@ export default function AdminConfig() {
               <CardTitle className="flex items-center gap-2">
                 <Users size={20} /> Hoa hồng CTV theo cấp bậc
               </CardTitle>
-              <p className="text-sm text-slate-500">V12.1: Hoa hồng cá nhân + Phí DV đào tạo (thay F1/F2/F3)</p>
+              <p className="text-sm text-slate-500">Hoa hồng cá nhân + Thù lao DV duy trì (theo V13.2.1)</p>
             </CardHeader>
             <CardContent>
               <Table>
@@ -98,7 +98,7 @@ export default function AdminConfig() {
                     <TableHead>Cấp bậc</TableHead>
                     <TableHead>Tên</TableHead>
                     <TableHead className="text-right">HH Tự bán</TableHead>
-                    <TableHead className="text-right">Lương cứng</TableHead>
+                    <TableHead className="text-right">Thù lao DV duy trì</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -123,7 +123,7 @@ export default function AdminConfig() {
               <CardTitle className="flex items-center gap-2">
                 <GraduationCap size={20} /> Phí DV đào tạo theo mốc doanh số nhánh
               </CardTitle>
-              <p className="text-sm text-slate-500">Thay thế F1/F2/F3 | Phí cố định theo số combo nhánh/tháng | Hệ số K điều chỉnh</p>
+              <p className="text-sm text-slate-500">Phí cố định theo mốc combo nhánh/tháng · Hệ số K điều chỉnh theo quỹ 3% doanh thu kênh CTV</p>
             </CardHeader>
             <CardContent>
               <Table>
@@ -155,10 +155,94 @@ export default function AdminConfig() {
                 </TableBody>
               </Table>
               <div className="mt-4 p-3 bg-blue-50 rounded-lg text-sm text-blue-800">
-                <strong>Hệ số K:</strong> K = (3% x Tổng DT kênh CTV) / (Tổng phí DV lý thuyết) | Tối thiểu K = 0.7
+                <strong>Hệ số K:</strong> K = (3% × Tổng DT kênh CTV) ÷ (Tổng phí DV lý thuyết) · Tối thiểu K = 0.7
                 <br />
-                <strong>Phí thực nhận:</strong> Phí cố định x K
+                <strong>Phí thực nhận:</strong> Phí cố định × K
               </div>
+            </CardContent>
+          </Card>
+
+          {/* Mentor Bonus Pool 6.5% — V13.1 Mục 7.9 */}
+          <Card className="mb-6 border-purple-200">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <GraduationCap size={20} className="text-purple-600" />
+                Phí DV đào tạo cố vấn (Mentor Bonus Pool)
+              </CardTitle>
+              <p className="text-sm text-slate-500">V13.1 Mục 7.9 · 6.5% doanh số nhánh vượt cấp</p>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Tham số</TableHead>
+                    <TableHead>Giá trị mặc định</TableHead>
+                    <TableHead>Mô tả</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  <TableRow>
+                    <TableCell className="font-medium">% Pool tổng</TableCell>
+                    <TableCell><Badge className="bg-purple-100 text-purple-700">6.5%</Badge></TableCell>
+                    <TableCell className="text-sm text-gray-600">% doanh số nhánh vượt cấp trích vào quỹ</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="font-medium">Phân bổ T1 — Cố vấn trực tiếp</TableCell>
+                    <TableCell><Badge className="bg-orange-100 text-orange-700">3%</Badge></TableCell>
+                    <TableCell className="text-sm text-gray-600">Cấp trên trực tiếp của người vượt cấp</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="font-medium">Phân bổ T2 — Cố vấn gián tiếp</TableCell>
+                    <TableCell><Badge className="bg-amber-100 text-amber-700">2%</Badge></TableCell>
+                    <TableCell className="text-sm text-gray-600">Cấp trên gián tiếp (grand-parent)</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="font-medium">Pool chung</TableCell>
+                    <TableCell><Badge className="bg-indigo-100 text-indigo-700">1.5%</Badge></TableCell>
+                    <TableCell className="text-sm text-gray-600">Chia đều cho các GĐKD/GĐV không trực tiếp liên quan</TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+
+          {/* Acting Manager Bonus, Fast-Track, Soft Salary, Referral */}
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle>Các chính sách nhân sự bổ sung</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Chính sách</TableHead>
+                    <TableHead>Giá trị</TableHead>
+                    <TableHead>Mô tả</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  <TableRow>
+                    <TableCell className="font-medium">Acting Manager Bonus</TableCell>
+                    <TableCell><Badge variant="outline">50% thù lao · tối đa 6 tháng</Badge></TableCell>
+                    <TableCell className="text-sm text-gray-600">Khi mentor ngừng hoạt động, cấp phó được ủy quyền tạm thời nhận 50% thù lao DV duy trì</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="font-medium">Fast-Track thăng cấp</TableCell>
+                    <TableCell><Badge variant="outline">≥ 200% KPI + đề cử</Badge></TableCell>
+                    <TableCell className="text-sm text-gray-600">Vượt 200% KPI 2 tháng liên tiếp + có đề cử từ GĐKD → thăng cấp nhanh (bỏ qua T+1)</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="font-medium">Soft Salary (quỹ lương mềm)</TableCell>
+                    <TableCell><Badge variant="outline">Ngưỡng 5% DT kênh CTV</Badge></TableCell>
+                    <TableCell className="text-sm text-gray-600">Quỹ lương cứng không được vượt 5% doanh thu kênh CTV · cảnh báo 80% · dừng 100%</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="font-medium">Referral (giới thiệu thành viên)</TableCell>
+                    <TableCell><Badge variant="outline">Cap 500K/tháng · Sunset 12 tháng</Badge></TableCell>
+                    <TableCell className="text-sm text-gray-600">Thưởng giới thiệu tối đa 500K/người giới thiệu/tháng · hết hiệu lực sau 12 tháng kể từ ngày giới thiệu thành công</TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
             </CardContent>
           </Card>
 
@@ -298,7 +382,7 @@ export default function AdminConfig() {
               </div>
               <div className="flex items-start gap-2">
                 <Badge variant="outline" className="mt-0.5">Công thức</Badge>
-                <p>Số cấp quản lý tối đa = (5% x DT kênh CTV) / Lương cứng TB theo cấp</p>
+                <p>Số cấp quản lý tối đa = (5% × DT kênh CTV) ÷ Thù lao DV duy trì TB theo cấp</p>
               </div>
             </CardContent>
           </Card>

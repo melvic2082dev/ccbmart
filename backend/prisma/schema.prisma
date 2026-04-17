@@ -19,6 +19,8 @@ model User {
   agencyId      Int?     @map("agency_id")
   isActive      Boolean  @default(true) @map("is_active")
   isBusinessHousehold Boolean @default(false) @map("is_business_household")
+  // Multi-capability: user có thể vừa CTV vừa Member (mua hàng cá nhân + tích điểm)
+  isMember      Boolean  @default(false) @map("is_member")
   createdAt     DateTime @default(now()) @map("created_at")
 
   // V12.2: eKYC
@@ -67,6 +69,17 @@ model User {
   breakawayNewParent  BreakawayLog[]       @relation("BreakawayNewParent")
   breakawayFeesFrom   BreakawayFee[]       @relation("BreakFeeFrom")
   breakawayFeesTo     BreakawayFee[]       @relation("BreakFeeTo")
+
+  // Notifications
+  notifications       Notification[]
+
+  // Cash deposits (CTV batches cash collections)
+  cashDeposits        CashDeposit[] @relation("CashDepositCtv")
+
+  // Member capability (1-1): wallet, points, referrals
+  memberWallet        MemberWallet?
+  referralsGiven      ReferralLog[] @relation("ReferrerUser")
+  referralsReceived   ReferralLog[] @relation("RefereeUser")
 
   @@map("users")
 }
@@ -141,6 +154,27 @@ model BusinessHousehold {
   businessLicense String?  @map("business_license")
   registeredAt    DateTime @default(now()) @map("registered_at")
   status          String   @default("active") // active, suspended, terminated
+
+  // Contract info (V13.1 Mục 5.3)
+  dealerContractNo   String?   @map("dealer_contract_no")
+  dealerSignedAt     DateTime? @map("dealer_signed_at")
+  dealerExpiredAt    DateTime? @map("dealer_expired_at")
+  dealerTermMonths   Int?      @default(12) @map("dealer_term_months")
+  dealerPdfUrl       String?   @map("dealer_pdf_url")
+
+  trainingContractNo   String?   @map("training_contract_no")
+  trainingSignedAt     DateTime? @map("training_signed_at")
+  trainingExpiredAt    DateTime? @map("training_expired_at")
+  trainingTermMonths   Int?      @default(12) @map("training_term_months")
+  trainingPdfUrl       String?   @map("training_pdf_url")
+
+  // Bank info for training-fee disbursement
+  bankName           String?   @map("bank_name")
+  bankAccountNo      String?   @map("bank_account_no")
+  bankAccountHolder  String?   @map("bank_account_holder")
+
+  // Optional: marker for business-line registered "đào tạo" (tư vấn đào tạo)
+  trainingLineRegistered Boolean @default(false) @map("training_line_registered")
 
   user            User     @relation(fields: [userId], references: [id])
 
@@ -318,12 +352,59 @@ model Transaction {
   cogsAmount      Float    @map("cogs_amount")
   createdAt       DateTime @default(now()) @map("created_at")
 
+  // Reconciliation fields
+  status          String   @default("CONFIRMED") // PENDING/CONFIRMED/REJECTED
+  paymentMethod   String?  @map("payment_method") // bank_transfer/cash/momo/zalopay
+  bankCode        String?  @map("bank_code")
+  qrCodeData      String?  @map("qr_code_data")
+  ctvSubmittedAt  DateTime? @map("ctv_submitted_at")
+  confirmedBy     Int?     @map("confirmed_by")
+  confirmedAt     DateTime? @map("confirmed_at")
+  rejectedReason  String?  @map("rejected_reason")
+  cashDepositId   Int?     @map("cash_deposit_id")
+
   customer        Customer?  @relation(fields: [customerId], references: [id])
   ctv             User?      @relation("CtvTransactions", fields: [ctvId], references: [id])
   agency          Agency?    @relation("AgencyTransactions", fields: [agencyId], references: [id])
   items           TransactionItem[]
+  paymentProof    PaymentProof?
+  cashDeposit     CashDeposit? @relation(fields: [cashDepositId], references: [id])
 
+  @@index([status, channel])
+  @@index([ctvId, status])
   @@map("transactions")
+}
+
+model PaymentProof {
+  id            Int      @id @default(autoincrement())
+  transactionId Int      @unique @map("transaction_id")
+  imageUrl      String   @map("image_url")
+  notes         String?
+  uploadedBy    Int      @map("uploaded_by")
+  uploadedAt    DateTime @default(now()) @map("uploaded_at")
+
+  transaction   Transaction @relation(fields: [transactionId], references: [id])
+
+  @@map("payment_proofs")
+}
+
+model CashDeposit {
+  id              Int      @id @default(autoincrement())
+  ctvId           Int      @map("ctv_id")
+  amount          Float
+  transactionIds  String   @map("transaction_ids") // JSON string of int array
+  status          String   @default("PENDING") // PENDING/CONFIRMED/REJECTED
+  depositedAt     DateTime @default(now()) @map("deposited_at")
+  confirmedBy     Int?     @map("confirmed_by")
+  confirmedAt     DateTime? @map("confirmed_at")
+  notes           String?
+
+  ctv             User     @relation("CashDepositCtv", fields: [ctvId], references: [id])
+  transactions    Transaction[]
+
+  @@index([status])
+  @@index([ctvId, status])
+  @@map("cash_deposits")
 }
 
 model TransactionItem {
@@ -513,4 +594,94 @@ model SyncLog {
   status        String
 
   @@map("sync_logs")
+}
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  type      String   // SALARY_WARNING, RANK_CHANGE, TRANSACTION_CONFIRMED, etc.
+  title     String
+  content   String
+  metadata  String?  // JSON-encoded
+  isRead    Boolean  @default(false) @map("is_read")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@index([userId, isRead])
+  @@index([userId, createdAt])
+  @@map("notifications")
+}
+
+// ========================================================
+// Member system (V13.1): 1 user có thể vừa là CTV vừa Member
+// User.isMember = true ↔ có MemberWallet (1-1 via userId)
+// ========================================================
+
+model MembershipTier {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique // BASIC/SILVER/GOLD
+  minDeposit  Float    @map("min_deposit")
+  pointsRate  Float    @default(0.01) @map("points_rate") // % của đơn mua tính thành điểm
+  description String?
+
+  wallets     MemberWallet[]
+
+  @@map("membership_tiers")
+}
+
+model MemberWallet {
+  id             Int      @id @default(autoincrement())
+  userId         Int      @unique @map("user_id")
+  tierId         Int?     @map("tier_id")
+  balance        Float    @default(0)      // VND số dư ví
+  points         Int      @default(0)       // điểm tích luỹ
+  referralCode   String   @unique @map("referral_code") // CCB_XXXXXX
+  referredById   Int?     @map("referred_by_id") // wallet của người giới thiệu
+  totalDeposited Float    @default(0) @map("total_deposited")
+  totalSpent     Float    @default(0) @map("total_spent")
+  referralCap    Float    @default(500000) @map("referral_cap") // cap 500K/tháng
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  user           User     @relation(fields: [userId], references: [id])
+  tier           MembershipTier? @relation(fields: [tierId], references: [id])
+  deposits       DepositHistory[]
+
+  @@index([referralCode])
+  @@map("member_wallets")
+}
+
+model DepositHistory {
+  id          Int      @id @default(autoincrement())
+  walletId    Int      @map("wallet_id")
+  amount      Float
+  method      String   // bank_transfer / cash / momo / zalopay
+  status      String   @default("PENDING") // PENDING/CONFIRMED/REJECTED
+  reference   String?  // mã giao dịch từ cổng thanh toán
+  confirmedBy Int?     @map("confirmed_by")
+  confirmedAt DateTime? @map("confirmed_at")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  wallet      MemberWallet @relation(fields: [walletId], references: [id])
+
+  @@index([walletId, status])
+  @@map("deposit_history")
+}
+
+model ReferralLog {
+  id          Int      @id @default(autoincrement())
+  referrerId  Int      @map("referrer_id") // user id của người giới thiệu
+  refereeId   Int      @map("referee_id")  // user id của người được giới thiệu
+  month       String   // YYYY-MM
+  bonusAmount Float    @map("bonus_amount")
+  sourceTxnId Int?     @map("source_txn_id") // giao dịch nào gây ra bonus
+  sunsetAt    DateTime @map("sunset_at")      // hết hiệu lực sau 12 tháng
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  referrer    User     @relation("ReferrerUser", fields: [referrerId], references: [id])
+  referee     User     @relation("RefereeUser",  fields: [refereeId],  references: [id])
+
+  @@index([referrerId, month])
+  @@index([refereeId])
+  @@map("referral_logs")
 }

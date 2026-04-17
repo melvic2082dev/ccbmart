@@ -67,7 +67,8 @@ async function main() {
   });
   console.log('✅ Admin created');
 
-  // 2. CTV Hierarchy: GDKD -> GDV -> TP -> PP -> CTV
+  // 2. CTV Hierarchy — V13.2.1 "Tiêu chuẩn": 1 GĐKD + 4 GĐV + 8 TP + 16 PP + 32 CTV = 61 người
+  // (Mỗi GĐV có 2 TP, mỗi TP có 2 PP, mỗi PP có 2 CTV)
   const gdkd = await prisma.user.create({
     data: {
       email: 'ctv1@ccbmart.vn',
@@ -80,72 +81,53 @@ async function main() {
     },
   });
 
-  const gdv1 = await prisma.user.create({
-    data: {
-      email: 'ctv2@ccbmart.vn',
-      passwordHash: ctvHash,
-      role: 'ctv',
-      name: 'Trần Thị Mai',
-      phone: '0901100002',
-      rank: 'GDV',
-      parentId: gdkd.id,
-      isBusinessHousehold: true,
-    },
-  });
+  // 4 GDV dưới GDKD
+  const gdvs = [];
+  const gdvNames = [
+    { name: 'Trần Thị Mai',      phone: '0901100002' },
+    { name: 'Lê Đức Phong',      phone: '0901100003' },
+    { name: 'Phạm Ngọc Hoa',     phone: '0901100004' },
+    { name: 'Hoàng Minh Tuấn',   phone: '0901100005' },
+  ];
+  for (let i = 0; i < 4; i++) {
+    const gdv = await prisma.user.create({
+      data: {
+        email: `gdv${i + 1}@ccbmart.vn`,
+        passwordHash: ctvHash,
+        role: 'ctv',
+        name: gdvNames[i].name,
+        phone: gdvNames[i].phone,
+        rank: 'GDV',
+        parentId: gdkd.id,
+        isBusinessHousehold: i < 2, // 2 GĐV đầu là HKD
+      },
+    });
+    gdvs.push(gdv);
+  }
 
-  const gdv2 = await prisma.user.create({
-    data: {
-      email: 'ctv3@ccbmart.vn',
-      passwordHash: ctvHash,
-      role: 'ctv',
-      name: 'Lê Đức Phong',
-      phone: '0901100003',
-      rank: 'GDV',
-      parentId: gdkd.id,
-    },
-  });
+  // 8 TP (2 / GDV)
+  const tps = [];
+  for (let i = 0; i < 8; i++) {
+    const parent = gdvs[Math.floor(i / 2)];
+    const tp = await prisma.user.create({
+      data: {
+        email: `tp${i + 1}@ccbmart.vn`,
+        passwordHash: ctvHash,
+        role: 'ctv',
+        name: randomName(),
+        phone: randomPhone(),
+        rank: 'TP',
+        parentId: parent.id,
+        isBusinessHousehold: i < 2,
+      },
+    });
+    tps.push(tp);
+  }
 
-  const tp1 = await prisma.user.create({
-    data: {
-      email: 'ctv4@ccbmart.vn',
-      passwordHash: ctvHash,
-      role: 'ctv',
-      name: 'Phạm Hoàng Nam',
-      phone: '0901100004',
-      rank: 'TP',
-      parentId: gdv1.id,
-      isBusinessHousehold: true,
-    },
-  });
-
-  const tp2 = await prisma.user.create({
-    data: {
-      email: 'ctv5@ccbmart.vn',
-      passwordHash: ctvHash,
-      role: 'ctv',
-      name: 'Hoàng Ngọc Lan',
-      phone: '0901100005',
-      rank: 'TP',
-      parentId: gdv1.id,
-    },
-  });
-
-  const tp3 = await prisma.user.create({
-    data: {
-      email: 'ctv6@ccbmart.vn',
-      passwordHash: ctvHash,
-      role: 'ctv',
-      name: 'Vũ Thanh Sơn',
-      phone: '0901100006',
-      rank: 'TP',
-      parentId: gdv2.id,
-    },
-  });
-
-  // PP level
+  // 16 PP (2 / TP)
   const pps = [];
-  const ppParents = [tp1, tp1, tp2, tp2, tp3, tp3];
-  for (let i = 0; i < 6; i++) {
+  for (let i = 0; i < 16; i++) {
+    const parent = tps[Math.floor(i / 2)];
     const pp = await prisma.user.create({
       data: {
         email: `pp${i + 1}@ccbmart.vn`,
@@ -154,16 +136,16 @@ async function main() {
         name: randomName(),
         phone: randomPhone(),
         rank: 'PP',
-        parentId: ppParents[i].id,
+        parentId: parent.id,
       },
     });
     pps.push(pp);
   }
 
-  // CTV level (regular CTVs under PPs)
+  // 32 CTV (2 / PP)
   const ctvs = [];
-  for (let i = 0; i < 18; i++) {
-    const parentPP = pps[i % pps.length];
+  for (let i = 0; i < 32; i++) {
+    const parent = pps[Math.floor(i / 2)];
     const ctv = await prisma.user.create({
       data: {
         email: `ctv_regular${i + 1}@ccbmart.vn`,
@@ -172,15 +154,18 @@ async function main() {
         name: randomName(),
         phone: randomPhone(),
         rank: 'CTV',
-        parentId: parentPP.id,
+        parentId: parent.id,
       },
     });
     ctvs.push(ctv);
   }
 
-  // All CTV users for transaction assignment
-  const allCtvUsers = [gdkd, gdv1, gdv2, tp1, tp2, tp3, ...pps, ...ctvs];
-  console.log(`✅ ${allCtvUsers.length} CTV users created (hierarchy: GDKD→GDV→TP→PP→CTV)`);
+  // Aliases for backward compatibility with the rest of the seed
+  const gdv1 = gdvs[0], gdv2 = gdvs[1];
+  const tp1 = tps[0], tp2 = tps[1], tp3 = tps[2];
+
+  const allCtvUsers = [gdkd, ...gdvs, ...tps, ...pps, ...ctvs];
+  console.log(`✅ ${allCtvUsers.length} CTV users created — V13.2.1 Tiêu chuẩn: 1 GĐKD + ${gdvs.length} GĐV + ${tps.length} TP + ${pps.length} PP + ${ctvs.length} CTV`);
 
   // 3. Build CtvHierarchy records
   for (const ctv of allCtvUsers) {
@@ -259,15 +244,63 @@ async function main() {
   });
   console.log('✅ Fee config (M0-M5) created');
 
-  // 7. Business Households (for PP, TP, GĐV)
-  await prisma.businessHousehold.createMany({
-    data: [
-      { userId: gdkd.id, businessName: 'HKD Nguyễn Văn Hùng', taxCode: '0301234567', businessLicense: 'GP-2024-001', status: 'active' },
-      { userId: gdv1.id, businessName: 'HKD Trần Thị Mai', taxCode: '0301234568', businessLicense: 'GP-2024-002', status: 'active' },
-      { userId: tp1.id, businessName: 'HKD Phạm Hoàng Nam', taxCode: '0301234569', businessLicense: 'GP-2024-003', status: 'active' },
-    ],
-  });
-  console.log('✅ 3 Business Households created');
+  // 7. Business Households (for PP, TP, GĐV) — with contract + bank info
+  const nowSeed = new Date();
+  function contractDates(monthsAgoSigned, termMonths = 12) {
+    const signed = new Date(nowSeed.getFullYear(), nowSeed.getMonth() - monthsAgoSigned, 15);
+    const expired = new Date(signed);
+    expired.setMonth(expired.getMonth() + termMonths);
+    return { signed, expired };
+  }
+  const hkdSeeds = [
+    {
+      userId: gdkd.id, name: 'HKD Nguyễn Văn Hùng', tax: '0301234567', license: 'GP-2024-001',
+      signedOffset: 10, termMonths: 24,
+      bank: { name: 'Vietcombank', accNo: '0071000123456', holder: 'NGUYEN VAN HUNG' },
+      trainingRegistered: true,
+    },
+    {
+      userId: gdv1.id, name: 'HKD Trần Thị Mai', tax: '0301234568', license: 'GP-2024-002',
+      signedOffset: 13, termMonths: 12, // sắp hết hạn
+      bank: { name: 'Techcombank', accNo: '19036998888', holder: 'TRAN THI MAI' },
+      trainingRegistered: true,
+    },
+    {
+      userId: tp1.id, name: 'HKD Phạm Hoàng Nam', tax: '0301234569', license: 'GP-2024-003',
+      signedOffset: 3, termMonths: 12,
+      bank: null, // chưa cập nhật TK ngân hàng
+      trainingRegistered: false, // chưa đăng ký ngành đào tạo
+    },
+  ];
+  for (let i = 0; i < hkdSeeds.length; i++) {
+    const h = hkdSeeds[i];
+    const { signed: dealerSigned, expired: dealerExpired } = contractDates(h.signedOffset, h.termMonths);
+    const { signed: trainingSigned, expired: trainingExpired } = contractDates(h.signedOffset, h.termMonths);
+    await prisma.businessHousehold.create({
+      data: {
+        userId: h.userId,
+        businessName: h.name,
+        taxCode: h.tax,
+        businessLicense: h.license,
+        status: 'active',
+        dealerContractNo: `CCB-DL-${2024 + Math.floor(i / 3)}-${String(i + 1).padStart(3, '0')}`,
+        dealerSignedAt: dealerSigned,
+        dealerExpiredAt: dealerExpired,
+        dealerTermMonths: h.termMonths,
+        dealerPdfUrl: `/uploads/hkd/${h.userId}/dealer-contract.pdf`,
+        trainingContractNo: `CCB-DT-${2024 + Math.floor(i / 3)}-${String(i + 1).padStart(3, '0')}`,
+        trainingSignedAt: trainingSigned,
+        trainingExpiredAt: trainingExpired,
+        trainingTermMonths: h.termMonths,
+        trainingPdfUrl: `/uploads/hkd/${h.userId}/training-contract.pdf`,
+        bankName: h.bank?.name || null,
+        bankAccountNo: h.bank?.accNo || null,
+        bankAccountHolder: h.bank?.holder || null,
+        trainingLineRegistered: h.trainingRegistered,
+      },
+    });
+  }
+  console.log(`✅ ${hkdSeeds.length} Business Households created (with contract + bank info)`);
 
   // 8. B2B Contracts
   const now = new Date();
@@ -726,9 +759,12 @@ async function main() {
   //    - tp1 thoát ly khỏi gdv1 (2 tháng trước, ACTIVE, còn 10 tháng)
   //    - tp3 thoát ly khỏi gdv2 (5 tháng trước, ACTIVE, còn 7 tháng)
   //    - pps[5] thoát ly khỏi tp3 (14 tháng trước, EXPIRED)
+  // Deeper hierarchy for L3 test: pps[0] → TP1 → GDV1 → GDKD
+  // When pps[0] vượt cấp, oldParent=TP1, newParent=GDV1 → GDKD vẫn được nhận L3 (1%)
   const breakawaySeeds = [
     { userId: tp1.id, oldParentId: gdv1.id, newParentId: gdkd.id, monthsAgo: 2, status: 'ACTIVE' },
-    { userId: tp3.id, oldParentId: gdv2.id, newParentId: gdkd.id, monthsAgo: 5, status: 'ACTIVE' },
+    // L3 eligible: oldParent=tp3, newParent=gdv2 (GĐKD không ở trong)
+    { userId: pps[4].id, oldParentId: tp3.id, newParentId: gdv2.id, monthsAgo: 5, status: 'ACTIVE' },
     { userId: pps[5].id, oldParentId: tp3.id, newParentId: gdv2.id, monthsAgo: 14, status: 'EXPIRED' },
   ];
 
@@ -814,6 +850,259 @@ async function main() {
     }
   }
   console.log(`✅ ${breakFeeCreated} BreakawayFee records created`);
+
+  // 23. Reconciliation mockup data (Đối soát)
+  // 23.1 — PENDING CTV transactions (bank transfer + cash)
+  // Distribute so a few CTVs have multiple cash txns (for batch deposit testing)
+  const ctvSellers = [gdv1, gdv2, tp1, tp2, tp3, ...pps.slice(0, 4), ...ctvs.slice(0, 8)];
+  const cashConcentrators = [tp1.id, tp2.id, pps[0].id]; // these 3 get multiple cash txns
+  const combo = products[0]; // Combo Sức khoẻ Vàng
+  const pendingTxnIds = [];
+  const pendingCashByCtv = new Map(); // ctvId -> [{id, amount}]
+
+  for (let i = 0; i < 30; i++) {
+    // 40% of txns go to cash-concentrators as cash → they'll have 3-4 cash txns each
+    const useConcentrator = i < 12; // first 12 go to concentrators as cash
+    const seller = useConcentrator
+      ? ctvSellers.find(s => s.id === cashConcentrators[i % cashConcentrators.length]) || ctvSellers[0]
+      : ctvSellers[(i + 5) % ctvSellers.length];
+    const customer = customers[i % customers.length];
+    const paymentMethod = useConcentrator
+      ? 'cash'
+      : (i % 3 === 0 ? 'bank_transfer' : i % 3 === 1 ? 'momo' : 'zalopay');
+    const qty = 1 + Math.floor(Math.random() * 3);
+    const totalAmount = combo.price * qty;
+    const cogsAmount = totalAmount * combo.cogsPct;
+    const hoursAgo = Math.floor(Math.random() * 72) + 1; // 1-72h wait
+    const submittedAt = new Date(Date.now() - hoursAgo * 3600 * 1000);
+
+    const tx = await prisma.transaction.create({
+      data: {
+        kiotvietOrderId: `KV-PEND-${String(i + 1).padStart(4, '0')}`,
+        customerId: customer.id,
+        ctvId: seller.id,
+        channel: 'ctv',
+        totalAmount,
+        cogsAmount,
+        status: 'PENDING',
+        paymentMethod,
+        bankCode: paymentMethod === 'bank_transfer' ? 'VCB' : null,
+        ctvSubmittedAt: submittedAt,
+        createdAt: submittedAt,
+        items: { create: [{ productId: combo.id, quantity: qty, unitPrice: combo.price, totalPrice: totalAmount }] },
+      },
+    });
+    pendingTxnIds.push(tx.id);
+
+    // Payment proof for ~60% of bank transfer txns (mock image URL)
+    if (paymentMethod === 'bank_transfer' && Math.random() < 0.6) {
+      await prisma.paymentProof.create({
+        data: {
+          transactionId: tx.id,
+          imageUrl: `https://placehold.co/600x800/10b981/white?text=Bien+lai+TX${tx.id}`,
+          uploadedBy: seller.id,
+          notes: i % 4 === 0 ? `Đã CK lúc ${submittedAt.toLocaleTimeString('vi-VN')}` : null,
+        },
+      });
+    }
+
+    // Track cash txns per CTV for deposit grouping
+    if (paymentMethod === 'cash') {
+      if (!pendingCashByCtv.has(seller.id)) pendingCashByCtv.set(seller.id, []);
+      pendingCashByCtv.get(seller.id).push({ id: tx.id, amount: totalAmount });
+    }
+  }
+  console.log(`✅ ${pendingTxnIds.length} PENDING CTV transactions created (mock đối soát)`);
+
+  // 23.2 — PENDING cash deposits (batch cash txns per CTV)
+  let depositsCreated = 0;
+  for (const [ctvId, txList] of pendingCashByCtv.entries()) {
+    if (txList.length < 2) continue; // only batch when ≥2 cash txns
+
+    const txIds = txList.map(t => t.id);
+    const total = txList.reduce((s, t) => s + t.amount, 0);
+    const hoursAgo = Math.floor(Math.random() * 48) + 2;
+
+    const deposit = await prisma.cashDeposit.create({
+      data: {
+        ctvId,
+        amount: total,
+        transactionIds: JSON.stringify(txIds),
+        status: 'PENDING',
+        depositedAt: new Date(Date.now() - hoursAgo * 3600 * 1000),
+        notes: 'Nộp tiền mặt gom từ các đơn bán tuần này',
+      },
+    });
+    await prisma.transaction.updateMany({
+      where: { id: { in: txIds } },
+      data: { cashDepositId: deposit.id },
+    });
+    depositsCreated++;
+  }
+  console.log(`✅ ${depositsCreated} PENDING cash deposits created`);
+
+  // 23.3 — A few CONFIRMED/REJECTED txns for history view
+  const confirmed = await prisma.transaction.findMany({
+    where: { channel: 'ctv', status: 'CONFIRMED' },
+    take: 10,
+  });
+  // Mark pre-existing CTV transactions as CONFIRMED with a stamped confirmation
+  await prisma.transaction.updateMany({
+    where: { channel: 'ctv', status: 'CONFIRMED', confirmedBy: null },
+    data: {
+      confirmedBy: admin.id,
+      confirmedAt: new Date(Date.now() - 24 * 3600 * 1000),
+      paymentMethod: 'bank_transfer',
+    },
+  });
+
+  // 2 REJECTED examples
+  if (confirmed.length >= 2) {
+    await prisma.transaction.update({
+      where: { id: confirmed[0].id },
+      data: {
+        status: 'REJECTED',
+        rejectedReason: 'Chứng từ không khớp — số tiền CK lệch 100.000đ',
+        confirmedBy: admin.id,
+        confirmedAt: new Date(Date.now() - 12 * 3600 * 1000),
+        paymentMethod: 'bank_transfer',
+      },
+    });
+    await prisma.transaction.update({
+      where: { id: confirmed[1].id },
+      data: {
+        status: 'REJECTED',
+        rejectedReason: 'CTV chưa tải bằng chứng thanh toán',
+        confirmedBy: admin.id,
+        confirmedAt: new Date(Date.now() - 6 * 3600 * 1000),
+        paymentMethod: 'bank_transfer',
+      },
+    });
+    console.log('✅ 2 REJECTED sample transactions created');
+  }
+
+  // 24. Membership — tiers + wallets (V13.1)
+  // Clean + reseed member tables
+  if (prisma.depositHistory) await prisma.depositHistory.deleteMany();
+  if (prisma.referralLog)    await prisma.referralLog.deleteMany();
+  if (prisma.memberWallet)   await prisma.memberWallet.deleteMany();
+  if (prisma.membershipTier) await prisma.membershipTier.deleteMany();
+
+  const tiers = await Promise.all([
+    prisma.membershipTier.create({ data: { name: 'BASIC',  minDeposit: 0,          pointsRate: 0.01, description: 'Mặc định — tích 1% điểm' } }),
+    prisma.membershipTier.create({ data: { name: 'SILVER', minDeposit: 5_000_000,  pointsRate: 0.02, description: 'Nạp từ 5tr — tích 2% điểm' } }),
+    prisma.membershipTier.create({ data: { name: 'GOLD',   minDeposit: 20_000_000, pointsRate: 0.03, description: 'Nạp từ 20tr — tích 3% + ưu đãi VIP' } }),
+  ]);
+  const tierByMin = tiers.sort((a, b) => b.minDeposit - a.minDeposit);
+
+  function pickTier(deposit) {
+    return tierByMin.find(t => deposit >= t.minDeposit) || tierByMin[tierByMin.length - 1];
+  }
+  function genRefCode() {
+    const c = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let s = 'CCB_';
+    for (let i = 0; i < 6; i++) s += c[Math.floor(Math.random() * c.length)];
+    return s;
+  }
+
+  // 24.1 — Gán MemberWallet cho 20 CTV (multi-role: vừa bán vừa mua)
+  const ctvMembers = [gdkd, gdv1, gdv2, tp1, tp2, tp3, ...pps.slice(0, 6), ...ctvs.slice(0, 8)];
+  let walletCount = 0;
+  for (const u of ctvMembers) {
+    const deposit = Math.floor(Math.random() * 30_000_000);
+    const tier = pickTier(deposit);
+    await prisma.memberWallet.create({
+      data: {
+        userId: u.id,
+        tierId: tier.id,
+        balance: Math.floor(deposit * 0.6),
+        points: Math.floor(deposit * tier.pointsRate),
+        referralCode: genRefCode(),
+        totalDeposited: deposit,
+        totalSpent: Math.floor(deposit * 0.4),
+      },
+    });
+    await prisma.user.update({ where: { id: u.id }, data: { isMember: true } });
+    walletCount++;
+  }
+
+  // 24.2 — Tạo 15 Member thuần (role=member, không phải CTV)
+  const memberHash = await bcrypt.hash('member123', 10);
+  const pureMembers = [];
+  for (let i = 0; i < 15; i++) {
+    const deposit = Math.floor(Math.random() * 25_000_000);
+    const tier = pickTier(deposit);
+    const user = await prisma.user.create({
+      data: {
+        email: `member${i + 1}@ccbmart.vn`,
+        passwordHash: memberHash,
+        role: 'member',
+        name: randomName(),
+        phone: randomPhone(),
+        isMember: true,
+      },
+    });
+    await prisma.memberWallet.create({
+      data: {
+        userId: user.id,
+        tierId: tier.id,
+        balance: Math.floor(deposit * 0.7),
+        points: Math.floor(deposit * tier.pointsRate),
+        referralCode: genRefCode(),
+        totalDeposited: deposit,
+        totalSpent: Math.floor(deposit * 0.3),
+      },
+    });
+    pureMembers.push(user);
+    walletCount++;
+  }
+  console.log(`✅ ${walletCount} MemberWallets (${ctvMembers.length} CTV+Member kiêm nhiệm, ${pureMembers.length} Member thuần)`);
+
+  // 24.3 — Deposit history mẫu
+  const allWallets = await prisma.memberWallet.findMany();
+  let depositLogCount = 0;
+  for (const w of allWallets.slice(0, 20)) {
+    const n = 1 + Math.floor(Math.random() * 3);
+    for (let i = 0; i < n; i++) {
+      const amount = 500_000 + Math.floor(Math.random() * 5_000_000);
+      const isConfirmed = Math.random() > 0.3;
+      await prisma.depositHistory.create({
+        data: {
+          walletId: w.id,
+          amount,
+          method: ['bank_transfer', 'momo', 'zalopay'][Math.floor(Math.random() * 3)],
+          status: isConfirmed ? 'CONFIRMED' : 'PENDING',
+          reference: `DEP-${Date.now().toString().slice(-8)}-${i}`,
+          confirmedBy: isConfirmed ? admin.id : null,
+          confirmedAt: isConfirmed ? randomDate(threeMonthsAgo, now) : null,
+          createdAt: randomDate(threeMonthsAgo, now),
+        },
+      });
+      depositLogCount++;
+    }
+  }
+  console.log(`✅ ${depositLogCount} DepositHistory entries`);
+
+  // 24.4 — ReferralLog mẫu (member giới thiệu lẫn nhau, < 500K/tháng cap)
+  let refCount = 0;
+  for (let i = 0; i < 12; i++) {
+    const referrer = pureMembers[i % pureMembers.length];
+    const referee = pureMembers[(i + 3) % pureMembers.length];
+    if (referrer.id === referee.id) continue;
+    const month = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    const sunsetAt = new Date(now.getFullYear() + 1, now.getMonth(), now.getDate());
+    await prisma.referralLog.create({
+      data: {
+        referrerId: referrer.id,
+        refereeId: referee.id,
+        month,
+        bonusAmount: 50_000 + Math.floor(Math.random() * 300_000),
+        sunsetAt,
+      },
+    });
+    refCount++;
+  }
+  console.log(`✅ ${refCount} ReferralLog entries`);
 
   console.log('\n🎉 Seed complete (C12.4)!');
   console.log('📧 Login credentials:');

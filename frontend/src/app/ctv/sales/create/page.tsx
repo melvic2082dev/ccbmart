@@ -28,11 +28,11 @@ export default function CtvCreateSale() {
 
   const handleCreateTransaction = async () => {
     if (!customerName || !customerPhone) {
-      setError('Vui long nhap ten va SDT khach hang');
+      setError('Vui lòng nhập tên và SĐT khách hàng');
       return;
     }
     if (paymentMethod === 'bank_transfer' && bankCode && bankCode.length !== 4) {
-      setError('Ma ngan hang phai co 4 so');
+      setError('Mã ngân hàng phải có 4 số');
       return;
     }
 
@@ -73,7 +73,7 @@ export default function CtvCreateSale() {
   return (
     <DashboardLayout role="ctv">
       <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
-        <ShoppingCart size={24} /> Tao don ban hang
+        <ShoppingCart size={24} /> Tạo đơn bán hàng
       </h2>
 
       {error && (
@@ -90,7 +90,7 @@ export default function CtvCreateSale() {
               s < step ? 'bg-emerald-600 text-white' : s === step ? 'bg-emerald-100 text-emerald-700 border-2 border-emerald-600' : 'bg-slate-200'
             }`}>{s}</div>
             <span className="text-sm hidden sm:inline">
-              {s === 1 ? 'Khach hang' : s === 2 ? 'Thanh toan' : s === 3 ? 'Xac nhan' : 'Hoan tat'}
+              {s === 1 ? 'Khách hàng' : s === 2 ? 'Thanh toán' : s === 3 ? 'Xác nhận' : 'Hoàn tất'}
             </span>
             {s < 4 && <div className="w-8 h-px bg-slate-300 mx-1" />}
           </div>
@@ -100,22 +100,22 @@ export default function CtvCreateSale() {
       {/* Step 1: Customer info */}
       {step === 1 && (
         <Card>
-          <CardHeader><CardTitle>Thong tin khach hang</CardTitle></CardHeader>
+          <CardHeader><CardTitle>Thông tin khách hàng</CardTitle></CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <Label>Ten khach hang *</Label>
-              <Input value={customerName} onChange={e => setCustomerName(e.target.value)} placeholder="Nguyen Van A" />
+              <Label>Tên khách hàng *</Label>
+              <Input value={customerName} onChange={e => setCustomerName(e.target.value)} placeholder="Nguyễn Văn A" />
             </div>
             <div>
-              <Label>So dien thoai *</Label>
+              <Label>Số điện thoại *</Label>
               <Input value={customerPhone} onChange={e => setCustomerPhone(e.target.value)} placeholder="0912345678" />
             </div>
             <div className="pt-2">
-              <p className="text-sm text-slate-500 mb-2">San pham: <strong>Combo CCB Mart</strong></p>
+              <p className="text-sm text-slate-500 mb-2">Sản phẩm: <strong>Combo CCB Mart</strong></p>
               <p className="text-2xl font-bold text-emerald-600">{formatVND(2000000)}</p>
             </div>
             <Button onClick={() => setStep(2)} disabled={!customerName || !customerPhone} className="w-full">
-              Tiep tuc
+              Tiếp tục
             </Button>
           </CardContent>
         </Card>
@@ -124,7 +124,7 @@ export default function CtvCreateSale() {
       {/* Step 2: Payment method */}
       {step === 2 && (
         <Card>
-          <CardHeader><CardTitle>Phuong thuc thanh toan</CardTitle></CardHeader>
+          <CardHeader><CardTitle>Phương thức thanh toán</CardTitle></CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <button
@@ -134,8 +134,8 @@ export default function CtvCreateSale() {
                 }`}
               >
                 <CreditCard size={32} className="mx-auto mb-2 text-emerald-600" />
-                <p className="font-semibold">Chuyen khoan</p>
-                <p className="text-xs text-slate-500">Khach CK vao TK cong ty</p>
+                <p className="font-semibold">Chuyển khoản</p>
+                <p className="text-xs text-slate-500">Khách CK vào TK công ty</p>
               </button>
               <button
                 onClick={() => setPaymentMethod('cash')}
@@ -144,28 +144,28 @@ export default function CtvCreateSale() {
                 }`}
               >
                 <Banknote size={32} className="mx-auto mb-2 text-yellow-600" />
-                <p className="font-semibold">Tien mat</p>
-                <p className="text-xs text-slate-500">CTV thu tien va nop sau</p>
+                <p className="font-semibold">Tiền mặt</p>
+                <p className="text-xs text-slate-500">CTV thu tiền và nộp sau</p>
               </button>
             </div>
 
             {paymentMethod === 'bank_transfer' && (
               <div>
-                <Label>4 so cuoi tai khoan chuyen (tuy chon)</Label>
+                <Label>4 số cuối tài khoản chuyển (tuỳ chọn)</Label>
                 <Input value={bankCode} onChange={e => setBankCode(e.target.value)} placeholder="1234" maxLength={4} />
               </div>
             )}
 
             {paymentMethod === 'cash' && (
               <div className="bg-yellow-50 border border-yellow-200 p-3 rounded-lg text-sm">
-                <strong>Luu y:</strong> Ban can nop tien mat ve cong ty trong vong 24h. Qua 48h tai khoan se bi khoa.
+                <strong>Lưu ý:</strong> Bạn cần nộp tiền mặt về công ty trong vòng 24h. Quá 48h tài khoản sẽ bị khoá.
               </div>
             )}
 
             <div className="flex gap-2">
-              <Button variant="outline" onClick={() => setStep(1)} className="flex-1">Quay lai</Button>
+              <Button variant="outline" onClick={() => setStep(1)} className="flex-1">Quay lại</Button>
               <Button onClick={handleCreateTransaction} disabled={loading} className="flex-1">
-                {loading ? 'Dang tao...' : 'Tao don hang'}
+                {loading ? 'Đang tạo…' : 'Tạo đơn hàng'}
               </Button>
             </div>
           </CardContent>
@@ -177,35 +177,35 @@ export default function CtvCreateSale() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <CheckCircle className="text-emerald-500" /> Don hang da tao!
+              <CheckCircle className="text-emerald-500" /> Đơn hàng đã tạo!
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="bg-emerald-50 p-4 rounded-lg">
-              <p>Ma giao dich: <strong>#{result.transactionId}</strong></p>
-              <p>Trang thai: <Badge variant="secondary">Cho xac nhan</Badge></p>
-              <p>So tien: <strong>{formatVND(result.totalAmount)}</strong></p>
+              <p>Mã giao dịch: <strong>#{result.transactionId}</strong></p>
+              <p>Trạng thái: <Badge variant="secondary">Chờ xác nhận</Badge></p>
+              <p>Số tiền: <strong>{formatVND(result.totalAmount)}</strong></p>
             </div>
 
             {result.paymentMethod === 'bank_transfer' && (
               <>
                 <div className="bg-blue-50 p-4 rounded-lg text-sm">
-                  <p className="font-semibold mb-2">Thong tin chuyen khoan:</p>
-                  <p>Ngan hang: {result.bankAccount?.bankName}</p>
+                  <p className="font-semibold mb-2">Thông tin chuyển khoản:</p>
+                  <p>Ngân hàng: {result.bankAccount?.bankName}</p>
                   <p>STK: <strong>{result.bankAccount?.accountNo}</strong></p>
-                  <p>Chu TK: {result.bankAccount?.accountName}</p>
-                  <p>Noi dung CK: <strong>{result.transferContent}</strong></p>
+                  <p>Chủ TK: {result.bankAccount?.accountName}</p>
+                  <p>Nội dung CK: <strong>{result.transferContent}</strong></p>
                 </div>
 
                 {result.qrCodeData && (
                   <div className="text-center">
-                    <p className="text-sm text-slate-500 mb-2">QR Code chuyen khoan:</p>
+                    <p className="text-sm text-slate-500 mb-2">QR Code chuyển khoản:</p>
                     <img src={result.qrCodeData} alt="QR Code" className="mx-auto w-48 h-48 border rounded" />
                   </div>
                 )}
 
                 <div className="border-t pt-4">
-                  <Label>Upload anh chup chuyen khoan</Label>
+                  <Label>Upload ảnh chụp chuyển khoản</Label>
                   <Input
                     type="file"
                     accept="image/*"
@@ -218,7 +218,7 @@ export default function CtvCreateSale() {
                     className="mt-2 w-full"
                   >
                     <Upload size={16} className="mr-1" />
-                    {loading ? 'Dang upload...' : 'Upload bang chung'}
+                    {loading ? 'Đang upload…' : 'Upload bằng chứng'}
                   </Button>
                 </div>
               </>
@@ -226,13 +226,13 @@ export default function CtvCreateSale() {
 
             {result.paymentMethod === 'cash' && (
               <div className="bg-yellow-50 p-4 rounded-lg text-sm">
-                <p className="font-semibold">Buoc tiep theo:</p>
-                <p>Vui long nop tien mat ve cong ty va bao cao tai trang &quot;Nop tien mat&quot;.</p>
+                <p className="font-semibold">Bước tiếp theo:</p>
+                <p>Vui lòng nộp tiền mặt về công ty và báo cáo tại trang &quot;Nộp tiền mặt&quot;.</p>
               </div>
             )}
 
             <Button variant="outline" onClick={() => { setStep(1); setResult(null); setCustomerName(''); setCustomerPhone(''); setBankCode(''); setProofFile(null); setUploadSuccess(false); }} className="w-full">
-              Tao don moi
+              Tạo đơn mới
             </Button>
           </CardContent>
         </Card>
@@ -243,11 +243,11 @@ export default function CtvCreateSale() {
         <Card>
           <CardContent className="py-12 text-center">
             <CheckCircle size={48} className="mx-auto text-emerald-500 mb-4" />
-            <h3 className="text-xl font-bold mb-2">Hoan tat!</h3>
-            <p className="text-slate-500">Don hang #{result?.transactionId} da duoc tao va upload bang chung thanh cong.</p>
-            <p className="text-slate-500">Admin se xac nhan trong thoi gian som nhat.</p>
+            <h3 className="text-xl font-bold mb-2">Hoàn tất!</h3>
+            <p className="text-slate-500">Đơn hàng #{result?.transactionId} đã được tạo và upload bằng chứng thành công.</p>
+            <p className="text-slate-500">Admin sẽ xác nhận trong thời gian sớm nhất.</p>
             <Button onClick={() => { setStep(1); setResult(null); setCustomerName(''); setCustomerPhone(''); setBankCode(''); setProofFile(null); setUploadSuccess(false); }} className="mt-6">
-              Tao don moi
+              Tạo đơn mới
             </Button>
           </CardContent>
         </Card>

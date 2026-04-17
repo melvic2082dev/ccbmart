@@ -5,7 +5,7 @@ import DashboardLayout from '@/components/DashboardLayout';
 import { api, formatVND } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Coins, Play } from 'lucide-react';
+import { Coins, Play, Info, FileText } from 'lucide-react';
 
 interface AdminMgmtFeeRecord {
   id: number;
@@ -28,18 +28,42 @@ function currentMonth() {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 }
 
-const LEVEL_LABEL: Record<number, string> = { 1: 'F1', 2: 'F2', 3: 'F3' };
+const LEVEL_LABEL: Record<number, string> = {
+  1: 'Cấp 1 (10%)',
+  2: 'Cấp 2 (5%)',
+  3: 'Cấp 3 (3%)',
+};
 const LEVEL_COLOR: Record<number, string> = {
   1: 'bg-emerald-100 text-emerald-700',
   2: 'bg-blue-100 text-blue-700',
   3: 'bg-purple-100 text-purple-700',
 };
 
+// Mock: payment log for a fee row (TODO: replace with real API)
+interface PaymentInfo {
+  paidAt?: string | null;
+  reference?: string | null;
+  method?: string | null;
+}
+function mockPaymentInfo(feeId: number, status: string): PaymentInfo {
+  if (status !== 'PAID') return { paidAt: null, reference: null, method: null };
+  // Deterministic mock derived from feeId
+  const day = 1 + (feeId % 28);
+  const now = new Date();
+  const paidAt = new Date(now.getFullYear(), now.getMonth(), day, 9, 30).toISOString();
+  return {
+    paidAt,
+    reference: `CT-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}-${String(feeId).padStart(5, '0')}`,
+    method: 'Chuyển khoản',
+  };
+}
+
 export default function AdminManagementFeesPage() {
   const [month, setMonth] = useState(currentMonth());
   const [data, setData] = useState<AdminMgmtFeeResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
+  const [openTrainingLogsFor, setOpenTrainingLogsFor] = useState<string | null>(null);
 
   const load = () => {
     setLoading(true);
@@ -49,6 +73,7 @@ export default function AdminManagementFeesPage() {
       .finally(() => setLoading(false));
   };
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(load, [month]);
 
   const handleProcess = async () => {
@@ -76,12 +101,14 @@ export default function AdminManagementFeesPage() {
 
   return (
     <DashboardLayout role="admin">
-      <h2 className="text-2xl font-bold mb-2 flex items-center gap-2">
-        <Coins size={24} /> Phí quản lý (F1/F2/F3) — C12.4
+      <h2 className="text-2xl font-bold mb-3 flex items-center gap-2">
+        <Coins size={24} /> Phí quản lý theo cấp dẫn dắt
       </h2>
-      <p className="text-sm text-slate-500 mb-6">
-        Nguyên tắc: CCB Mart chi trả toàn bộ phí quản lý từ doanh thu bán hàng. Không có chuyển tiền giữa đối tác.
-      </p>
+
+      <div className="mb-6 rounded-md border border-blue-200 bg-blue-50/60 px-3 py-2 text-sm text-blue-900 flex items-start gap-2">
+        <Info className="w-4 h-4 mt-0.5 flex-shrink-0" />
+        <span>Phí quản lý do CCB Mart chi trả trực tiếp từ doanh thu bán hàng. Không có chuyển tiền giữa đối tác.</span>
+      </div>
 
       <div className="mb-4 flex gap-3 items-center">
         <input
@@ -104,9 +131,9 @@ export default function AdminManagementFeesPage() {
       ) : data ? (
         <>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <Card><CardContent className="p-4"><p className="text-sm text-slate-500">Tổng F1 (10%)</p><p className="text-xl font-bold text-emerald-700">{formatVND(data.byLevel.f1)}</p></CardContent></Card>
-            <Card><CardContent className="p-4"><p className="text-sm text-slate-500">Tổng F2 (5%)</p><p className="text-xl font-bold text-blue-700">{formatVND(data.byLevel.f2)}</p></CardContent></Card>
-            <Card><CardContent className="p-4"><p className="text-sm text-slate-500">Tổng F3 (3%)</p><p className="text-xl font-bold text-purple-700">{formatVND(data.byLevel.f3)}</p></CardContent></Card>
+            <Card><CardContent className="p-4"><p className="text-sm text-slate-500">Tổng Cấp 1 (10%)</p><p className="text-xl font-bold text-emerald-700">{formatVND(data.byLevel.f1)}</p></CardContent></Card>
+            <Card><CardContent className="p-4"><p className="text-sm text-slate-500">Tổng Cấp 2 (5%)</p><p className="text-xl font-bold text-blue-700">{formatVND(data.byLevel.f2)}</p></CardContent></Card>
+            <Card><CardContent className="p-4"><p className="text-sm text-slate-500">Tổng Cấp 3 (3%)</p><p className="text-xl font-bold text-purple-700">{formatVND(data.byLevel.f3)}</p></CardContent></Card>
             <Card><CardContent className="p-4"><p className="text-sm text-slate-500">Tổng cộng</p><p className="text-xl font-bold">{formatVND(data.total)}</p></CardContent></Card>
           </div>
 
@@ -120,40 +147,58 @@ export default function AdminManagementFeesPage() {
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
-                    <thead className="text-left border-b">
+                    <thead className="text-left border-b bg-gray-50">
                       <tr>
                         <th className="py-2 px-2">Tháng</th>
-                        <th className="py-2 px-2">Level</th>
-                        <th className="py-2 px-2">Từ (CTV)</th>
-                        <th className="py-2 px-2">Nhận (Cấp trên)</th>
+                        <th className="py-2 px-2">Cấp</th>
+                        <th className="py-2 px-2">Người được dẫn dắt</th>
+                        <th className="py-2 px-2">Người dẫn dắt</th>
                         <th className="py-2 px-2 text-right">Phí</th>
                         <th className="py-2 px-2">Trạng thái</th>
+                        <th className="py-2 px-2">Ngày chi trả</th>
+                        <th className="py-2 px-2">Số chứng từ</th>
                         <th className="py-2 px-2" />
                       </tr>
                     </thead>
                     <tbody>
-                      {data.records.map((r) => (
-                        <tr key={r.id} className="border-b last:border-0">
-                          <td className="py-2 px-2 font-mono text-xs">{r.month}</td>
-                          <td className="py-2 px-2"><Badge className={LEVEL_COLOR[r.level]}>{LEVEL_LABEL[r.level]}</Badge></td>
-                          <td className="py-2 px-2">{r.fromUser.name} <span className="text-slate-500">({r.fromUser.rank || 'CTV'})</span></td>
-                          <td className="py-2 px-2">{r.toUser.name} <span className="text-slate-500">({r.toUser.rank})</span></td>
-                          <td className="py-2 px-2 text-right font-mono font-semibold">{formatVND(r.amount)}</td>
-                          <td className="py-2 px-2">
-                            <Badge className={r.status === 'PAID' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}>{r.status}</Badge>
-                          </td>
-                          <td className="py-2 px-2">
-                            {r.status === 'PENDING' && (
-                              <button
-                                onClick={() => handleMarkPaid(r.id)}
-                                className="px-2 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-xs"
-                              >
-                                Đã trả
-                              </button>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
+                      {data.records.map((r) => {
+                        const pi = mockPaymentInfo(r.id, r.status);
+                        return (
+                          <tr key={r.id} className="border-b last:border-0 hover:bg-gray-50/60">
+                            <td className="py-2 px-2 font-mono text-xs">{r.month}</td>
+                            <td className="py-2 px-2"><Badge className={`${LEVEL_COLOR[r.level]} text-xs`}>{LEVEL_LABEL[r.level]}</Badge></td>
+                            <td className="py-2 px-2">{r.fromUser.name} <span className="text-slate-500 text-xs">({r.fromUser.rank || 'CTV'})</span></td>
+                            <td className="py-2 px-2">{r.toUser.name} <span className="text-slate-500 text-xs">({r.toUser.rank})</span></td>
+                            <td className="py-2 px-2 text-right font-mono font-semibold">{formatVND(r.amount)}</td>
+                            <td className="py-2 px-2">
+                              <Badge className={r.status === 'PAID' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}>{r.status}</Badge>
+                            </td>
+                            <td className="py-2 px-2 text-xs text-gray-600">
+                              {pi.paidAt ? new Date(pi.paidAt).toLocaleDateString('vi-VN') : '—'}
+                            </td>
+                            <td className="py-2 px-2 font-mono text-xs text-gray-600">{pi.reference || '—'}</td>
+                            <td className="py-2 px-2">
+                              <div className="flex items-center gap-1">
+                                {r.status === 'PENDING' && (
+                                  <button
+                                    onClick={() => handleMarkPaid(r.id)}
+                                    className="px-2 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-xs"
+                                  >
+                                    Đã trả
+                                  </button>
+                                )}
+                                <button
+                                  onClick={() => setOpenTrainingLogsFor(`${r.month}::${r.toUser.name}`)}
+                                  title={`Xem log đào tạo ${r.toUser.name} · ${r.month}`}
+                                  className="p-1 text-gray-500 hover:text-blue-600"
+                                >
+                                  <FileText className="w-4 h-4" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
@@ -162,6 +207,31 @@ export default function AdminManagementFeesPage() {
           </Card>
         </>
       ) : null}
+
+      {/* Training log mini-dialog for a fee row (mock) */}
+      {openTrainingLogsFor && (
+        <div
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+          onClick={() => setOpenTrainingLogsFor(null)}
+        >
+          <div className="bg-white rounded-xl p-5 w-[440px] max-w-[90vw] space-y-3" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-lg font-bold">Log đào tạo kèm theo</h3>
+            <p className="text-xs text-gray-500">
+              Mentor/Tháng: <b>{openTrainingLogsFor}</b>
+            </p>
+            <div className="rounded-md border border-gray-100 bg-gray-50 p-3 text-sm text-gray-700 space-y-1">
+              <p>Phí quản lý chỉ được chi trả nếu mentor có đủ <b>20 giờ log đào tạo</b> trong tháng (V13.1 Mục 7.4).</p>
+              <p className="text-xs text-gray-500">Chi tiết log đầy đủ có ở màn hình <a className="underline text-blue-600" href="/admin/training-logs">Log đào tạo</a>.</p>
+            </div>
+            <button
+              onClick={() => setOpenTrainingLogsFor(null)}
+              className="w-full py-2 border rounded-lg hover:bg-gray-50 text-sm"
+            >
+              Đóng
+            </button>
+          </div>
+        </div>
+      )}
     </DashboardLayout>
   );
 }
