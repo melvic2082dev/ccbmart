@@ -8,28 +8,26 @@ export default function DashboardLayout({ role, children }: { role: string; chil
   const router = useRouter();
   const checkedRef = useRef(false);
 
-  // Read user synchronously from localStorage on first render (no flash)
-  const [user] = useState<{ name: string; role: string; rank?: string } | null>(() => {
-    if (typeof window === 'undefined') return null;
+  const [mounted, setMounted] = useState(false);
+  const [user, setUser] = useState<{ name: string; role: string; rank?: string } | null>(null);
+  const [sidebarExpanded, setSidebarExpanded] = useState(false);
+
+  useEffect(() => {
     try {
       const userData = localStorage.getItem('user');
       const token = localStorage.getItem('token');
-      if (!token || !userData) return null;
-      return JSON.parse(userData);
-    } catch { return null; }
-  });
-
-  const [sidebarExpanded, setSidebarExpanded] = useState(() => {
-    if (typeof window === 'undefined') return false;
-    return localStorage.getItem('sidebar-expanded') === 'true';
-  });
+      if (token && userData) setUser(JSON.parse(userData));
+    } catch {}
+    setSidebarExpanded(localStorage.getItem('sidebar-expanded') === 'true');
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
-    if (checkedRef.current) return;
+    if (!mounted || checkedRef.current) return;
     checkedRef.current = true;
     if (!user) { router.push('/login'); return; }
     if (user.role !== role) { router.push(`/${user.role}/dashboard`); return; }
-  }, [user, role, router]);
+  }, [mounted, user, role, router]);
 
   useEffect(() => {
     const handler = (e: Event) => setSidebarExpanded((e as CustomEvent).detail.expanded);
@@ -37,21 +35,21 @@ export default function DashboardLayout({ role, children }: { role: string; chil
     return () => window.removeEventListener('sidebar-toggle', handler);
   }, []);
 
-  if (!user || user.role !== role) {
+  if (!mounted || !user || user.role !== role) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-background">
+      <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
         <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
 
-  const desktopMl = sidebarExpanded ? '14rem' : '4rem';
-
   return (
     <div className="min-h-screen bg-background text-foreground">
       <Sidebar role={role} />
-      <main className="min-h-screen p-4 sm:p-6 pt-16 lg:pt-6" style={{}}>
-        <style>{`@media (min-width: 1024px) { main { margin-left: ${desktopMl} !important; } }`}</style>
+      <main
+        className="min-h-screen p-4 sm:p-6 pt-16 lg:pt-6 lg:ml-[var(--sidebar-w)]"
+        style={{ ['--sidebar-w' as string]: sidebarExpanded ? '14rem' : '4rem' }}
+      >
         <div className="mb-6 flex items-center justify-between">
           <div>
             <p className="text-sm text-muted-foreground">Xin chào,</p>
