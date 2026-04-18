@@ -1,3 +1,4 @@
+const config = require('./config');
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
@@ -35,11 +36,13 @@ const { scheduleReferralCapReset } = require('./jobs/resetReferralCap');
 const { scheduleAuditLogCleanup } = require('./jobs/auditLogCleanup');
 
 const app = express();
-const PORT = process.env.PORT || 4000;
+const PORT = config.port;
 
 app.use(cors({
   origin: (origin, callback) => {
-    if (!origin || origin.startsWith('http://localhost:')) return callback(null, true);
+    if (!origin) return callback(null, true);
+    if (config.cors.origins.includes(origin)) return callback(null, true);
+    if (config.nodeEnv !== 'production' && origin.startsWith('http://localhost:')) return callback(null, true);
     callback(new Error('Not allowed'));
   },
   credentials: true,

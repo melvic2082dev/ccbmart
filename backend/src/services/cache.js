@@ -1,20 +1,16 @@
-/**
- * Cache service with Redis (optional) and in-memory fallback
- * If Redis is available, uses Redis. Otherwise falls back to in-memory Map.
- */
+const config = require('../config');
 
 let redis = null;
 const memoryCache = new Map();
 
-// Try to connect to Redis
 async function initRedis() {
-  if (process.env.REDIS_HOST || process.env.REDIS_URL) {
+  if (config.redis.host || config.redis.url) {
     try {
       const Redis = require('ioredis');
       redis = new Redis({
-        host: process.env.REDIS_HOST || 'localhost',
-        port: parseInt(process.env.REDIS_PORT || '6379'),
-        password: process.env.REDIS_PASSWORD || undefined,
+        host: config.redis.host || 'localhost',
+        port: config.redis.port,
+        password: config.redis.password,
         maxRetriesPerRequest: 3,
         retryStrategy(times) {
           if (times > 3) {

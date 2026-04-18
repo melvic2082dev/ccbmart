@@ -1,11 +1,5 @@
 const jwt = require('jsonwebtoken');
-
-const JWT_SECRET = process.env.JWT_SECRET || 'ccb-mart-secret-key-2026';
-
-if (!process.env.JWT_SECRET && process.env.NODE_ENV === 'production') {
-  console.error('FATAL: JWT_SECRET must be set via environment variable in production');
-  process.exit(1);
-}
+const config = require('../config');
 
 function authenticate(req, res, next) {
   const authHeader = req.headers.authorization;
@@ -14,7 +8,7 @@ function authenticate(req, res, next) {
   }
   try {
     const token = authHeader.split(' ')[1];
-    const decoded = jwt.verify(token, JWT_SECRET);
+    const decoded = jwt.verify(token, config.jwt.secret);
     req.user = decoded;
     next();
   } catch {
@@ -31,4 +25,4 @@ function authorize(...roles) {
   };
 }
 
-module.exports = { authenticate, authorize, JWT_SECRET };
+module.exports = { authenticate, authorize };
