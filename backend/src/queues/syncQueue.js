@@ -6,6 +6,8 @@
 const { PrismaClient } = require('@prisma/client');
 const { invalidateCache } = require('../services/cache');
 const { invalidateCommissionCache } = require('../services/commission');
+const appEvents = require('../services/eventEmitter');
+const { queueCommissionRecalc } = require('../jobs/commissionCalculation');
 
 const prisma = new PrismaClient();
 
@@ -142,6 +144,16 @@ async function processWebhookOrder(data) {
     await invalidateCache(`agency:dashboard:${transaction.agencyId}:*`);
   }
   await invalidateCache('admin:dashboard:*');
+
+  // Emit SSE event so connected dashboards refresh immediately
+  const now = new Date();
+  const monthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  appEvents.emit('transaction:new', { transactionId: transaction.id, orderId: order.id, month: monthStr });
+
+  // Queue commission recalculation asynchronously
+  queueCommissionRecalc(monthStr, transaction.ctvId).catch(err =>
+    console.warn('[SyncQueue] Commission recalc queue error:', err.message)
+  );
 
   console.log(`[SyncQueue] Webhook order ${order.id} processed`);
   return { transactionId: transaction.id, orderId: order.id };

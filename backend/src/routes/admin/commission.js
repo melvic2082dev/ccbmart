@@ -9,6 +9,7 @@ const {
 } = require('../../services/commission');
 const { validate, schemas } = require('../../middleware/validate');
 const { asyncHandler } = require('../../middleware/errorHandler');
+const appEvents = require('../../services/eventEmitter');
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -30,6 +31,7 @@ router.put('/config/commission/:tier', validate(schemas.updateCommission), async
     data: { selfSalePct, directPct, indirect2Pct, indirect3Pct, fixedSalary },
   });
   invalidateCommissionCache();
+  appEvents.emit('config:changed', { type: 'commission', tier: req.params.tier });
   res.json(config);
 }));
 

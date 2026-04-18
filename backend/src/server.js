@@ -36,6 +36,9 @@ const { scheduleAutoRankJob } = require('./jobs/autoRankUpdate');
 const { scheduleCashCheckJob } = require('./jobs/checkUnsubmittedCash');
 const { scheduleReferralCapReset } = require('./jobs/resetReferralCap');
 const { scheduleAuditLogCleanup } = require('./jobs/auditLogCleanup');
+const { initCommissionQueue } = require('./jobs/commissionCalculation');
+const appEvents = require('./services/eventEmitter');
+const jwt = require('jsonwebtoken');
 
 const app = express();
 const PORT = config.port;
@@ -166,6 +169,48 @@ app.post('/webhook/kiotviet/order', validate(schemas.webhookOrder), async (req, 
   }
 });
 
+// SSE real-time event stream (supports token via query param for EventSource compatibility)
+app.get('/api/events', (req, res) => {
+  const authHeader = req.headers.authorization;
+  const queryToken = req.query.token;
+  const token = authHeader?.startsWith('Bearer ') ? authHeader.split(' ')[1] : queryToken;
+
+  if (!token) return res.status(401).json({ error: 'Unauthorized' });
+  try {
+    const decoded = jwt.verify(token, config.jwt.secret);
+    req.user = decoded;
+  } catch {
+    return res.status(401).json({ error: 'Invalid token' });
+  }
+
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.setHeader('X-Accel-Buffering', 'no');
+  res.flushHeaders();
+
+  res.write('event: connected\ndata: {"status":"connected"}\n\n');
+
+  const keepAlive = setInterval(() => res.write(': ping\n\n'), 30000);
+
+  const handlers = {
+    'transaction:new': (data) => res.write(`event: transaction:new\ndata: ${JSON.stringify(data)}\n\n`),
+    'commission:calculated': (data) => res.write(`event: commission:calculated\ndata: ${JSON.stringify(data)}\n\n`),
+    'config:changed': (data) => res.write(`event: config:changed\ndata: ${JSON.stringify(data)}\n\n`),
+  };
+
+  for (const [event, handler] of Object.entries(handlers)) {
+    appEvents.on(event, handler);
+  }
+
+  req.on('close', () => {
+    clearInterval(keepAlive);
+    for (const [event, handler] of Object.entries(handlers)) {
+      appEvents.off(event, handler);
+    }
+  });
+});
+
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
@@ -178,6 +223,7 @@ app.use(errorHandler);
 async function start() {
   await initRedis();
   await initSyncQueue();
+  await initCommissionQueue();
   scheduleAutoRankJob();
   scheduleCashCheckJob();
   scheduleReferralCapReset();

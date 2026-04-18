@@ -298,54 +298,56 @@ async function calculateAllCtvCommissions(month) {
 }
 
 async function calculateSalaryFundStatus(month) {
-  const startDate = new Date(`${month}-01`);
-  const endDate = new Date(startDate);
-  endDate.setMonth(endDate.getMonth() + 1);
+  return getCachedOrCompute(`salary-fund:${month}`, 300, async () => {
+    const startDate = new Date(`${month}-01`);
+    const endDate = new Date(startDate);
+    endDate.setMonth(endDate.getMonth() + 1);
 
-  const ctvRevenueResult = await prisma.transaction.aggregate({
-    where: {
-      channel: 'ctv',
-      status: 'CONFIRMED',
-      createdAt: { gte: startDate, lt: endDate },
-    },
-    _sum: { totalAmount: true },
+    const ctvRevenueResult = await prisma.transaction.aggregate({
+      where: {
+        channel: 'ctv',
+        status: 'CONFIRMED',
+        createdAt: { gte: startDate, lt: endDate },
+      },
+      _sum: { totalAmount: true },
+    });
+
+    const ctvRevenue = Number(ctvRevenueResult._sum.totalAmount) || 0;
+    const salaryFundCap = ctvRevenue * 0.05;
+
+    const managers = await prisma.user.findMany({
+      where: {
+        role: 'ctv',
+        isActive: true,
+        rank: { in: ['PP', 'TP', 'GDV', 'GDKD'] },
+      },
+      select: { id: true, name: true, rank: true },
+    });
+
+    const allRates = await getCommissionRates();
+
+    let totalFixedSalary = 0;
+    for (const m of managers) {
+      totalFixedSalary += allRates[m.rank]?.fixedSalary || 0;
+    }
+
+    const usagePercent = salaryFundCap > 0 ? (totalFixedSalary / salaryFundCap) * 100 : 0;
+
+    return {
+      month,
+      ctvRevenue,
+      salaryFundCap,
+      totalFixedSalary,
+      usagePercent: Math.round(usagePercent * 100) / 100,
+      warning: usagePercent >= 100 ? 'CRITICAL' : usagePercent >= 80 ? 'WARNING' : 'OK',
+      managers: managers.map(m => ({
+        id: m.id,
+        name: m.name,
+        rank: m.rank,
+        salary: allRates[m.rank]?.fixedSalary || 0,
+      })),
+    };
   });
-
-  const ctvRevenue = Number(ctvRevenueResult._sum.totalAmount) || 0;
-  const salaryFundCap = ctvRevenue * 0.05;
-
-  const managers = await prisma.user.findMany({
-    where: {
-      role: 'ctv',
-      isActive: true,
-      rank: { in: ['PP', 'TP', 'GDV', 'GDKD'] },
-    },
-    select: { id: true, name: true, rank: true },
-  });
-
-  const allRates = await getCommissionRates();
-
-  let totalFixedSalary = 0;
-  for (const m of managers) {
-    totalFixedSalary += allRates[m.rank]?.fixedSalary || 0;
-  }
-
-  const usagePercent = salaryFundCap > 0 ? (totalFixedSalary / salaryFundCap) * 100 : 0;
-
-  return {
-    month,
-    ctvRevenue,
-    salaryFundCap,
-    totalFixedSalary,
-    usagePercent: Math.round(usagePercent * 100) / 100,
-    warning: usagePercent >= 100 ? 'CRITICAL' : usagePercent >= 80 ? 'WARNING' : 'OK',
-    managers: managers.map(m => ({
-      id: m.id,
-      name: m.name,
-      rank: m.rank,
-      salary: allRates[m.rank]?.fixedSalary || 0,
-    })),
-  };
 }
 
 /**
@@ -358,9 +360,10 @@ function invalidateCommissionCache(ctvId = null) {
   } else {
     commissionCache.clear();
   }
-  // Also clear the DB-driven rates cache so next read fetches fresh config
+  // Clear DB-driven rates cache and salary fund cache
   invalidateCache('commission:rates:config');
   invalidateCache('commission:agency:config');
+  invalidateCache('salary-fund:*');
   console.log(`[Cache] Commission cache invalidated${ctvId ? ` for CTV ${ctvId}` : ' (all)'}`);
 }
 

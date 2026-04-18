@@ -12,30 +12,32 @@ const router = express.Router();
 const prisma = new PrismaClient();
 
 router.get('/ctvs', asyncHandler(async (req, res) => {
-  const ctvs = await prisma.user.findMany({
-    where: { role: 'ctv' },
-    include: {
-      parent: { select: { id: true, name: true, rank: true } },
-      children: { select: { id: true, name: true, rank: true }, where: { role: 'ctv' } },
-      _count: { select: { transactions: true, customers: true } },
-    },
-    orderBy: { createdAt: 'asc' },
-  });
+  const result = await getCachedOrCompute('admin:ctv-list', 120, async () => {
+    const ctvs = await prisma.user.findMany({
+      where: { role: 'ctv' },
+      include: {
+        parent: { select: { id: true, name: true, rank: true } },
+        children: { select: { id: true, name: true, rank: true }, where: { role: 'ctv' } },
+        _count: { select: { transactions: true, customers: true } },
+      },
+      orderBy: { createdAt: 'asc' },
+    });
 
-  const result = ctvs.map(ctv => ({
-    id: ctv.id,
-    name: ctv.name,
-    email: ctv.email,
-    phone: ctv.phone,
-    rank: ctv.rank,
-    isActive: ctv.isActive,
-    parentId: ctv.parentId,
-    parent: ctv.parent,
-    childrenCount: ctv.children.length,
-    transactions: ctv._count.transactions,
-    customers: ctv._count.customers,
-    createdAt: ctv.createdAt,
-  }));
+    return ctvs.map(ctv => ({
+      id: ctv.id,
+      name: ctv.name,
+      email: ctv.email,
+      phone: ctv.phone,
+      rank: ctv.rank,
+      isActive: ctv.isActive,
+      parentId: ctv.parentId,
+      parent: ctv.parent,
+      childrenCount: ctv.children.length,
+      transactions: ctv._count.transactions,
+      customers: ctv._count.customers,
+      createdAt: ctv.createdAt,
+    }));
+  });
 
   res.json(result);
 }));
@@ -83,6 +85,7 @@ router.post('/ctv/:id/reassign', validate(schemas.reassignCtv), asyncHandler(asy
 
   invalidateCommissionCache();
   await invalidateCache('admin:ctv-tree');
+  await invalidateCache('admin:ctv-list');
   await invalidateCache('ctv:tree:*');
 
   res.json({ success: true });
@@ -114,6 +117,7 @@ router.post('/ctv/:id/rank', validate(schemas.changeRank), asyncHandler(async (r
 
   await sendRankChangeNotification(ctvId, oldRank, newRank, reason || 'Admin thay doi');
   invalidateCommissionCache(ctvId);
+  await invalidateCache('admin:ctv-list');
 
   res.json({ success: true });
 }));
