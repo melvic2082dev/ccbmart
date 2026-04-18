@@ -1,5 +1,5 @@
 const { PrismaClient } = require('@prisma/client');
-const { COMMISSION_RATES } = require('./commission');
+const { getCommissionRates } = require('./commission');
 const prisma = new PrismaClient();
 
 /**
@@ -39,10 +39,12 @@ async function calculateSoftSalary(month) {
     orderBy: { createdAt: 'asc' },
   });
 
+  const allRates = await getCommissionRates();
+
   // Total fixed salary
   let totalFixedSalary = 0;
   for (const m of managers) {
-    totalFixedSalary += COMMISSION_RATES[m.rank]?.fixedSalary || 0;
+    totalFixedSalary += allRates[m.rank]?.fixedSalary || 0;
   }
 
   const usagePercent = salaryFundCap > 0 ? (totalFixedSalary / salaryFundCap) * 100 : 0;
@@ -83,7 +85,7 @@ async function calculateSoftSalary(month) {
   const managersSorted = [...managers].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
   const details = managersSorted.map((m, idx) => {
-    const baseSalary = COMMISSION_RATES[m.rank]?.fixedSalary || 0;
+    const baseSalary = allRates[m.rank]?.fixedSalary || 0;
     const personalRevenue = salesMap.get(m.id) || 0;
     const isNewest = idx === 0 && bracket !== 'NORMAL';
 

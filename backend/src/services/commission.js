@@ -1,7 +1,8 @@
 const { PrismaClient } = require('@prisma/client');
+const { getCachedOrCompute, invalidateCache } = require('./cache');
 const prisma = new PrismaClient();
 
-// Commission rates by rank
+// Default hardcoded rates (used as fallback when DB is unavailable)
 const COMMISSION_RATES = {
   CTV:  { selfSale: 0.20, direct: 0,    indirect2: 0,    indirect3: 0,    fixedSalary: 0 },
   PP:   { selfSale: 0.20, direct: 0,    indirect2: 0,    indirect3: 0,    fixedSalary: 5000000 },
@@ -10,7 +11,7 @@ const COMMISSION_RATES = {
   GDKD: { selfSale: 0.38, direct: 0.10, indirect2: 0.05, indirect3: 0.03, fixedSalary: 30000000 },
 };
 
-// Agency commission by product group
+// Default agency commission (fallback)
 const AGENCY_COMMISSION = {
   A: { commission: 0.08, bonus: 0.02 },
   B: { commission: 0.15, bonus: 0.03 },
@@ -57,6 +58,53 @@ class LRUCache {
 const commissionCache = new LRUCache(1000);
 
 /**
+ * Get commission rates from DB with 5-minute cache, falls back to hardcoded defaults
+ */
+async function getCommissionRates() {
+  return getCachedOrCompute('commission:rates:config', 300, async () => {
+    try {
+      const dbRates = await prisma.commissionConfig.findMany();
+      if (!dbRates || dbRates.length === 0) return COMMISSION_RATES;
+      const rates = {};
+      for (const r of dbRates) {
+        rates[r.tier] = {
+          selfSale: Number(r.selfSalePct),
+          direct: Number(r.directPct),
+          indirect2: Number(r.indirect2Pct),
+          indirect3: Number(r.indirect3Pct),
+          fixedSalary: Number(r.fixedSalary),
+        };
+      }
+      return rates;
+    } catch {
+      return COMMISSION_RATES;
+    }
+  });
+}
+
+/**
+ * Get agency commission rates from DB with 5-minute cache, falls back to hardcoded defaults
+ */
+async function getAgencyCommissionRates() {
+  return getCachedOrCompute('commission:agency:config', 300, async () => {
+    try {
+      const dbRates = await prisma.agencyCommissionConfig.findMany();
+      if (!dbRates || dbRates.length === 0) return AGENCY_COMMISSION;
+      const rates = {};
+      for (const r of dbRates) {
+        rates[r.group] = {
+          commission: Number(r.commissionPct),
+          bonus: Number(r.bonusPct),
+        };
+      }
+      return rates;
+    } catch {
+      return AGENCY_COMMISSION;
+    }
+  });
+}
+
+/**
  * Optimized commission calculator - uses only 2-3 queries instead of N+1
  */
 async function calculateCtvCommission(ctvId, month) {
@@ -68,7 +116,8 @@ async function calculateCtvCommission(ctvId, month) {
   if (!user || user.role !== 'ctv') return null;
 
   const rank = user.rank || 'CTV';
-  const rates = COMMISSION_RATES[rank];
+  const allRates = await getCommissionRates();
+  const rates = allRates[rank];
   if (!rates) return null;
 
   const startDate = new Date(`${month}-01`);
@@ -118,21 +167,18 @@ async function calculateCtvCommission(ctvId, month) {
   let indirect2Commission = 0;
   let indirect3Commission = 0;
 
-  // Direct: direct children (thanh vien truc tiep)
   const directIds = childrenMap.get(ctvId) || [];
   if (rates.direct > 0) {
     for (const directId of directIds) {
       const directRevenue = revenueMap.get(directId) || 0;
       directCommission += directRevenue * rates.direct;
 
-      // Indirect level 2: children of direct members (gian tiep cap 2)
       if (rates.indirect2 > 0) {
         const indirect2Ids = childrenMap.get(directId) || [];
         for (const ind2Id of indirect2Ids) {
           const ind2Revenue = revenueMap.get(ind2Id) || 0;
           indirect2Commission += ind2Revenue * rates.indirect2;
 
-          // Indirect level 3: children of indirect2 (gian tiep cap 3)
           if (rates.indirect3 > 0) {
             const indirect3Ids = childrenMap.get(ind2Id) || [];
             for (const ind3Id of indirect3Ids) {
@@ -175,8 +221,7 @@ async function calculateAllCtvCommissions(month) {
   const endDate = new Date(startDate);
   endDate.setMonth(endDate.getMonth() + 1);
 
-  // Only 2 queries for ALL CTVs (CONFIRMED only)
-  const [allTransactions, allCtv] = await Promise.all([
+  const [allTransactions, allCtv, allRates] = await Promise.all([
     prisma.transaction.findMany({
       where: {
         channel: 'ctv',
@@ -189,6 +234,7 @@ async function calculateAllCtvCommissions(month) {
       where: { role: 'ctv', isActive: true },
       select: { id: true, parentId: true, rank: true, name: true },
     }),
+    getCommissionRates(),
   ]);
 
   const revenueMap = new Map();
@@ -206,7 +252,7 @@ async function calculateAllCtvCommissions(month) {
 
   const results = new Map();
   for (const ctv of allCtv) {
-    const rates = COMMISSION_RATES[ctv.rank || 'CTV'];
+    const rates = allRates[ctv.rank || 'CTV'];
     if (!rates) continue;
 
     const selfSalesAmount = revenueMap.get(ctv.id) || 0;
@@ -256,7 +302,6 @@ async function calculateSalaryFundStatus(month) {
   const endDate = new Date(startDate);
   endDate.setMonth(endDate.getMonth() + 1);
 
-  // Single aggregation query - CONFIRMED only
   const ctvRevenueResult = await prisma.transaction.aggregate({
     where: {
       channel: 'ctv',
@@ -278,9 +323,11 @@ async function calculateSalaryFundStatus(month) {
     select: { id: true, name: true, rank: true },
   });
 
+  const allRates = await getCommissionRates();
+
   let totalFixedSalary = 0;
   for (const m of managers) {
-    totalFixedSalary += COMMISSION_RATES[m.rank]?.fixedSalary || 0;
+    totalFixedSalary += allRates[m.rank]?.fixedSalary || 0;
   }
 
   const usagePercent = salaryFundCap > 0 ? (totalFixedSalary / salaryFundCap) * 100 : 0;
@@ -296,7 +343,7 @@ async function calculateSalaryFundStatus(month) {
       id: m.id,
       name: m.name,
       rank: m.rank,
-      salary: COMMISSION_RATES[m.rank]?.fixedSalary || 0,
+      salary: allRates[m.rank]?.fixedSalary || 0,
     })),
   };
 }
@@ -311,6 +358,9 @@ function invalidateCommissionCache(ctvId = null) {
   } else {
     commissionCache.clear();
   }
+  // Also clear the DB-driven rates cache so next read fetches fresh config
+  invalidateCache('commission:rates:config');
+  invalidateCache('commission:agency:config');
   console.log(`[Cache] Commission cache invalidated${ctvId ? ` for CTV ${ctvId}` : ' (all)'}`);
 }
 
@@ -319,6 +369,8 @@ module.exports = {
   calculateAllCtvCommissions,
   calculateSalaryFundStatus,
   invalidateCommissionCache,
+  getCommissionRates,
+  getAgencyCommissionRates,
   COMMISSION_RATES,
   AGENCY_COMMISSION,
 };

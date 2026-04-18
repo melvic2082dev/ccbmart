@@ -30,6 +30,7 @@ const { confirmDeposit: confirmMemberDeposit } = require('./services/membership'
 const { globalLimiter, apiLimiter } = require('./middleware/rateLimiter');
 const { validate, schemas } = require('./middleware/validate');
 const { initRedis } = require('./services/cache');
+const { errorHandler } = require('./middleware/errorHandler');
 const { initSyncQueue, addSyncJob } = require('./queues/syncQueue');
 const { scheduleAutoRankJob } = require('./jobs/autoRankUpdate');
 const { scheduleCashCheckJob } = require('./jobs/checkUnsubmittedCash');
@@ -169,6 +170,9 @@ app.post('/webhook/kiotviet/order', validate(schemas.webhookOrder), async (req, 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
+
+// Centralized error handler (must be after all routes)
+app.use(errorHandler);
 
 // Initialize services and start server
 async function start() {
