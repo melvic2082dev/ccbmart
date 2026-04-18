@@ -98,7 +98,7 @@ async function calculateCtvCommission(ctvId, month) {
   // Build revenue map: ctvId -> total revenue
   const revenueMap = new Map();
   for (const tx of allTransactions) {
-    revenueMap.set(tx.ctvId, (revenueMap.get(tx.ctvId) || 0) + tx.totalAmount);
+    revenueMap.set(tx.ctvId, (revenueMap.get(tx.ctvId) || 0) + Number(tx.totalAmount));
   }
 
   // Build children map: parentId -> [childIds]
@@ -193,7 +193,7 @@ async function calculateAllCtvCommissions(month) {
 
   const revenueMap = new Map();
   for (const tx of allTransactions) {
-    revenueMap.set(tx.ctvId, (revenueMap.get(tx.ctvId) || 0) + tx.totalAmount);
+    revenueMap.set(tx.ctvId, (revenueMap.get(tx.ctvId) || 0) + Number(tx.totalAmount));
   }
 
   const childrenMap = new Map();
@@ -266,7 +266,7 @@ async function calculateSalaryFundStatus(month) {
     _sum: { totalAmount: true },
   });
 
-  const ctvRevenue = ctvRevenueResult._sum.totalAmount || 0;
+  const ctvRevenue = Number(ctvRevenueResult._sum.totalAmount) || 0;
   const salaryFundCap = ctvRevenue * 0.05;
 
   const managers = await prisma.user.findMany({

@@ -564,8 +564,8 @@ async function main() {
       data: {
         userId: user.id,
         tierId: tier.id,
-        balance: tier.minDeposit + Math.floor(Math.random() * 500000),
-        totalDeposit: tier.minDeposit + Math.floor(Math.random() * 1000000),
+        balance: Number(tier.minDeposit) + Math.floor(Math.random() * 500000),
+        totalDeposit: Number(tier.minDeposit) + Math.floor(Math.random() * 1000000),
         referralCode: code,
         referredById: i >= 5 ? memberWallets[i % 5].id : null,
       },
@@ -597,7 +597,7 @@ async function main() {
     const earner = memberWallets[i % 5];
     const source = memberWallets[i];
     const rate = tiers[i % 4].referralPct;
-    if (rate > 0) {
+    if (Number(rate) > 0) {
       await prisma.referralCommission.create({
         data: {
           earnerWalletId: earner.id,

@@ -25,7 +25,7 @@ async function calculateSoftSalary(month) {
     },
     _sum: { totalAmount: true },
   });
-  const ctvRevenue = revenueResult._sum.totalAmount || 0;
+  const ctvRevenue = Number(revenueResult._sum.totalAmount) || 0;
   const salaryFundCap = ctvRevenue * 0.05;
 
   // Get all managers with ranks PP+
@@ -77,7 +77,7 @@ async function calculateSoftSalary(month) {
     },
     _sum: { totalAmount: true },
   });
-  const salesMap = new Map(personalSales.map(s => [s.ctvId, s._sum.totalAmount || 0]));
+  const salesMap = new Map(personalSales.map(s => [s.ctvId, Number(s._sum.totalAmount) || 0]));
 
   // Sort by newest first for adjustment targeting
   const managersSorted = [...managers].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));

@@ -22,7 +22,7 @@ async function generateReferralCode() {
 async function determineTier(depositAmount) {
   const tiers = await prisma.membershipTier.findMany({ orderBy: { minDeposit: 'desc' } });
   for (const tier of tiers) {
-    if (depositAmount >= tier.minDeposit) return tier;
+    if (depositAmount >= Number(tier.minDeposit)) return tier;
   }
   return tiers[tiers.length - 1];
 }
@@ -92,8 +92,8 @@ async function processReferralCommission(walletId, depositAmount) {
   if (!wallet?.referredBy) return null;
 
   const referrer = wallet.referredBy;
-  const rate = referrer.tier?.referralPct || 0;
-  const cap = referrer.tier?.monthlyReferralCap || 0;
+  const rate = Number(referrer.tier?.referralPct) || 0;
+  const cap = Number(referrer.tier?.monthlyReferralCap) || 0;
 
   if (rate <= 0 || cap <= 0) return null;
 
@@ -101,7 +101,7 @@ async function processReferralCommission(walletId, depositAmount) {
   const now = new Date();
   const month = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
 
-  const remaining = cap - (referrer.monthlyReferralEarned || 0);
+  const remaining = cap - (Number(referrer.monthlyReferralEarned) || 0);
   if (remaining <= 0) return null;
 
   const actualCommission = Math.min(commission, remaining);
@@ -140,8 +140,8 @@ async function confirmDeposit(depositId, adminId) {
   if (deposit.status !== 'PENDING') throw new Error('Phieu nap tien khong o trang thai PENDING');
 
   // V13.3: split 70/30 vào available/reserve
-  const availableAdd = Math.floor(deposit.amount * AVAILABLE_RATE);
-  const reserveAdd = deposit.amount - availableAdd;
+  const availableAdd = Math.floor(Number(deposit.amount) * AVAILABLE_RATE);
+  const reserveAdd = Number(deposit.amount) - availableAdd;
 
   await prisma.depositHistory.update({
     where: { id: depositId },
@@ -166,7 +166,7 @@ async function confirmDeposit(depositId, adminId) {
     });
   }
 
-  const referralResult = await processReferralCommission(wallet.id, deposit.amount);
+  const referralResult = await processReferralCommission(wallet.id, Number(deposit.amount));
 
   return {
     walletId: wallet.id,
@@ -224,8 +224,8 @@ async function getReferralStats(userId) {
     where: { earnerWalletId: wallet.id, month },
   });
 
-  const earnedThisMonth = monthlyCommissions.reduce((s, c) => s + c.amount, 0);
-  const cap = wallet.tier?.monthlyReferralCap || 0;
+  const earnedThisMonth = monthlyCommissions.reduce((s, c) => s + Number(c.amount), 0);
+  const cap = Number(wallet.tier?.monthlyReferralCap) || 0;
   const capRemaining = Math.max(0, cap - earnedThisMonth);
 
   return {

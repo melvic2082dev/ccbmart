@@ -190,7 +190,7 @@ async function getSubtreeRevenue(rootUserId, month) {
     },
     select: { totalAmount: true },
   });
-  return txns.reduce((s, t) => s + t.totalAmount, 0);
+  return txns.reduce((s, t) => s + Number(t.totalAmount), 0);
 }
 
 /**
@@ -310,10 +310,10 @@ async function getReceivedBreakawayFeesSummary(userId, month) {
   });
   const summary = { level1: 0, level2: 0, level3: 0, total: 0 };
   for (const r of rows) {
-    if (r.level === 1) summary.level1 += r.amount;
-    else if (r.level === 2) summary.level2 += r.amount;
-    else if (r.level === 3) summary.level3 += r.amount;
-    summary.total += r.amount;
+    if (r.level === 1) summary.level1 += Number(r.amount);
+    else if (r.level === 2) summary.level2 += Number(r.amount);
+    else if (r.level === 3) summary.level3 += Number(r.amount);
+    summary.total += Number(r.amount);
   }
   return { ...summary, records: rows };
 }

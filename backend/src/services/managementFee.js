@@ -73,7 +73,7 @@ async function getPersonalComboRevenue(userId, month) {
     },
     select: { totalAmount: true },
   });
-  return txns.reduce((s, t) => s + t.totalAmount, 0);
+  return txns.reduce((s, t) => s + Number(t.totalAmount), 0);
 }
 
 /**
@@ -178,10 +178,10 @@ async function getReceivedManagementFeesSummary(userId, month) {
   });
   const summary = { f1: 0, f2: 0, f3: 0, total: 0 };
   for (const r of rows) {
-    if (r.level === 1) summary.f1 += r.amount;
-    else if (r.level === 2) summary.f2 += r.amount;
-    else if (r.level === 3) summary.f3 += r.amount;
-    summary.total += r.amount;
+    if (r.level === 1) summary.f1 += Number(r.amount);
+    else if (r.level === 2) summary.f2 += Number(r.amount);
+    else if (r.level === 3) summary.f3 += Number(r.amount);
+    summary.total += Number(r.amount);
   }
   return { ...summary, records: rows };
 }

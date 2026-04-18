@@ -121,7 +121,7 @@ async function calculateKFactor(month) {
     where: { channel: 'ctv', createdAt: { gte: startDate, lt: endDate } },
     select: { totalAmount: true },
   });
-  const totalRevenue = txns.reduce((sum, t) => sum + t.totalAmount, 0);
+  const totalRevenue = txns.reduce((sum, t) => sum + Number(t.totalAmount), 0);
   const trainingFund = totalRevenue * 0.03; // 3% of total revenue
 
   // Calculate total theoretical fees for all eligible trainers
@@ -132,7 +132,7 @@ async function calculateKFactor(month) {
   let totalTheoreticalFees = 0;
   for (const trainer of trainers) {
     const fee = await calculateTrainingFee(trainer.id, month);
-    totalTheoreticalFees += fee.feeAmount;
+    totalTheoreticalFees += Number(fee.feeAmount);
   }
 
   const kFactor = totalTheoreticalFees > 0

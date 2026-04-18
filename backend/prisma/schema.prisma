@@ -3,8 +3,8 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = "file:./dev.db"
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model User {
@@ -102,7 +102,7 @@ model Agency {
   id              Int      @id @default(autoincrement())
   userId          Int      @unique @map("user_id")
   name            String
-  depositAmount   Float    @map("deposit_amount")
+  depositAmount   Decimal  @db.Decimal(15, 0) @map("deposit_amount")
   depositTier     String   @map("deposit_tier")
   address         String?
 
@@ -116,32 +116,32 @@ model Agency {
 }
 
 model CommissionConfig {
-  id            Int    @id @default(autoincrement())
-  tier          String @unique
-  selfSalePct   Float  @map("self_sale_pct")
-  directPct     Float  @map("direct_pct")
-  indirect2Pct  Float  @map("indirect2_pct")
-  indirect3Pct  Float  @map("indirect3_pct")
-  fixedSalary   Float  @map("fixed_salary")
+  id            Int     @id @default(autoincrement())
+  tier          String  @unique
+  selfSalePct   Decimal @db.Decimal(5, 4) @map("self_sale_pct")
+  directPct     Decimal @db.Decimal(5, 4) @map("direct_pct")
+  indirect2Pct  Decimal @db.Decimal(5, 4) @map("indirect2_pct")
+  indirect3Pct  Decimal @db.Decimal(5, 4) @map("indirect3_pct")
+  fixedSalary   Decimal @db.Decimal(15, 0) @map("fixed_salary")
 
   @@map("commission_config")
 }
 
 model AgencyCommissionConfig {
-  id            Int    @id @default(autoincrement())
-  group         String @unique
-  commissionPct Float  @map("commission_pct")
-  bonusPct      Float  @map("bonus_pct")
+  id            Int     @id @default(autoincrement())
+  group         String  @unique
+  commissionPct Decimal @db.Decimal(5, 4) @map("commission_pct")
+  bonusPct      Decimal @db.Decimal(5, 4) @map("bonus_pct")
 
   @@map("agency_commission_config")
 }
 
 model Product {
-  id       Int    @id @default(autoincrement())
+  id       Int     @id @default(autoincrement())
   name     String
   category String
-  price    Float
-  cogsPct  Float  @map("cogs_pct")
+  price    Decimal @db.Decimal(15, 0)
+  cogsPct  Decimal @db.Decimal(5, 4) @map("cogs_pct")
   unit     String
 
   transactionItems TransactionItem[]
@@ -157,8 +157,8 @@ model Transaction {
   ctvId           Int?     @map("ctv_id")
   agencyId        Int?     @map("agency_id")
   channel         String   // ctv, agency, showroom
-  totalAmount     Float    @map("total_amount")
-  cogsAmount      Float    @map("cogs_amount")
+  totalAmount     Decimal  @db.Decimal(15, 0) @map("total_amount")
+  cogsAmount      Decimal  @db.Decimal(15, 0) @map("cogs_amount")
   status          String   @default("CONFIRMED") // PENDING, CONFIRMED, REJECTED
   paymentMethod   String?  @map("payment_method") // bank_transfer, cash
   bankCode        String?  @map("bank_code") // last 4 digits
@@ -191,12 +191,12 @@ model Transaction {
 }
 
 model TransactionItem {
-  id            Int    @id @default(autoincrement())
-  transactionId Int    @map("transaction_id")
-  productId     Int    @map("product_id")
+  id            Int     @id @default(autoincrement())
+  transactionId Int     @map("transaction_id")
+  productId     Int     @map("product_id")
   quantity      Int
-  unitPrice     Float  @map("unit_price")
-  totalPrice    Float  @map("total_price")
+  unitPrice     Decimal @db.Decimal(15, 0) @map("unit_price")
+  totalPrice    Decimal @db.Decimal(15, 0) @map("total_price")
 
   transaction   Transaction @relation(fields: [transactionId], references: [id])
   product       Product     @relation(fields: [productId], references: [id])
@@ -213,7 +213,7 @@ model Customer {
   ctvId         Int?     @map("ctv_id")
   agencyId      Int?     @map("agency_id")
   firstPurchase DateTime? @map("first_purchase")
-  totalSpent    Float    @default(0) @map("total_spent")
+  totalSpent    Decimal  @db.Decimal(15, 0) @default(0) @map("total_spent")
 
   ctv           User?    @relation("CtvCustomers", fields: [ctvId], references: [id])
   agency        Agency?  @relation("AgencyCustomers", fields: [agencyId], references: [id])
@@ -283,8 +283,8 @@ model Notification {
   userId    Int      @map("user_id")
   type      String
   title     String
-  content   String
-  metadata  String?
+  content   String   @db.Text
+  metadata  String?  @db.Text
   isRead    Boolean  @default(false) @map("is_read")
   createdAt DateTime @default(now()) @map("created_at")
 
@@ -312,8 +312,8 @@ model PaymentProof {
 model CashDeposit {
   id             Int       @id @default(autoincrement())
   ctvId          Int       @map("ctv_id")
-  amount         Float
-  transactionIds String    @map("transaction_ids") // JSON array
+  amount         Decimal   @db.Decimal(15, 0)
+  transactionIds String    @db.Text @map("transaction_ids") // JSON array
   depositedAt    DateTime  @default(now()) @map("deposited_at")
   confirmedBy    Int?      @map("confirmed_by")
   confirmedAt    DateTime? @map("confirmed_at")
@@ -340,10 +340,10 @@ model KpiConfig {
 }
 
 model CogsConfig {
-  id          Int    @id @default(autoincrement())
-  phase       String @unique
+  id          Int     @id @default(autoincrement())
+  phase       String  @unique
   name        String
-  cogsPct     Float  @map("cogs_pct")
+  cogsPct     Decimal @db.Decimal(5, 4) @map("cogs_pct")
   description String?
 
   @@map("cogs_config")
@@ -352,10 +352,10 @@ model CogsConfig {
 model MembershipTier {
   id                 Int      @id @default(autoincrement())
   name               String   @unique
-  minDeposit         Float    @map("min_deposit")
-  discountPct        Float    @map("discount_pct")
-  referralPct        Float    @map("referral_pct")
-  monthlyReferralCap Float    @map("monthly_referral_cap")
+  minDeposit         Decimal  @db.Decimal(15, 0) @map("min_deposit")
+  discountPct        Decimal  @db.Decimal(5, 4) @map("discount_pct")
+  referralPct        Decimal  @db.Decimal(5, 4) @map("referral_pct")
+  monthlyReferralCap Decimal  @db.Decimal(15, 0) @map("monthly_referral_cap")
   color              String   @default("gray")
   createdAt          DateTime @default(now()) @map("created_at")
 
@@ -369,12 +369,12 @@ model MemberWallet {
   userId                Int      @unique @map("user_id")
   customerId            Int?     @unique @map("customer_id")
   tierId                Int      @map("tier_id")
-  balance               Float    @default(0)
-  totalDeposit          Float    @default(0) @map("total_deposit")
+  balance               Decimal  @db.Decimal(15, 0) @default(0)
+  totalDeposit          Decimal  @db.Decimal(15, 0) @default(0) @map("total_deposit")
   referralCode          String   @unique @map("referral_code")
   referredById          Int?     @map("referred_by_id")
-  referralEarned        Float    @default(0) @map("referral_earned")
-  monthlyReferralEarned Float    @default(0) @map("monthly_referral_earned")
+  referralEarned        Decimal  @db.Decimal(15, 0) @default(0) @map("referral_earned")
+  monthlyReferralEarned Decimal  @db.Decimal(15, 0) @default(0) @map("monthly_referral_earned")
   createdAt             DateTime @default(now()) @map("created_at")
 
   user                  User              @relation("MemberWallet", fields: [userId], references: [id])
@@ -394,7 +394,7 @@ model MemberWallet {
 model DepositHistory {
   id          Int       @id @default(autoincrement())
   walletId    Int       @map("wallet_id")
-  amount      Float
+  amount      Decimal   @db.Decimal(15, 0)
   method      String    // bank_transfer, cash, momo, zalopay
   status      String    @default("PENDING")
   provider    String?   // momo, zalopay
@@ -415,8 +415,8 @@ model ReferralCommission {
   id              Int      @id @default(autoincrement())
   earnerWalletId  Int      @map("earner_wallet_id")
   sourceWalletId  Int      @map("source_wallet_id")
-  amount          Float
-  ratePct         Float    @map("rate_pct")
+  amount          Decimal  @db.Decimal(15, 0)
+  ratePct         Decimal  @db.Decimal(5, 4) @map("rate_pct")
   month           String
   createdAt       DateTime @default(now()) @map("created_at")
 
@@ -452,7 +452,7 @@ model ImportLog {
   failedRows  Int      @map("failed_rows")
   importedBy  Int      @map("imported_by")
   importedAt  DateTime @default(now()) @map("imported_at")
-  details     String?  // JSON
+  details     String?  @db.Text // JSON
 
   importer    User     @relation(fields: [importedBy], references: [id])
 
@@ -481,11 +481,11 @@ model TeamBonus {
   ctvId               Int       @map("ctv_id")
   month               String
   directMemberCount   Int       @map("direct_member_count")
-  teamRevenue         Float     @map("team_revenue")
-  bonusRate           Float     @map("bonus_rate")
-  bonusAmount         Float     @map("bonus_amount")
-  cashAmount          Float     @map("cash_amount")
-  pointAmount         Float     @map("point_amount")
+  teamRevenue         Decimal   @db.Decimal(15, 0) @map("team_revenue")
+  bonusRate           Decimal   @db.Decimal(5, 4) @map("bonus_rate")
+  bonusAmount         Decimal   @db.Decimal(15, 0) @map("bonus_amount")
+  cashAmount          Decimal   @db.Decimal(15, 0) @map("cash_amount")
+  pointAmount         Decimal   @db.Decimal(15, 0) @map("point_amount")
   status              String    @default("PENDING")
   paidAt              DateTime? @map("paid_at")
   createdAt           DateTime  @default(now()) @map("created_at")
@@ -533,7 +533,7 @@ model FeeConfig {
   tier        String   @unique
   minCombo    Int      @map("min_combo")
   maxCombo    Int?     @map("max_combo")
-  feeAmount   Float    @map("fee_amount")
+  feeAmount   Decimal  @db.Decimal(15, 0) @map("fee_amount")
   description String?
   isActive    Boolean  @default(true) @map("is_active")
   updatedAt   DateTime @updatedAt @map("updated_at")
@@ -582,7 +582,7 @@ model B2BContract {
   expiredAt           DateTime? @map("expired_at")
   status              String    @default("active")
   terminatedAt        DateTime? @map("terminated_at")
-  terminationReason   String?   @map("termination_reason")
+  terminationReason   String?   @db.Text @map("termination_reason")
   terminatedBy        Int?      @map("terminated_by")
 
   trainer             User      @relation("Trainer", fields: [trainerId], references: [id])
@@ -598,7 +598,7 @@ model TrainingLog {
   traineeId       Int       @map("trainee_id")
   sessionDate     DateTime  @map("session_date")
   durationMinutes Int       @map("duration_minutes")
-  content         String
+  content         String    @db.Text
   menteeConfirmed Boolean   @default(false) @map("mentee_confirmed")
   mentorConfirmed Boolean   @default(true) @map("mentor_confirmed")
   status          String    @default("PENDING")
@@ -628,7 +628,7 @@ model Invoice {
   contractId    Int?     @map("contract_id")
   fromUserId    Int      @map("from_user_id")
   toUserId      Int      @map("to_user_id")
-  amount        Float
+  amount        Decimal  @db.Decimal(15, 0)
   feeTier       String   @map("fee_tier")
   invoiceNumber String   @unique @map("invoice_number")
   issuedAt      DateTime @default(now()) @map("issued_at")
@@ -656,11 +656,11 @@ model AutoTransferLog {
   id           Int      @id @default(autoincrement())
   fromUserId   Int      @map("from_user_id")
   toUserId     Int      @map("to_user_id")
-  amount       Float
+  amount       Decimal  @db.Decimal(15, 0)
   transferDate DateTime @default(now()) @map("transfer_date")
   reference    Int?
   status       String   @default("PENDING")
-  errorMessage String?  @map("error_message")
+  errorMessage String?  @db.Text @map("error_message")
 
   retryCount     Int       @default(0) @map("retry_count")
   maxRetry       Int       @default(3) @map("max_retry")
@@ -668,7 +668,7 @@ model AutoTransferLog {
   manualResolved Boolean   @default(false) @map("manual_resolved")
   resolvedBy     Int?      @map("resolved_by")
   resolvedAt     DateTime? @map("resolved_at")
-  adminNote      String?   @map("admin_note")
+  adminNote      String?   @db.Text @map("admin_note")
 
   fromUser     User     @relation("TransfersFrom", fields: [fromUserId], references: [id])
   toUser       User     @relation("TransfersTo", fields: [toUserId], references: [id])
@@ -682,8 +682,8 @@ model TaxRecord {
   id             Int      @id @default(autoincrement())
   userId         Int      @map("user_id")
   month          String
-  taxableIncome  Float    @map("taxable_income")
-  taxAmount      Float    @map("tax_amount")
+  taxableIncome  Decimal  @db.Decimal(15, 0) @map("taxable_income")
+  taxAmount      Decimal  @db.Decimal(15, 0) @map("tax_amount")
   status         String   @default("PENDING")
   createdAt      DateTime @default(now()) @map("created_at")
 
@@ -698,7 +698,7 @@ model ManagementFee {
   fromUserId Int      @map("from_user_id")
   toUserId   Int      @map("to_user_id")
   level      Int
-  amount     Float
+  amount     Decimal  @db.Decimal(15, 0)
   month      String
   status     String   @default("PENDING")
   createdAt  DateTime @default(now()) @map("created_at")
@@ -738,7 +738,7 @@ model BreakawayFee {
   fromUserId     Int      @map("from_user_id")
   toUserId       Int      @map("to_user_id")
   level          Int
-  amount         Float
+  amount         Decimal  @db.Decimal(15, 0)
   month          String
   status         String   @default("PENDING")
   createdAt      DateTime @default(now()) @map("created_at")
@@ -758,12 +758,12 @@ model AuditLog {
   action      String
   targetType  String?  @map("target_type")
   targetId    Int?     @map("target_id")
-  oldValue    String?  @map("old_value")
-  newValue    String?  @map("new_value")
+  oldValue    String?  @db.Text @map("old_value")
+  newValue    String?  @db.Text @map("new_value")
   ipAddress   String?  @map("ip_address")
   userAgent   String?  @map("user_agent")
   status      String   @default("SUCCESS")
-  metadata    String?
+  metadata    String?  @db.Text
   createdAt   DateTime @default(now())     @map("created_at")
 
   user        User?    @relation("AuditLogs", fields: [userId], references: [id])
