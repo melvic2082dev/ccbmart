@@ -2,6 +2,7 @@ const express = require('express');
 const { PrismaClient } = require('@prisma/client');
 const { authenticate, authorize } = require('../middleware/auth');
 const { processMonthlyTax, generateTaxReport, calculateTax } = require('../services/taxEngine');
+const { validate, schemas } = require('../middleware/validate');
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -9,7 +10,7 @@ const prisma = new PrismaClient();
 router.use(authenticate);
 
 // GET /api/admin/tax — list tax records by month
-router.get('/admin/tax', authorize('admin'), async (req, res) => {
+router.get('/admin/tax', authorize('admin'), validate(schemas.taxQuery, 'query'), async (req, res) => {
   try {
     const { month, status } = req.query;
     const where = {};
@@ -37,7 +38,7 @@ router.get('/admin/tax', authorize('admin'), async (req, res) => {
 });
 
 // POST /api/admin/tax/process — trigger tax calculation for a month
-router.post('/admin/tax/process', authorize('admin'), async (req, res) => {
+router.post('/admin/tax/process', authorize('admin'), validate(schemas.taxProcess), async (req, res) => {
   try {
     const { month } = req.body;
     if (!month) return res.status(400).json({ error: 'month (YYYY-MM) is required' });

@@ -2,6 +2,7 @@ const express = require('express');
 const { PrismaClient } = require('@prisma/client');
 const { authenticate, authorize } = require('../middleware/auth');
 const { confirmTransaction, rejectTransaction, confirmCashDeposit, getReconciliationStats } = require('../services/transaction');
+const { validate, schemas } = require('../middleware/validate');
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -10,7 +11,7 @@ router.use(authenticate);
 router.use(authorize('admin'));
 
 // GET /pending - List pending transactions for reconciliation
-router.get('/pending', async (req, res) => {
+router.get('/pending', validate(schemas.reconciliationQuery, 'query'), async (req, res) => {
   try {
     const { page = 1, limit = 20, paymentMethod } = req.query;
     const skip = (parseInt(page) - 1) * parseInt(limit);
@@ -48,7 +49,7 @@ router.get('/pending', async (req, res) => {
 });
 
 // POST /:id/confirm - Confirm a transaction
-router.post('/:id/confirm', async (req, res) => {
+router.post('/:id/confirm', validate(schemas.confirmNotes), async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     const result = await confirmTransaction(id, req.user.id, req.body.notes);
@@ -59,7 +60,7 @@ router.post('/:id/confirm', async (req, res) => {
 });
 
 // POST /:id/reject - Reject a transaction
-router.post('/:id/reject', async (req, res) => {
+router.post('/:id/reject', validate(schemas.rejectReason), async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     if (!req.body.reason) return res.status(400).json({ error: 'Can cung cap ly do tu choi' });
@@ -101,7 +102,7 @@ router.get('/cash-deposits/pending', async (req, res) => {
 });
 
 // POST /cash-deposits/:id/confirm - Confirm a cash deposit
-router.post('/cash-deposits/:id/confirm', async (req, res) => {
+router.post('/cash-deposits/:id/confirm', validate(schemas.confirmNotes), async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     const result = await confirmCashDeposit(id, req.user.id, req.body.notes);
@@ -112,7 +113,7 @@ router.post('/cash-deposits/:id/confirm', async (req, res) => {
 });
 
 // POST /cash-deposits/:id/reject - Reject a cash deposit
-router.post('/cash-deposits/:id/reject', async (req, res) => {
+router.post('/cash-deposits/:id/reject', validate(schemas.rejectReason), async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     if (!req.body.reason) return res.status(400).json({ error: 'Can cung cap ly do tu choi' });
@@ -142,7 +143,7 @@ router.post('/cash-deposits/:id/reject', async (req, res) => {
 });
 
 // GET /all - All transactions with any status for full view
-router.get('/all', async (req, res) => {
+router.get('/all', validate(schemas.reconciliationQuery, 'query'), async (req, res) => {
   try {
     const { page = 1, limit = 50, status, channel } = req.query;
     const skip = (parseInt(page) - 1) * parseInt(limit);

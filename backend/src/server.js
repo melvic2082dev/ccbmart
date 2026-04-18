@@ -1,5 +1,6 @@
 const config = require('./config');
 const express = require('express');
+const helmet = require('helmet');
 const cors = require('cors');
 const path = require('path');
 const authRoutes = require('./routes/auth');
@@ -26,7 +27,7 @@ const { subscribeUser, unsubscribeUser } = require('./services/pushNotification'
 const { authenticate: authMw } = require('./middleware/auth');
 const { createMomoPayment, verifyMomoSignature, createZaloPayPayment, verifyZaloPayCallback } = require('./services/payment');
 const { confirmDeposit: confirmMemberDeposit } = require('./services/membership');
-const { globalLimiter } = require('./middleware/rateLimiter');
+const { globalLimiter, apiLimiter } = require('./middleware/rateLimiter');
 const { validate, schemas } = require('./middleware/validate');
 const { initRedis } = require('./services/cache');
 const { initSyncQueue, addSyncJob } = require('./queues/syncQueue');
@@ -38,6 +39,7 @@ const { scheduleAuditLogCleanup } = require('./jobs/auditLogCleanup');
 const app = express();
 const PORT = config.port;
 
+app.use(helmet());
 app.use(cors({
   origin: (origin, callback) => {
     if (!origin) return callback(null, true);
@@ -96,7 +98,7 @@ app.post('/api/notifications/unsubscribe', authMw, async (req, res) => {
 });
 
 // Payment: Momo
-app.post('/api/payment/momo/create', authMw, async (req, res) => {
+app.post('/api/payment/momo/create', authMw, apiLimiter, async (req, res) => {
   try {
     const { amount, depositId } = req.body;
     const baseUrl = `${req.protocol}://${req.get('host')}`;
@@ -106,6 +108,9 @@ app.post('/api/payment/momo/create', authMw, async (req, res) => {
 });
 app.post('/webhook/momo/ipn', async (req, res) => {
   try {
+    if (!verifyMomoSignature(req.body, req.body.signature)) {
+      return res.status(401).end();
+    }
     if (req.body.resultCode === 0) {
       const orderId = req.body.orderId;
       const depositId = parseInt(orderId.replace('DEP', ''));
@@ -120,7 +125,7 @@ app.post('/webhook/momo/ipn', async (req, res) => {
 });
 
 // Payment: ZaloPay
-app.post('/api/payment/zalopay/create', authMw, async (req, res) => {
+app.post('/api/payment/zalopay/create', authMw, apiLimiter, async (req, res) => {
   try {
     const { amount, depositId } = req.body;
     const baseUrl = `${req.protocol}://${req.get('host')}`;
@@ -129,7 +134,24 @@ app.post('/api/payment/zalopay/create', authMw, async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 app.post('/webhook/zalopay/callback', async (req, res) => {
-  try { res.json({ return_code: 1, return_message: 'success' }); } catch { res.json({ return_code: 0 }); }
+  try {
+    const { data, mac } = req.body;
+    if (!data || !verifyZaloPayCallback(data, mac)) {
+      return res.json({ return_code: -1, return_message: 'mac not equal' });
+    }
+    const callbackData = JSON.parse(data);
+    const depMatch = callbackData.app_trans_id?.match(/DEP(\d+)$/);
+    if (depMatch) {
+      const depositId = parseInt(depMatch[1]);
+      const { PrismaClient } = require('@prisma/client');
+      const p = new PrismaClient();
+      await p.depositHistory.update({ where: { id: depositId }, data: { status: 'CONFIRMED', provider: 'zalopay', providerTxId: String(callbackData.zp_trans_id), confirmedAt: new Date() } });
+    }
+    res.json({ return_code: 1, return_message: 'success' });
+  } catch (err) {
+    console.error('[ZaloPay] Callback error:', err.message);
+    res.json({ return_code: 0, return_message: err.message });
+  }
 });
 
 // Webhook endpoint for KiotViet

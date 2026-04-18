@@ -85,6 +85,129 @@ const schemas = {
     amount: Joi.number().min(10000).required(),
     method: Joi.string().valid('bank_transfer', 'cash').default('bank_transfer'),
   }),
+
+  // Phase 3: Security hardening — new validation schemas
+
+  confirmNotes: Joi.object({
+    notes: Joi.string().max(500).allow('').optional(),
+  }),
+
+  rejectReason: Joi.object({
+    reason: Joi.string().min(1).max(500).required(),
+  }),
+
+  reconciliationQuery: Joi.object({
+    page: Joi.number().integer().min(1).default(1),
+    limit: Joi.number().integer().min(1).max(100).default(20),
+    paymentMethod: Joi.string().optional(),
+    status: Joi.string().valid('PENDING', 'CONFIRMED', 'REJECTED').optional(),
+    channel: Joi.string().valid('ctv', 'agency', 'showroom').optional(),
+  }),
+
+  businessHouseholdRenew: Joi.object({
+    kind: Joi.string().valid('dealer', 'training').required(),
+    termMonths: Joi.number().integer().min(1).max(60).default(12),
+  }),
+
+  businessHouseholdUpdateBank: Joi.object({
+    bankName: Joi.string().max(100).required(),
+    bankAccountNo: Joi.string().max(50).required(),
+    bankAccountHolder: Joi.string().max(100).required(),
+  }),
+
+  businessHouseholdAction: Joi.object({
+    userId: Joi.number().integer().required(),
+    action: Joi.string().valid('create', 'suspend', 'terminate', 'activate').required(),
+    businessName: Joi.string().max(200).optional(),
+    taxCode: Joi.string().max(20).optional(),
+    businessLicense: Joi.string().max(100).optional(),
+  }),
+
+  trainingLogQuery: Joi.object({
+    status: Joi.string().valid('PENDING', 'VERIFIED', 'REJECTED').optional(),
+    page: Joi.number().integer().min(1).default(1),
+    limit: Joi.number().integer().min(1).max(100).default(50),
+  }),
+
+  trainingLogVerify: Joi.object({
+    action: Joi.string().valid('verify', 'reject').required(),
+  }),
+
+  trainingLogCreate: Joi.object({
+    traineeId: Joi.number().integer().required(),
+    sessionDate: Joi.string().isoDate().required(),
+    durationMinutes: Joi.number().integer().min(1).max(480).required(),
+    content: Joi.string().min(5).max(2000).required(),
+  }),
+
+  trainingLogConfirm: Joi.object({
+    otp: Joi.string().length(6).optional(),
+  }),
+
+  feeConfigUpdate: Joi.object({
+    minCombo: Joi.number().min(0).optional(),
+    maxCombo: Joi.number().allow(null).min(0).optional(),
+    feeAmount: Joi.number().min(0).optional(),
+    description: Joi.string().max(200).optional(),
+    isActive: Joi.boolean().optional(),
+  }),
+
+  kycSubmit: Joi.object({
+    idNumber: Joi.string().min(9).max(12).required(),
+    idFrontImage: Joi.string().required(),
+    idBackImage: Joi.string().required(),
+    deviceId: Joi.string().max(100).optional(),
+  }),
+
+  kycVerify: Joi.object({
+    approved: Joi.boolean().required(),
+    reason: Joi.string().max(500).optional(),
+  }),
+
+  taxQuery: Joi.object({
+    month: Joi.string().pattern(/^\d{4}-\d{2}$/).optional(),
+    status: Joi.string().valid('PENDING', 'PAID').optional(),
+  }),
+
+  taxProcess: Joi.object({
+    month: Joi.string().pattern(/^\d{4}-\d{2}$/).required(),
+  }),
+
+  memberRedeemCode: Joi.object({
+    code: Joi.string().min(1).max(50).required(),
+  }),
+
+  invoicesQuery: Joi.object({
+    status: Joi.string().optional(),
+    page: Joi.number().integer().min(1).default(1),
+    limit: Joi.number().integer().min(1).max(100).default(50),
+  }),
+
+  invoiceProcessMonthly: Joi.object({
+    month: Joi.number().integer().min(1).max(12).optional(),
+    year: Joi.number().integer().min(2020).max(2100).optional(),
+  }),
+
+  monthlyReportQuery: Joi.object({
+    month: Joi.string().pattern(/^\d{4}-\d{2}$/).optional(),
+  }),
+
+  contractTerminate: Joi.object({
+    reason: Joi.string().max(500).optional(),
+  }),
+
+  awardTitle: Joi.object({
+    userId: Joi.number().integer().required(),
+    title: Joi.string().valid('EXPERT_LEADER', 'SENIOR_EXPERT', 'STRATEGIC_ADVISOR').required(),
+  }),
+
+  adminSync: Joi.object({
+    dateRange: Joi.string().valid('last-7-days', 'last-30-days', 'last-90-days').optional(),
+  }),
+
+  monthQuery: Joi.object({
+    month: Joi.string().pattern(/^\d{4}-\d{2}$/).optional(),
+  }),
 };
 
 module.exports = { validate, schemas };

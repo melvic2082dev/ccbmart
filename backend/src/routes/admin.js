@@ -554,7 +554,7 @@ router.get('/titles', async (req, res) => {
   }
 });
 
-router.post('/titles/award', async (req, res) => {
+router.post('/titles/award', validate(schemas.awardTitle), async (req, res) => {
   try {
     const { userId, title } = req.body;
     if (!userId || !title) return res.status(400).json({ error: 'userId and title required' });
@@ -591,7 +591,7 @@ router.post('/titles/award', async (req, res) => {
 });
 
 // Sync (via queue)
-router.post('/sync', async (req, res) => {
+router.post('/sync', validate(schemas.adminSync), async (req, res) => {
   try {
     const result = await addSyncJob('batch-sync', { dateRange: req.body?.dateRange || 'last-7-days' });
     res.json({ message: 'Sync job initiated', ...result });

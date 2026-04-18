@@ -2,6 +2,7 @@ const express = require('express');
 const { PrismaClient } = require('@prisma/client');
 const { authenticate, authorize } = require('../middleware/auth');
 const { auditLog } = require('../middleware/auditLog');
+const { validate, schemas } = require('../middleware/validate');
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -22,7 +23,7 @@ router.get('/', async (req, res) => {
 });
 
 // PUT /api/admin/fee-config/:tier — update a fee tier
-router.put('/:tier', auditLog('CONFIG_CHANGE', 'FeeConfig'), async (req, res) => {
+router.put('/:tier', auditLog('CONFIG_CHANGE', 'FeeConfig'), validate(schemas.feeConfigUpdate), async (req, res) => {
   try {
     const { minCombo, maxCombo, feeAmount, description, isActive } = req.body;
     const config = await prisma.feeConfig.update({

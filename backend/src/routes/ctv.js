@@ -5,6 +5,7 @@ const { calculateCtvCommission } = require('../services/commission');
 const { getCachedOrCompute } = require('../services/cache');
 const { getReceivedManagementFeesSummary } = require('../services/managementFee');
 const { getReceivedBreakawayFeesSummary } = require('../services/breakaway');
+const { validate, schemas } = require('../middleware/validate');
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -190,7 +191,7 @@ router.get('/customers', async (req, res) => {
 });
 
 // Transactions
-router.get('/transactions', async (req, res) => {
+router.get('/transactions', validate(schemas.pagination, 'query'), async (req, res) => {
   try {
     const { page = 1, limit = 20 } = req.query;
     const skip = (parseInt(page) - 1) * parseInt(limit);
@@ -213,7 +214,7 @@ router.get('/transactions', async (req, res) => {
 });
 
 // C12.4: Management fees received (F1/F2/F3)
-router.get('/management-fees', async (req, res) => {
+router.get('/management-fees', validate(schemas.monthQuery, 'query'), async (req, res) => {
   try {
     const now = new Date();
     const month = req.query.month || `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
@@ -236,7 +237,7 @@ router.get('/management-fees', async (req, res) => {
 });
 
 // C12.4: Breakaway fees received (giai đoạn 1)
-router.get('/breakaway-fees', async (req, res) => {
+router.get('/breakaway-fees', validate(schemas.monthQuery, 'query'), async (req, res) => {
   try {
     const now = new Date();
     const month = req.query.month || `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;

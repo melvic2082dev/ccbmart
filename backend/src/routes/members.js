@@ -64,7 +64,7 @@ router.post('/deposit', validate(schemas.memberDeposit), async (req, res) => {
 });
 
 // GET /transactions - Deposit history + referral commissions
-router.get('/transactions', async (req, res) => {
+router.get('/transactions', validate(schemas.pagination, 'query'), async (req, res) => {
   try {
     const { page = 1, limit = 20 } = req.query;
     const wallet = await prisma.memberWallet.findUnique({ where: { userId: req.user.id } });
@@ -111,7 +111,7 @@ router.get('/referral-stats', async (req, res) => {
 });
 
 // POST /redeem-code - Link referral code post-registration
-router.post('/redeem-code', async (req, res) => {
+router.post('/redeem-code', validate(schemas.memberRedeemCode), async (req, res) => {
   try {
     const { code } = req.body;
     if (!code) return res.status(400).json({ error: 'Can nhap ma gioi thieu' });

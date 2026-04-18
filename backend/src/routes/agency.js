@@ -3,6 +3,7 @@ const { PrismaClient } = require('@prisma/client');
 const { authenticate, authorize } = require('../middleware/auth');
 const { AGENCY_COMMISSION } = require('../services/commission');
 const { getCachedOrCompute } = require('../services/cache');
+const { validate, schemas } = require('../middleware/validate');
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -113,7 +114,7 @@ router.get('/inventory', async (req, res) => {
 });
 
 // Transactions
-router.get('/transactions', async (req, res) => {
+router.get('/transactions', validate(schemas.pagination, 'query'), async (req, res) => {
   try {
     const agency = await prisma.agency.findUnique({ where: { userId: req.user.id } });
     if (!agency) return res.status(404).json({ error: 'Agency not found' });

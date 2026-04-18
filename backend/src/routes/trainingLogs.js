@@ -2,6 +2,7 @@ const express = require('express');
 const { PrismaClient } = require('@prisma/client');
 const { authenticate, authorize } = require('../middleware/auth');
 const { generateOTP, verifyOTP } = require('../services/otpService');
+const { validate, schemas } = require('../middleware/validate');
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -11,7 +12,7 @@ router.use(authenticate);
 // ============ ADMIN ROUTES ============
 
 // GET /api/admin/training-logs — list all training logs (admin only)
-router.get('/admin', authorize('admin'), async (req, res) => {
+router.get('/admin', authorize('admin'), validate(schemas.trainingLogQuery, 'query'), async (req, res) => {
   try {
     const { status, page = 1, limit = 50 } = req.query;
     const skip = (parseInt(page) - 1) * parseInt(limit);
@@ -39,7 +40,7 @@ router.get('/admin', authorize('admin'), async (req, res) => {
 });
 
 // POST /api/admin/training-logs/verify/:id — verify a training log (admin only)
-router.post('/admin/verify/:id', authorize('admin'), async (req, res) => {
+router.post('/admin/verify/:id', authorize('admin'), validate(schemas.trainingLogVerify), async (req, res) => {
   try {
     const logId = parseInt(req.params.id);
     const { action } = req.body; // 'verify' or 'reject'
@@ -86,7 +87,7 @@ router.get('/my', authorize('ctv'), async (req, res) => {
 });
 
 // POST /api/ctv/training-logs — create a training session
-router.post('/', authorize('ctv'), async (req, res) => {
+router.post('/', authorize('ctv'), validate(schemas.trainingLogCreate), async (req, res) => {
   try {
     const { traineeId, sessionDate, durationMinutes, content } = req.body;
     if (!traineeId || !sessionDate || !durationMinutes || !content) {
@@ -130,7 +131,7 @@ router.post('/:id/request-otp', authorize('ctv'), async (req, res) => {
 });
 
 // POST /api/ctv/training-logs/:id/confirm — trainee confirms the session via OTP
-router.post('/:id/confirm', authorize('ctv'), async (req, res) => {
+router.post('/:id/confirm', authorize('ctv'), validate(schemas.trainingLogConfirm), async (req, res) => {
   try {
     const logId = parseInt(req.params.id);
     const { otp } = req.body;

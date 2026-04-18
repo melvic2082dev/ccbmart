@@ -1,6 +1,7 @@
 const express = require('express');
 const { PrismaClient } = require('@prisma/client');
 const { authenticate, authorize } = require('../middleware/auth');
+const { validate, schemas } = require('../middleware/validate');
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -103,7 +104,7 @@ router.get('/:id/details', async (req, res) => {
 });
 
 // POST /api/admin/business-household/:id/renew — renew contract
-router.post('/:id/renew', async (req, res) => {
+router.post('/:id/renew', validate(schemas.businessHouseholdRenew), async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     const { kind, termMonths } = req.body; // kind = 'dealer' | 'training'
@@ -126,7 +127,7 @@ router.post('/:id/renew', async (req, res) => {
 });
 
 // POST /api/admin/business-household/:id/update-bank — update bank info
-router.post('/:id/update-bank', async (req, res) => {
+router.post('/:id/update-bank', validate(schemas.businessHouseholdUpdateBank), async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     const { bankName, bankAccountNo, bankAccountHolder } = req.body;
@@ -144,7 +145,7 @@ router.post('/:id/update-bank', async (req, res) => {
 });
 
 // POST /api/admin/business-household — create or update actions (suspend, terminate, activate)
-router.post('/', async (req, res) => {
+router.post('/', validate(schemas.businessHouseholdAction), async (req, res) => {
   try {
     const { userId, action, businessName, taxCode, businessLicense } = req.body;
 

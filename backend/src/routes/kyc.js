@@ -6,13 +6,14 @@ const {
   verifyKyc,
   listPendingKyc,
 } = require('../services/kycService');
+const { validate, schemas } = require('../middleware/validate');
 
 const router = express.Router();
 
 router.use(authenticate);
 
 // POST /api/kyc/submit — CTV uploads KYC documents
-router.post('/kyc/submit', authorize('ctv'), async (req, res) => {
+router.post('/kyc/submit', authorize('ctv'), validate(schemas.kycSubmit), async (req, res) => {
   try {
     const { idNumber, idFrontImage, idBackImage, deviceId } = req.body;
     // V13.3: deviceId từ client, IP từ request
@@ -54,7 +55,7 @@ router.get('/admin/kyc/pending', authorize('admin'), async (req, res) => {
 });
 
 // POST /api/admin/kyc/verify/:userId — Admin verifies or rejects
-router.post('/admin/kyc/verify/:userId', authorize('admin'), async (req, res) => {
+router.post('/admin/kyc/verify/:userId', authorize('admin'), validate(schemas.kycVerify), async (req, res) => {
   try {
     const userId = parseInt(req.params.userId, 10);
     const { approved, reason } = req.body;

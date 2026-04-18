@@ -5,6 +5,7 @@ const { calculateCtvCommission } = require('../services/commission');
 const { calculateTax } = require('../services/taxEngine');
 const { getReceivedManagementFeesSummary } = require('../services/managementFee');
 const { getReceivedBreakawayFeesSummary } = require('../services/breakaway');
+const { validate, schemas } = require('../middleware/validate');
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -24,7 +25,7 @@ router.use(authenticate);
  * Nguyên tắc tài chính: TẤT CẢ khoản thù lao/HH/phí đều do CCB Mart chi
  * trả từ doanh thu bán hàng. Không có chuyển tiền trực tiếp giữa đối tác.
  */
-router.get('/ctv/monthly-report', authorize('ctv'), async (req, res) => {
+router.get('/ctv/monthly-report', authorize('ctv'), validate(schemas.monthlyReportQuery, 'query'), async (req, res) => {
   try {
     const userId = req.user.id;
     const now = new Date();

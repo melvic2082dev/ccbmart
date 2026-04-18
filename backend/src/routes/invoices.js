@@ -2,6 +2,7 @@ const express = require('express');
 const { PrismaClient } = require('@prisma/client');
 const { authenticate, authorize } = require('../middleware/auth');
 const { processMonthlyTransfer, generateInvoicePDF } = require('../services/autoTransfer');
+const { validate, schemas } = require('../middleware/validate');
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -9,7 +10,7 @@ const prisma = new PrismaClient();
 router.use(authenticate);
 
 // GET /api/admin/invoices — list all invoices with filter
-router.get('/admin/invoices', authorize('admin'), async (req, res) => {
+router.get('/admin/invoices', authorize('admin'), validate(schemas.invoicesQuery, 'query'), async (req, res) => {
   try {
     const { status, page = 1, limit = 50 } = req.query;
     const skip = (parseInt(page, 10) - 1) * parseInt(limit, 10);
@@ -38,7 +39,7 @@ router.get('/admin/invoices', authorize('admin'), async (req, res) => {
 });
 
 // POST /api/admin/invoices/process-monthly — trigger monthly auto-transfer
-router.post('/admin/invoices/process-monthly', authorize('admin'), async (req, res) => {
+router.post('/admin/invoices/process-monthly', authorize('admin'), validate(schemas.invoiceProcessMonthly), async (req, res) => {
   try {
     const { month, year } = req.body;
     const now = new Date();
@@ -52,7 +53,7 @@ router.post('/admin/invoices/process-monthly', authorize('admin'), async (req, r
 });
 
 // GET /api/admin/transfers — list auto-transfer logs
-router.get('/admin/transfers', authorize('admin'), async (req, res) => {
+router.get('/admin/transfers', authorize('admin'), validate(schemas.invoicesQuery, 'query'), async (req, res) => {
   try {
     const { status, page = 1, limit = 50 } = req.query;
     const skip = (parseInt(page, 10) - 1) * parseInt(limit, 10);
@@ -112,7 +113,7 @@ router.get('/admin/invoices/:id/pdf', authorize('admin'), async (req, res) => {
 });
 
 // POST /api/admin/contracts/:id/terminate — terminate a B2B contract
-router.post('/admin/contracts/:id/terminate', authorize('admin'), async (req, res) => {
+router.post('/admin/contracts/:id/terminate', authorize('admin'), validate(schemas.contractTerminate), async (req, res) => {
   try {
     const contractId = parseInt(req.params.id, 10);
     const { reason } = req.body;
