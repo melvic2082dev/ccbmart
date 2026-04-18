@@ -1,4 +1,5 @@
 const config = require('./config');
+const logger = require('./services/logger');
 const express = require('express');
 const helmet = require('helmet');
 const cors = require('cors');
@@ -23,6 +24,7 @@ const invoiceRoutes = require('./routes/invoices');
 const taxRoutes = require('./routes/tax');
 const monthlyReportRoutes = require('./routes/monthlyReport');
 const auditLogRoutes = require('./routes/auditLogs');
+const healthRoutes = require('./routes/health');
 const { subscribeUser, unsubscribeUser } = require('./services/pushNotification');
 const { authenticate: authMw } = require('./middleware/auth');
 const { createMomoPayment, verifyMomoSignature, createZaloPayPayment, verifyZaloPayCallback } = require('./services/payment');
@@ -86,6 +88,9 @@ app.use('/api', monthlyReportRoutes);
 
 // C13.3.1: Audit log viewer (admin)
 app.use('/api/admin', auditLogRoutes);
+
+// Health check (detailed)
+app.use('/api/health', healthRoutes);
 
 // Push notification subscribe/unsubscribe
 app.post('/api/notifications/subscribe', authMw, async (req, res) => {
@@ -153,7 +158,7 @@ app.post('/webhook/zalopay/callback', async (req, res) => {
     }
     res.json({ return_code: 1, return_message: 'success' });
   } catch (err) {
-    console.error('[ZaloPay] Callback error:', err.message);
+    logger.error('[ZaloPay] Callback error', { error: err.message });
     res.json({ return_code: 0, return_message: err.message });
   }
 });
@@ -164,7 +169,7 @@ app.post('/webhook/kiotviet/order', validate(schemas.webhookOrder), async (req, 
     await addSyncJob('webhook-order', { order: req.body });
     res.status(200).json({ ok: true });
   } catch (err) {
-    console.error('[Webhook] Error:', err.message);
+    logger.error('[Webhook] Error', { error: err.message });
     res.status(500).json({ error: 'Internal error' });
   }
 });
@@ -211,11 +216,6 @@ app.get('/api/events', (req, res) => {
   });
 });
 
-// Health check
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
-});
-
 // Centralized error handler (must be after all routes)
 app.use(errorHandler);
 
@@ -230,12 +230,12 @@ async function start() {
   scheduleAuditLogCleanup();
 
   app.listen(PORT, () => {
-    console.log(`CCB Mart API running on http://localhost:${PORT}`);
-    console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+    logger.info(`CCB Mart API running on http://localhost:${PORT}`);
+    logger.info(`Environment: ${process.env.NODE_ENV || 'development'}`);
   });
 }
 
 start().catch(err => {
-  console.error('Failed to start server:', err);
+  logger.error('Failed to start server', { error: err.message, stack: err.stack });
   process.exit(1);
 });

@@ -5,8 +5,11 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci --production
 
-COPY . .
+COPY prisma ./prisma
 RUN npx prisma generate
+
+COPY src ./src
+RUN mkdir -p uploads logs
 
 EXPOSE 4000
 

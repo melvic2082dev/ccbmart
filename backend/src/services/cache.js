@@ -136,8 +136,13 @@ async function clearAllCache() {
   console.log('[Cache] All cache cleared');
 }
 
+function getRedisClient() {
+  return redis;
+}
+
 module.exports = {
   initRedis,
+  getRedisClient,
   getCachedOrCompute,
   invalidateCache,
   clearAllCache,
