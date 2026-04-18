@@ -6,7 +6,9 @@
       "Bash(PRISMA_USER_CONSENT_FOR_DANGEROUS_AI_ACTION=\"npx prisma db push --force-reset\" npx prisma db push --force-reset --accept-data-loss)",
       "Bash(npm run:*)",
       "Bash(npx next:*)",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "Bash(xargs ls *)",
+      "Bash(npx jest *)"
     ]
   }
 }
