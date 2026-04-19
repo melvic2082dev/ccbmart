@@ -3,8 +3,15 @@ require('dotenv').config();
 const nodeEnv = process.env.NODE_ENV || 'development';
 const isProduction = nodeEnv === 'production';
 
+const WEAK_JWT_DEFAULTS = ['ccb-mart-change-this-secret', 'dev-only-change-in-prod', 'secret'];
+
 if (!process.env.JWT_SECRET) {
-  console.error('FATAL: JWT_SECRET environment variable is required');
+  if (isProduction) {
+    console.error('FATAL: JWT_SECRET environment variable is required in production');
+    process.exit(1);
+  }
+} else if (isProduction && WEAK_JWT_DEFAULTS.includes(process.env.JWT_SECRET)) {
+  console.error('FATAL: JWT_SECRET must not use a default/weak value in production');
   process.exit(1);
 }
 

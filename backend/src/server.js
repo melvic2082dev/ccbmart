@@ -1,5 +1,6 @@
 const config = require('./config');
 const logger = require('./services/logger');
+const prisma = require('./lib/prisma');
 const express = require('express');
 const helmet = require('helmet');
 const cors = require('cors');
@@ -57,7 +58,7 @@ app.use(cors({
   },
   credentials: true,
 }));
-app.use(express.json());
+app.use(express.json({ limit: '1mb' }));
 
 // Serve uploaded files
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
@@ -126,9 +127,11 @@ app.post('/webhook/momo/ipn', async (req, res) => {
       const orderId = req.body.orderId;
       const depositId = parseInt(orderId.replace('DEP', ''));
       if (depositId) {
-        const { PrismaClient } = require('@prisma/client');
-        const p = new PrismaClient();
-        await p.depositHistory.update({ where: { id: depositId }, data: { status: 'CONFIRMED', provider: 'momo', providerTxId: String(req.body.transId), confirmedAt: new Date() } });
+        await prisma.depositHistory.update({
+          where: { id: depositId },
+          data: { provider: 'momo', providerTxId: String(req.body.transId) },
+        });
+        await confirmMemberDeposit(depositId, null);
       }
     }
     res.status(204).end();
@@ -154,9 +157,11 @@ app.post('/webhook/zalopay/callback', async (req, res) => {
     const depMatch = callbackData.app_trans_id?.match(/DEP(\d+)$/);
     if (depMatch) {
       const depositId = parseInt(depMatch[1]);
-      const { PrismaClient } = require('@prisma/client');
-      const p = new PrismaClient();
-      await p.depositHistory.update({ where: { id: depositId }, data: { status: 'CONFIRMED', provider: 'zalopay', providerTxId: String(callbackData.zp_trans_id), confirmedAt: new Date() } });
+      await prisma.depositHistory.update({
+        where: { id: depositId },
+        data: { provider: 'zalopay', providerTxId: String(callbackData.zp_trans_id) },
+      });
+      await confirmMemberDeposit(depositId, null);
     }
     res.json({ return_code: 1, return_message: 'success' });
   } catch (err) {
@@ -242,6 +247,7 @@ app.post('/api/uploads/kyc', authMw, kycUpload.single('file'), (req, res) => {
 app.use(errorHandler);
 
 // Initialize services and start server
+let server;
 async function start() {
   await initRedis();
   await initSyncQueue();
@@ -251,11 +257,22 @@ async function start() {
   scheduleReferralCapReset();
   scheduleAuditLogCleanup();
 
-  app.listen(PORT, () => {
+  server = app.listen(PORT, () => {
     logger.info(`CCB Mart API running on http://localhost:${PORT}`);
     logger.info(`Environment: ${process.env.NODE_ENV || 'development'}`);
   });
 }
+
+const gracefulShutdown = async (signal) => {
+  console.log(`${signal} received, shutting down gracefully...`);
+  server.close(async () => {
+    await prisma.$disconnect();
+    process.exit(0);
+  });
+  setTimeout(() => process.exit(1), 10000);
+};
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
 start().catch(err => {
   logger.error('Failed to start server', { error: err.message, stack: err.stack });

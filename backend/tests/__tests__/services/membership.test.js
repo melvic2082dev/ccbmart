@@ -224,7 +224,16 @@ describe('processReferralCommission', () => {
       },
     });
 
-    prisma.$transaction.mockResolvedValue([{ id: 1 }, { id: 2 }]);
+    prisma.$transaction.mockImplementation(async (fn) => {
+      const tx = {
+        memberWallet: {
+          findUnique: jest.fn().mockResolvedValue({ monthlyReferralEarned: 0 }),
+          update: jest.fn().mockResolvedValue({}),
+        },
+        referralCommission: { create: jest.fn().mockResolvedValue({ id: 1 }) },
+      };
+      return fn(tx);
+    });
 
     const result = await processReferralCommission(1, 1000000);
     expect(result.amount).toBe(10000); // 1M * 1%

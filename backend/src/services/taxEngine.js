@@ -1,7 +1,6 @@
-const { PrismaClient } = require('@prisma/client');
 const { calculateCtvCommission } = require('./commission');
 
-const prisma = new PrismaClient();
+const prisma = require('../lib/prisma');
 
 // TNCN flat rate for HKD / professional services income
 const TAX_RATE = 0.10; // 10%

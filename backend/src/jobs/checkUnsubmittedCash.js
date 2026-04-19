@@ -1,8 +1,7 @@
 const cron = require('node-cron');
-const { PrismaClient } = require('@prisma/client');
 const { createNotification, notifyAdmins } = require('../services/notification');
 
-const prisma = new PrismaClient();
+const prisma = require('../lib/prisma');
 
 /**
  * Check for CTV holding cash too long

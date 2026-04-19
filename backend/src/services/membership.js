@@ -1,6 +1,5 @@
-const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcryptjs');
-const prisma = new PrismaClient();
+const prisma = require('../lib/prisma');
 
 // V13.3: Thanh khoản — khóa 30% trên mỗi phiếu nạp
 const RESERVE_RATE = 0.30;
@@ -101,34 +100,36 @@ async function processReferralCommission(walletId, depositAmount) {
   const now = new Date();
   const month = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
 
-  const remaining = cap - (Number(referrer.monthlyReferralEarned) || 0);
-  if (remaining <= 0) return null;
+  // Fast-path check to avoid unnecessary transaction overhead
+  const preRemaining = cap - (Number(referrer.monthlyReferralEarned) || 0);
+  if (preRemaining <= 0) return null;
 
-  const actualCommission = Math.min(commission, remaining);
+  const result = await prisma.$transaction(async (tx) => {
+    const freshReferrer = await tx.memberWallet.findUnique({
+      where: { id: referrer.id },
+      select: { monthlyReferralEarned: true },
+    });
+    const remaining = cap - (Number(freshReferrer?.monthlyReferralEarned) || 0);
+    if (remaining <= 0) return null;
 
-  const [commissionRecord] = await prisma.$transaction([
-    prisma.referralCommission.create({
-      data: {
-        earnerWalletId: referrer.id,
-        sourceWalletId: walletId,
-        amount: actualCommission,
-        ratePct: rate,
-        month,
-      },
-    }),
-    prisma.memberWallet.update({
+    const actualCommission = Math.min(commission, remaining);
+
+    const commissionRecord = await tx.referralCommission.create({
+      data: { earnerWalletId: referrer.id, sourceWalletId: walletId, amount: actualCommission, ratePct: rate, month },
+    });
+    await tx.memberWallet.update({
       where: { id: referrer.id },
       data: {
-        // Hoa hồng referral được cộng thẳng vào available (không khóa 30%)
         balance: { increment: actualCommission },
         availableBalance: { increment: actualCommission },
         referralEarned: { increment: actualCommission },
         monthlyReferralEarned: { increment: actualCommission },
       },
-    }),
-  ]);
+    });
+    return { commissionId: commissionRecord.id, amount: actualCommission, referrerId: referrer.id };
+  }, { isolationLevel: 'Serializable' });
 
-  return { commissionId: commissionRecord.id, amount: actualCommission, referrerId: referrer.id };
+  return result;
 }
 
 async function confirmDeposit(depositId, adminId) {

@@ -1,11 +1,10 @@
 const express = require('express');
-const { PrismaClient } = require('@prisma/client');
 const { authenticate, authorize } = require('../middleware/auth');
 const { generateOTP, verifyOTP } = require('../services/otpService');
 const { validate, schemas } = require('../middleware/validate');
 
 const router = express.Router();
-const prisma = new PrismaClient();
+const prisma = require('../lib/prisma');
 
 router.use(authenticate);
 

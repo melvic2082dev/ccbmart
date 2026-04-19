@@ -81,7 +81,7 @@ describe('POST /api/auth/login', () => {
 
     const res = await request(app)
       .post('/api/auth/login')
-      .send({ email: 'noone@test.com', password: 'pass' });
+      .send({ email: 'noone@test.com', password: 'password99' });
 
     expect(res.status).toBe(401);
     expect(res.body.error).toBe('Invalid credentials');
@@ -109,7 +109,7 @@ describe('POST /api/auth/login', () => {
   test('returns 400 when email format is invalid', async () => {
     const res = await request(app)
       .post('/api/auth/login')
-      .send({ email: 'not-an-email', password: 'pass123' });
+      .send({ email: 'not-an-email', password: 'password99' });
 
     expect(res.status).toBe(400);
     expect(res.body.error).toBe('Validation failed');
@@ -124,7 +124,7 @@ describe('POST /api/auth/login', () => {
   });
 
   test('token contains user id, role, and rank', async () => {
-    const hash = await bcrypt.hash('pass', 10);
+    const hash = await bcrypt.hash('password99', 10);
     prisma.user.findUnique.mockResolvedValue({
       id: 42,
       email: 'admin@test.com',
@@ -136,7 +136,7 @@ describe('POST /api/auth/login', () => {
 
     const res = await request(app)
       .post('/api/auth/login')
-      .send({ email: 'admin@test.com', password: 'pass' });
+      .send({ email: 'admin@test.com', password: 'password99' });
 
     expect(res.status).toBe(200);
     const decoded = jwt.verify(res.body.token, SECRET);

@@ -1,12 +1,11 @@
 const express = require('express');
-const { PrismaClient } = require('@prisma/client');
 const { getCachedOrCompute } = require('../../services/cache');
 const { calculateSalaryFundStatus } = require('../../services/commission');
 const { sendSalaryWarning } = require('../../services/notification');
 const { asyncHandler, AppError } = require('../../middleware/errorHandler');
 
 const router = express.Router();
-const prisma = new PrismaClient();
+const prisma = require('../../lib/prisma');
 
 router.get('/dashboard', asyncHandler(async (req, res) => {
   const now = new Date();

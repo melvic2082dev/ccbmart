@@ -12,7 +12,7 @@ describe('validate middleware', () => {
     const loginMiddleware = validate(schemas.login);
 
     test('passes valid email + password', () => {
-      const req = { body: { email: 'user@test.com', password: 'pass123' } };
+      const req = { body: { email: 'user@test.com', password: 'Password123' } };
       const res = mockRes();
       const next = jest.fn();
 
@@ -43,7 +43,7 @@ describe('validate middleware', () => {
     });
 
     test('strips unknown fields from body', () => {
-      const req = { body: { email: 'user@test.com', password: 'pass', extra: 'removed' } };
+      const req = { body: { email: 'user@test.com', password: 'Password1', extra: 'removed' } };
       const res = mockRes();
       const next = jest.fn();
 
@@ -82,7 +82,7 @@ describe('validate middleware', () => {
       const req = {
         body: {
           email: 'member@test.com',
-          password: 'password123',
+          password: 'Password123',
           name: 'Test Member',
           phone: '0900000001',
           referralCode: 'CCB_ABC123',
@@ -99,7 +99,7 @@ describe('validate middleware', () => {
       const req = {
         body: {
           email: 'member@test.com',
-          password: 'password123',
+          password: 'Password123',
           name: 'Test Member',
           phone: '0900000001',
           referralCode: 'INVALID',

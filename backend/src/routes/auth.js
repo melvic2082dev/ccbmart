@@ -1,14 +1,13 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { PrismaClient } = require('@prisma/client');
 const config = require('../config');
 const { loginLimiter } = require('../middleware/rateLimiter');
 const { validate, schemas } = require('../middleware/validate');
 const { logAudit } = require('../middleware/auditLog');
 
 const router = express.Router();
-const prisma = new PrismaClient();
+const prisma = require('../lib/prisma');
 
 router.post('/login', loginLimiter, validate(schemas.login), async (req, res) => {
   const ip = req.ip || req.headers['x-forwarded-for'] || req.socket?.remoteAddress || null;

@@ -1,8 +1,7 @@
 const cron = require('node-cron');
-const { PrismaClient } = require('@prisma/client');
 const { logAudit } = require('../middleware/auditLog');
 
-const prisma = new PrismaClient();
+const prisma = require('../lib/prisma');
 
 const RETENTION_DAYS = 90;
 

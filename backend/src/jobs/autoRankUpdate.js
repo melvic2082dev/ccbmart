@@ -1,10 +1,9 @@
 const cron = require('node-cron');
-const { PrismaClient } = require('@prisma/client');
 const { getDescendantCount } = require('../services/treeValidator');
 const { sendRankChangeNotification, notifyAdmins } = require('../services/notification');
 const { invalidateCommissionCache } = require('../services/commission');
 
-const prisma = new PrismaClient();
+const prisma = require('../lib/prisma');
 
 // Lock to prevent concurrent runs
 let isRunning = false;

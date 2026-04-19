@@ -1,9 +1,8 @@
 const express = require('express');
-const { PrismaClient } = require('@prisma/client');
 const { asyncHandler } = require('../../middleware/errorHandler');
 
 const router = express.Router();
-const prisma = new PrismaClient();
+const prisma = require('../../lib/prisma');
 
 router.get('/management-fees', asyncHandler(async (req, res) => {
   const { month, level, status } = req.query;

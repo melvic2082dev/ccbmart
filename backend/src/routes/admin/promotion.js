@@ -1,11 +1,10 @@
 const express = require('express');
-const { PrismaClient } = require('@prisma/client');
 const { checkEligibility, activatePromotions } = require('../../services/promotion');
 const { invalidateCommissionCache } = require('../../services/commission');
 const { asyncHandler, AppError } = require('../../middleware/errorHandler');
 
 const router = express.Router();
-const prisma = new PrismaClient();
+const prisma = require('../../lib/prisma');
 
 // Batch size for parallel eligibility checks to avoid overwhelming the connection pool
 const ELIGIBILITY_BATCH_SIZE = 10;

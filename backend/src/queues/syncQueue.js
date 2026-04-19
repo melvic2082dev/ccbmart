@@ -3,13 +3,12 @@
  * Falls back to direct execution if Redis is not available
  */
 
-const { PrismaClient } = require('@prisma/client');
 const { invalidateCache } = require('../services/cache');
 const { invalidateCommissionCache } = require('../services/commission');
 const appEvents = require('../services/eventEmitter');
 const { queueCommissionRecalc } = require('../jobs/commissionCalculation');
 
-const prisma = new PrismaClient();
+const prisma = require('../lib/prisma');
 
 let syncQueue = null;
 let syncWorker = null;

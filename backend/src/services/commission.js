@@ -1,6 +1,5 @@
-const { PrismaClient } = require('@prisma/client');
 const { getCachedOrCompute, invalidateCache } = require('./cache');
-const prisma = new PrismaClient();
+const prisma = require('../lib/prisma');
 
 // Default hardcoded rates (used as fallback when DB is unavailable)
 const COMMISSION_RATES = {

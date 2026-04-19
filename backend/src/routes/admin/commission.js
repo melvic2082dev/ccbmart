@@ -1,5 +1,4 @@
 const express = require('express');
-const { PrismaClient } = require('@prisma/client');
 const {
   COMMISSION_RATES,
   AGENCY_COMMISSION,
@@ -12,7 +11,7 @@ const { asyncHandler } = require('../../middleware/errorHandler');
 const appEvents = require('../../services/eventEmitter');
 
 const router = express.Router();
-const prisma = new PrismaClient();
+const prisma = require('../../lib/prisma');
 
 router.get('/config/commission', asyncHandler(async (req, res) => {
   const [ctvConfig, agencyConfig, rates, agencyRates] = await Promise.all([

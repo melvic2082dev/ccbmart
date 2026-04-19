@@ -1,10 +1,9 @@
 const express = require('express');
-const { PrismaClient } = require('@prisma/client');
 const { authenticate, authorize } = require('../middleware/auth');
 const { COMMISSION_RATES, AGENCY_COMMISSION, invalidateCommissionCache } = require('../services/commission');
 
 const router = express.Router();
-const prisma = new PrismaClient();
+const prisma = require('../lib/prisma');
 
 router.use(authenticate);
 router.use(authorize('admin'));

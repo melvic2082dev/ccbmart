@@ -1,6 +1,5 @@
-const { PrismaClient } = require('@prisma/client');
 const { getCommissionRates } = require('./commission');
-const prisma = new PrismaClient();
+const prisma = require('../lib/prisma');
 
 /**
  * Calculate soft salary for all managers in a given month

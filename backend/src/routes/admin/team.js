@@ -1,11 +1,10 @@
 const express = require('express');
-const { PrismaClient } = require('@prisma/client');
 const { calculateTeamBonus } = require('../../services/team-bonus');
 const { calculateSoftSalary } = require('../../services/soft-salary');
 const { asyncHandler, AppError } = require('../../middleware/errorHandler');
 
 const router = express.Router();
-const prisma = new PrismaClient();
+const prisma = require('../../lib/prisma');
 
 router.get('/salary/soft-adjustment', asyncHandler(async (req, res) => {
   const now = new Date();

@@ -2,11 +2,10 @@ const express = require('express');
 const multer = require('multer');
 const XLSX = require('xlsx');
 const bcrypt = require('bcryptjs');
-const { PrismaClient } = require('@prisma/client');
 const { authenticate, authorize } = require('../middleware/auth');
 
 const router = express.Router();
-const prisma = new PrismaClient();
+const prisma = require('../lib/prisma');
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
 
 router.use(authenticate);

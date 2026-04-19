@@ -1,6 +1,5 @@
 const cron = require('node-cron');
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+const prisma = require('../lib/prisma');
 
 async function resetMonthlyReferralCaps() {
   console.log('[ReferralCap] Resetting monthly referral earnings...');

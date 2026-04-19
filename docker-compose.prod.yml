@@ -39,7 +39,7 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=4000
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-ccbmart}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-ccbmart}
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-ccbmart}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-ccbmart}?connection_limit=20&pool_timeout=10
       - JWT_SECRET=${JWT_SECRET}
       - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-7d}
       - ALLOWED_ORIGINS=${ALLOWED_ORIGINS}

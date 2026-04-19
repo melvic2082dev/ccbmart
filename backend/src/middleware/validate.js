@@ -26,7 +26,7 @@ function validate(schema, source = 'body') {
 const schemas = {
   login: Joi.object({
     email: Joi.string().email().required(),
-    password: Joi.string().min(3).max(100).required(),
+    password: Joi.string().min(8).max(100).required(),
   }),
 
   reassignCtv: Joi.object({
@@ -74,11 +74,20 @@ const schemas = {
 
   memberRegister: Joi.object({
     email: Joi.string().email().required(),
-    password: Joi.string().min(6).max(100).required(),
+    password: Joi.string().min(8).max(100).pattern(/^(?=.*[A-Z])(?=.*\d).+$/).required()
+      .messages({ 'string.pattern.base': 'Password must contain at least 1 uppercase letter and 1 number' }),
     name: Joi.string().min(2).max(100).required(),
     phone: Joi.string().min(9).max(15).required(),
     depositAmount: Joi.number().min(0).default(0),
     referralCode: Joi.string().pattern(/^CCB_[A-Z0-9]{6}$/).optional(),
+  }),
+
+  createCtv: Joi.object({
+    email: Joi.string().email().required(),
+    password: Joi.string().min(8).max(100).required(),
+    name: Joi.string().min(2).max(100).required(),
+    phone: Joi.string().min(9).max(15).required(),
+    parentId: Joi.number().integer().allow(null).optional(),
   }),
 
   memberDeposit: Joi.object({

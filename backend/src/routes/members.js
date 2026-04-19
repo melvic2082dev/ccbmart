@@ -1,11 +1,10 @@
 const express = require('express');
-const { PrismaClient } = require('@prisma/client');
 const { authenticate, authorize } = require('../middleware/auth');
 const { registerMember, getWalletDetails, getReferralStats } = require('../services/membership');
 const { validate, schemas } = require('../middleware/validate');
 
 const router = express.Router();
-const prisma = new PrismaClient();
+const prisma = require('../lib/prisma');
 
 // POST /register - Public registration
 router.post('/register', validate(schemas.memberRegister), async (req, res) => {

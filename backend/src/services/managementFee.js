@@ -16,8 +16,7 @@
 // khoản thù lao/HH/phí. Không có chuyển tiền trực tiếp giữa đối tác.
 // =======================================================================
 
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+const prisma = require('../lib/prisma');
 
 const MIN_TRAINING_MINUTES_PER_MONTH = 20 * 60; // 20h = 1200 phút
 

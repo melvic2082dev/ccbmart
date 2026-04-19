@@ -1,10 +1,9 @@
-const { PrismaClient } = require('@prisma/client');
 const QRCode = require('qrcode');
 const { invalidateCommissionCache } = require('./commission');
 const { invalidateCache } = require('./cache');
 const { createNotification, notifyAdmins } = require('./notification');
 
-const prisma = new PrismaClient();
+const prisma = require('../lib/prisma');
 
 const BANK_ACCOUNT = {
   bankName: process.env.BANK_NAME || 'Vietcombank',
@@ -63,16 +62,12 @@ async function createCtvTransaction(ctvId, { customerId, customerName, customerP
     customer = await prisma.customer.findUnique({ where: { id: customerId } });
     if (!customer) throw new Error('Khach hang khong ton tai');
   } else if (customerName && customerPhone) {
-    customer = await prisma.customer.upsert({
-      where: { phone: customerPhone },
-      create: {
-        name: customerName,
-        phone: customerPhone,
-        ctvId,
-        firstPurchase: new Date(),
-      },
-      update: { name: customerName },
-    });
+    customer = await prisma.customer.findFirst({ where: { phone: customerPhone, ctvId } });
+    if (!customer) {
+      customer = await prisma.customer.create({
+        data: { name: customerName, phone: customerPhone, ctvId, firstPurchase: new Date() },
+      });
+    }
   } else {
     throw new Error('Can cung cap customerId hoac customerName + customerPhone');
   }

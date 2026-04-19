@@ -2,12 +2,11 @@ const express = require('express');
 const path = require('path');
 const fs = require('fs');
 const multer = require('multer');
-const { PrismaClient } = require('@prisma/client');
 const { authenticate, authorize } = require('../middleware/auth');
 const { createCtvTransaction, uploadPaymentProof, createCashDeposit } = require('../services/transaction');
 
 const router = express.Router();
-const prisma = new PrismaClient();
+const prisma = require('../lib/prisma');
 
 router.use(authenticate);
 router.use(authorize('ctv'));

@@ -1,5 +1,4 @@
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+const prisma = require('../lib/prisma');
 
 // Fee tiers for training service fees (Phí DV đào tạo)
 const FEE_TIERS = [

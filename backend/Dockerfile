@@ -1,5 +1,7 @@
 FROM node:20-alpine
 
+RUN apk add --no-cache wget
+
 WORKDIR /app
 
 COPY package*.json ./
@@ -12,5 +14,8 @@ COPY src ./src
 RUN mkdir -p uploads logs
 
 EXPOSE 4000
+
+HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
+  CMD wget -qO- http://localhost:4000/api/health || exit 1
 
 CMD ["node", "src/server.js"]

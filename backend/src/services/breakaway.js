@@ -21,8 +21,7 @@
 // trả từ doanh thu bán hàng — không có chuyển tiền trực tiếp giữa đối tác.
 // =======================================================================
 
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+const prisma = require('../lib/prisma');
 
 // Rank hierarchy (higher index = higher rank)
 const RANK_ORDER = ['CTV', 'PP', 'TP', 'GDV', 'GDKD'];

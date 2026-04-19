@@ -1,5 +1,4 @@
 const express = require('express');
-const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcryptjs');
 const { getCachedOrCompute, invalidateCache } = require('../../services/cache');
 const { invalidateCommissionCache } = require('../../services/commission');
@@ -10,7 +9,7 @@ const { runRankEvaluation } = require('../../jobs/autoRankUpdate');
 const { asyncHandler, AppError } = require('../../middleware/errorHandler');
 
 const router = express.Router();
-const prisma = new PrismaClient();
+const prisma = require('../../lib/prisma');
 
 // GET /ctv/export — export CTV list as JSON (#5)
 router.get('/ctv/export', asyncHandler(async (req, res) => {

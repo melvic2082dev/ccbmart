@@ -1,5 +1,4 @@
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+const prisma = require('../lib/prisma');
 
 /**
  * V13.3: eKYC "3 duy nhất" — 1 CCCD = 1 thiết bị = 1 IP cho 1 user duy nhất.

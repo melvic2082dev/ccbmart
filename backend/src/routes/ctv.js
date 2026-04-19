@@ -1,5 +1,4 @@
 const express = require('express');
-const { PrismaClient } = require('@prisma/client');
 const { authenticate, authorize } = require('../middleware/auth');
 const { calculateCtvCommission } = require('../services/commission');
 const { getCachedOrCompute } = require('../services/cache');
@@ -8,7 +7,7 @@ const { getReceivedBreakawayFeesSummary } = require('../services/breakaway');
 const { validate, schemas } = require('../middleware/validate');
 
 const router = express.Router();
-const prisma = new PrismaClient();
+const prisma = require('../lib/prisma');
 
 router.use(authenticate);
 router.use(authorize('ctv'));

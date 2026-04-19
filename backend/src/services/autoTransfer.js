@@ -1,7 +1,6 @@
-const { PrismaClient } = require('@prisma/client');
 const { calculateTrainingFee, calculateKFactor } = require('./trainingFee');
 
-const prisma = new PrismaClient();
+const prisma = require('../lib/prisma');
 
 /**
  * V12.2: Process monthly auto-transfer for all ACTIVE B2B contracts.
