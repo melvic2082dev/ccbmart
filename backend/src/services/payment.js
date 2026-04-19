@@ -5,6 +5,10 @@ async function createMomoPayment(amount, orderId, returnUrl, notifyUrl) {
   const partnerCode = process.env.MOMO_PARTNER_CODE || 'MOMO_TEST';
   const accessKey = process.env.MOMO_ACCESS_KEY || '';
   const secretKey = process.env.MOMO_SECRET_KEY || '';
+  if (!accessKey || !secretKey) {
+    console.warn('[Momo] Payment keys not configured — aborting payment creation');
+    return { resultCode: -1, message: 'Momo payment not configured' };
+  }
   const requestId = `${orderId}_${Date.now()}`;
   const orderInfo = `CCB Mart nap tien #${orderId}`;
   const extraData = '';
@@ -39,8 +43,12 @@ function verifyMomoSignature(data, signature) {
 
 // ========== ZALOPAY ==========
 async function createZaloPayPayment(amount, orderId, returnUrl, callbackUrl) {
-  const appId = process.env.ZALOPAY_APP_ID || '2553';
+  const appId = process.env.ZALOPAY_APP_ID || '';
   const key1 = process.env.ZALOPAY_KEY1 || '';
+  if (!appId || !key1) {
+    console.warn('[ZaloPay] Payment keys not configured — aborting payment creation');
+    return { return_code: -1, return_message: 'ZaloPay payment not configured' };
+  }
   const appTransId = `${new Date().toISOString().slice(2, 10).replace(/-/g, '')}${orderId}`;
   const appTime = Date.now();
   const embedData = JSON.stringify({ redirecturl: returnUrl });

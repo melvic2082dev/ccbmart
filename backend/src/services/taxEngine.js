@@ -5,6 +5,10 @@ const prisma = require('../lib/prisma');
 // TNCN flat rate for HKD / professional services income
 const TAX_RATE = 0.10; // 10%
 
+// Monthly income below this threshold is tax-exempt (100M VND/year ÷ 12)
+// Configurable via TAX_EXEMPT_THRESHOLD env var
+const TAX_EXEMPT_THRESHOLD = parseInt(process.env.TAX_EXEMPT_THRESHOLD || '8333333');
+
 /**
  * V12.2: Calculate tax for a single user in a given month.
  * Taxable income = commission + training fee + fixed salary + team bonus.
@@ -16,6 +20,11 @@ async function calculateTax(userId, month) {
   }
 
   const taxableIncome = commissionData.totalIncome || 0;
+
+  if (taxableIncome < TAX_EXEMPT_THRESHOLD) {
+    return { userId, month, taxableIncome, taxAmount: 0, rate: 0, exempt: true };
+  }
+
   const taxAmount = Math.floor(taxableIncome * TAX_RATE);
 
   return {
@@ -24,6 +33,7 @@ async function calculateTax(userId, month) {
     taxableIncome,
     taxAmount,
     rate: TAX_RATE,
+    exempt: false,
     breakdown: {
       selfCommission: commissionData.selfCommission,
       trainingFee: commissionData.trainingFee,
@@ -106,4 +116,5 @@ module.exports = {
   processMonthlyTax,
   generateTaxReport,
   TAX_RATE,
+  TAX_EXEMPT_THRESHOLD,
 };

@@ -1,6 +1,6 @@
 const EventEmitter = require('events');
 
 const appEvents = new EventEmitter();
-appEvents.setMaxListeners(200); // Support many concurrent SSE connections
+appEvents.setMaxListeners(0); // Unlimited — one listener per SSE connection, no artificial cap
 
 module.exports = appEvents;

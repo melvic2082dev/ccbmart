@@ -165,6 +165,14 @@ describe('registerMember', () => {
 describe('confirmDeposit', () => {
   test('splits deposit 70% available / 30% reserve', async () => {
     const depositAmount = 1000000;
+    const mockWallet = {
+      id: 10,
+      balance: depositAmount,
+      availableBalance: 700000,
+      reserveBalance: 300000,
+      totalDeposited: depositAmount,
+      tierId: 1,
+    };
     prisma.depositHistory.findUnique.mockResolvedValue({
       id: 1,
       amount: depositAmount,
@@ -172,17 +180,16 @@ describe('confirmDeposit', () => {
       walletId: 10,
       wallet: { id: 10 },
     });
-    prisma.depositHistory.update.mockResolvedValue({});
-    prisma.memberWallet.update.mockResolvedValue({
-      id: 10,
-      balance: depositAmount,
-      availableBalance: 700000,
-      reserveBalance: 300000,
-      totalDeposited: depositAmount,
-      tierId: 1,
-    });
-    prisma.membershipTier.findMany.mockResolvedValue([BASIC_TIER]);
     prisma.memberWallet.findUnique.mockResolvedValue(null); // no referrer
+
+    prisma.$transaction.mockImplementation(async (fn) => {
+      const tx = {
+        depositHistory: { update: jest.fn().mockResolvedValue({}) },
+        memberWallet: { update: jest.fn().mockResolvedValue(mockWallet) },
+        membershipTier: { findMany: jest.fn().mockResolvedValue([BASIC_TIER]) },
+      };
+      return fn(tx);
+    });
 
     const result = await confirmDeposit(1, 99);
     expect(result.availableAdded).toBe(700000);

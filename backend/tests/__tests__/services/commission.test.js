@@ -9,6 +9,7 @@ jest.mock('@prisma/client', () => {
       findMany: jest.fn(),
       aggregate: jest.fn(),
     },
+    $queryRaw: jest.fn(),
   };
   return { PrismaClient: jest.fn(() => mockPrisma) };
 });
@@ -70,7 +71,13 @@ describe('COMMISSION_RATES constants', () => {
 describe('calculateCtvCommission', () => {
   function setupMocks({ userId = 1, rank = 'CTV', transactions = [], ctvs = [] } = {}) {
     prisma.user.findUnique.mockResolvedValue({ id: userId, role: 'ctv', rank });
-    prisma.transaction.findMany.mockResolvedValue(transactions);
+    // Aggregate transactions by ctvId to match $queryRaw GROUP BY output
+    const revenueMap = new Map();
+    for (const tx of transactions) {
+      revenueMap.set(tx.ctvId, (revenueMap.get(tx.ctvId) || 0) + Number(tx.totalAmount));
+    }
+    const revenueRows = Array.from(revenueMap.entries()).map(([ctvId, revenue]) => ({ ctvId, revenue }));
+    prisma.$queryRaw.mockResolvedValue(revenueRows);
     prisma.user.findMany.mockResolvedValue(ctvs);
   }
 

@@ -144,29 +144,42 @@ async function confirmDeposit(depositId, adminId) {
   const availableAdd = Math.floor(Number(deposit.amount) * AVAILABLE_RATE);
   const reserveAdd = Number(deposit.amount) - availableAdd;
 
-  await prisma.depositHistory.update({
-    where: { id: depositId },
-    data: { status: 'CONFIRMED', confirmedBy: adminId, confirmedAt: new Date() },
-  });
-
-  const wallet = await prisma.memberWallet.update({
-    where: { id: deposit.walletId },
-    data: {
-      balance: { increment: deposit.amount },
-      availableBalance: { increment: availableAdd },
-      reserveBalance: { increment: reserveAdd },
-      totalDeposited: { increment: deposit.amount },
-    },
-  });
-
-  const newTier = await determineTier(wallet.totalDeposited);
-  if (newTier.id !== wallet.tierId) {
-    await prisma.memberWallet.update({
-      where: { id: wallet.id },
-      data: { tierId: newTier.id },
+  // Atomic: update deposit + wallet + tier in single transaction
+  const wallet = await prisma.$transaction(async (tx) => {
+    await tx.depositHistory.update({
+      where: { id: depositId },
+      data: { status: 'CONFIRMED', confirmedBy: adminId, confirmedAt: new Date() },
     });
-  }
 
+    const updatedWallet = await tx.memberWallet.update({
+      where: { id: deposit.walletId },
+      data: {
+        balance: { increment: deposit.amount },
+        availableBalance: { increment: availableAdd },
+        reserveBalance: { increment: reserveAdd },
+        totalDeposited: { increment: deposit.amount },
+      },
+    });
+
+    const tiers = await tx.membershipTier.findMany({ orderBy: { minDeposit: 'desc' } });
+    let newTier = tiers[tiers.length - 1];
+    for (const tier of tiers) {
+      if (Number(updatedWallet.totalDeposited) >= Number(tier.minDeposit)) {
+        newTier = tier;
+        break;
+      }
+    }
+    if (newTier && newTier.id !== updatedWallet.tierId) {
+      await tx.memberWallet.update({
+        where: { id: updatedWallet.id },
+        data: { tierId: newTier.id },
+      });
+    }
+
+    return updatedWallet;
+  });
+
+  // processReferralCommission uses its own Serializable transaction — call after main commit
   const referralResult = await processReferralCommission(wallet.id, Number(deposit.amount));
 
   return {

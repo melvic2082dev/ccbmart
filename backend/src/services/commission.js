@@ -131,30 +131,35 @@ async function calculateCtvCommission(ctvId, month) {
   const endDate = new Date(startDate);
   endDate.setMonth(endDate.getMonth() + 1);
 
-  // Query 1: Get ALL CONFIRMED CTV channel transactions for the month
-  const allTransactions = await prisma.transaction.findMany({
-    where: {
-      channel: 'ctv',
-      status: 'CONFIRMED',
-      createdAt: { gte: startDate, lt: endDate },
-    },
-    select: {
-      id: true,
-      totalAmount: true,
-      ctvId: true,
-    },
-  });
+  // Aggregate revenue per CTV in DB — avoids loading raw transaction rows
+  const revenueRows = await prisma.$queryRaw`
+    SELECT "ctvId", COALESCE(SUM("totalAmount"), 0)::float8 AS revenue
+    FROM "Transaction"
+    WHERE channel = 'ctv' AND status = 'CONFIRMED'
+      AND "createdAt" >= ${startDate} AND "createdAt" < ${endDate}
+      AND "ctvId" IS NOT NULL
+    GROUP BY "ctvId"
+  `;
 
-  // Query 2: Get ALL active CTVs to build the tree in memory
-  const allCtv = await prisma.user.findMany({
-    where: { role: 'ctv', isActive: true },
-    select: { id: true, parentId: true, rank: true, name: true },
-  });
+  // Cursor-paginated CTV load — safe for large orgs
+  const allCtv = [];
+  let cursor = null;
+  do {
+    const batch = await prisma.user.findMany({
+      where: { role: 'ctv', isActive: true },
+      select: { id: true, parentId: true, rank: true, name: true },
+      take: 100,
+      orderBy: { id: 'asc' },
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+    });
+    allCtv.push(...batch);
+    cursor = batch.length === 100 ? batch[batch.length - 1].id : null;
+  } while (cursor !== null);
 
   // Build revenue map: ctvId -> total revenue
   const revenueMap = new Map();
-  for (const tx of allTransactions) {
-    revenueMap.set(tx.ctvId, (revenueMap.get(tx.ctvId) || 0) + Number(tx.totalAmount));
+  for (const row of revenueRows) {
+    revenueMap.set(Number(row.ctvId), Number(row.revenue));
   }
 
   // Build children map: parentId -> [childIds]
@@ -228,25 +233,36 @@ async function calculateAllCtvCommissions(month) {
   const endDate = new Date(startDate);
   endDate.setMonth(endDate.getMonth() + 1);
 
-  const [allTransactions, allCtv, allRates] = await Promise.all([
-    prisma.transaction.findMany({
-      where: {
-        channel: 'ctv',
-        status: 'CONFIRMED',
-        createdAt: { gte: startDate, lt: endDate },
-      },
-      select: { id: true, totalAmount: true, ctvId: true },
-    }),
-    prisma.user.findMany({
-      where: { role: 'ctv', isActive: true },
-      select: { id: true, parentId: true, rank: true, name: true },
-    }),
+  const [revenueRows, allRates] = await Promise.all([
+    prisma.$queryRaw`
+      SELECT "ctvId", COALESCE(SUM("totalAmount"), 0)::float8 AS revenue
+      FROM "Transaction"
+      WHERE channel = 'ctv' AND status = 'CONFIRMED'
+        AND "createdAt" >= ${startDate} AND "createdAt" < ${endDate}
+        AND "ctvId" IS NOT NULL
+      GROUP BY "ctvId"
+    `,
     getCommissionRates(),
   ]);
 
+  // Cursor-paginated CTV load — safe for large orgs
+  const allCtv = [];
+  let cursor = null;
+  do {
+    const batch = await prisma.user.findMany({
+      where: { role: 'ctv', isActive: true },
+      select: { id: true, parentId: true, rank: true, name: true },
+      take: 100,
+      orderBy: { id: 'asc' },
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+    });
+    allCtv.push(...batch);
+    cursor = batch.length === 100 ? batch[batch.length - 1].id : null;
+  } while (cursor !== null);
+
   const revenueMap = new Map();
-  for (const tx of allTransactions) {
-    revenueMap.set(tx.ctvId, (revenueMap.get(tx.ctvId) || 0) + Number(tx.totalAmount));
+  for (const row of revenueRows) {
+    revenueMap.set(Number(row.ctvId), Number(row.revenue));
   }
 
   const childrenMap = new Map();
