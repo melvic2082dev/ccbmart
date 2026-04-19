@@ -44,7 +44,7 @@ async function checkUnsubmittedCash() {
 
   for (const [ctvId, txns] of byCtvId) {
     const ctv = txns[0].ctv;
-    const totalAmount = txns.reduce((s, t) => s + t.totalAmount, 0);
+    const totalAmount = txns.reduce((s, t) => s + Number(t.totalAmount), 0);
 
     // Check if any are over 48h
     const hasOver48h = txns.some(tx =>

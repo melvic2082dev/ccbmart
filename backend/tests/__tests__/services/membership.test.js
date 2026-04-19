@@ -184,7 +184,7 @@ describe('confirmDeposit', () => {
 
     prisma.$transaction.mockImplementation(async (fn) => {
       const tx = {
-        depositHistory: { update: jest.fn().mockResolvedValue({}) },
+        depositHistory: { updateMany: jest.fn().mockResolvedValue({ count: 1 }) },
         memberWallet: { update: jest.fn().mockResolvedValue(mockWallet) },
         membershipTier: { findMany: jest.fn().mockResolvedValue([BASIC_TIER]) },
       };
@@ -207,6 +207,15 @@ describe('confirmDeposit', () => {
       amount: 1000000,
       status: 'CONFIRMED',
       walletId: 10,
+    });
+    // updateMany with status:'PENDING' filter returns count:0 when already processed
+    prisma.$transaction.mockImplementation(async (fn) => {
+      const tx = {
+        depositHistory: { updateMany: jest.fn().mockResolvedValue({ count: 0 }) },
+        memberWallet: { update: jest.fn() },
+        membershipTier: { findMany: jest.fn() },
+      };
+      return fn(tx);
     });
     await expect(confirmDeposit(1, 1)).rejects.toThrow('PENDING');
   });

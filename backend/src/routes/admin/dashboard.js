@@ -121,13 +121,17 @@ router.get('/dashboard', asyncHandler(async (req, res) => {
     };
   });
 
-  if (dashboard.salaryFund && dashboard.salaryFund.warning !== 'OK') {
-    await sendSalaryWarning(
-      dashboard.salaryFund.usagePercent,
-      dashboard.salaryFund.totalFixedSalary,
-      dashboard.salaryFund.salaryFundCap
-    );
-  }
+  // Guard: send at most once per hour per month — prevents spam on every 60s cache miss
+  await getCachedOrCompute(`salary-warning-sent:${monthStr}`, 3600, async () => {
+    if (dashboard.salaryFund && dashboard.salaryFund.warning !== 'OK') {
+      await sendSalaryWarning(
+        dashboard.salaryFund.usagePercent,
+        dashboard.salaryFund.totalFixedSalary,
+        dashboard.salaryFund.salaryFundCap
+      );
+    }
+    return true;
+  });
 
   res.json(dashboard);
 }));

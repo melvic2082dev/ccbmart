@@ -137,15 +137,19 @@ async function confirmDeposit(depositId, adminId) {
     include: { wallet: true },
   });
   if (!deposit) throw new Error('Phieu nap tien khong ton tai');
-  if (deposit.status !== 'PENDING') throw new Error('Phieu nap tien khong o trang thai PENDING');
 
-  // Atomic: update deposit + wallet + tier in single transaction
+  // Atomic: status guard + wallet credit in single transaction to prevent double-credit on MoMo/ZaloPay retries
   const wallet = await prisma.$transaction(async (tx) => {
-    await tx.depositHistory.update({
-      where: { id: depositId },
+    // updateMany with status filter is the atomic guard — count === 0 means already processed
+    const result = await tx.depositHistory.updateMany({
+      where: { id: depositId, status: 'PENDING' },
       data: { status: 'CONFIRMED', confirmedBy: adminId, confirmedAt: new Date() },
     });
+    if (result.count === 0) throw new Error('Phieu nap tien khong o trang thai PENDING');
 
+    // Business rule: RESERVE_RATE (30%) is tracked at the business layer, not split into a
+    // separate DB column — MemberWallet schema has only `balance`. Full amount credited here;
+    // the 70/30 reserve logic is enforced at withdrawal approval time.
     const updatedWallet = await tx.memberWallet.update({
       where: { id: deposit.walletId },
       data: {

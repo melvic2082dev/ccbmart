@@ -41,7 +41,7 @@ const { scheduleAutoRankJob } = require('./jobs/autoRankUpdate');
 const { scheduleCashCheckJob } = require('./jobs/checkUnsubmittedCash');
 const { scheduleReferralCapReset } = require('./jobs/resetReferralCap');
 const { scheduleAuditLogCleanup } = require('./jobs/auditLogCleanup');
-const { initCommissionQueue } = require('./jobs/commissionCalculation');
+const { initCommissionQueue, closeCommissionWorker } = require('./jobs/commissionCalculation');
 const appEvents = require('./services/eventEmitter');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
@@ -202,6 +202,9 @@ app.post('/webhook/kiotviet/order', (req, res, next) => {
 });
 
 // SSE real-time event stream (supports token via query param for EventSource compatibility)
+// Trade-off: browser EventSource API cannot set custom headers, so ?token= is required.
+// Security note: tokens in query strings appear in nginx access logs — configure log_format
+// to exclude the `token` query param (e.g., $uri instead of $request) or redact in log pipeline.
 app.get('/api/events', async (req, res) => {
   const authHeader = req.headers.authorization;
   const queryToken = req.query.token;
@@ -297,6 +300,7 @@ async function start() {
 const gracefulShutdown = async (signal) => {
   console.log(`${signal} received, shutting down gracefully...`);
   server.close(async () => {
+    await closeCommissionWorker();
     await prisma.$disconnect();
     process.exit(0);
   });

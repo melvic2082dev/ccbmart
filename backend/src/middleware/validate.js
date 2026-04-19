@@ -89,6 +89,7 @@ const schemas = {
     name: Joi.string().min(2).max(100).required(),
     phone: Joi.string().min(9).max(15).required(),
     parentId: Joi.number().integer().allow(null).optional(),
+    rank: Joi.string().valid('CTV', 'PP', 'TP', 'GDV', 'GDKD').default('CTV').optional(),
   }),
 
   memberDeposit: Joi.object({

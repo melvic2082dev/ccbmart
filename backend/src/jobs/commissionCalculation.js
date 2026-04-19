@@ -9,6 +9,7 @@ const { invalidateCache } = require('../services/cache');
 const appEvents = require('../services/eventEmitter');
 
 let queue = null;
+let worker = null;
 let useQueue = false;
 
 async function initCommissionQueue() {
@@ -30,7 +31,7 @@ async function initCommissionQueue() {
 
     queue = new Queue('commission-calc', { connection });
 
-    const worker = new Worker('commission-calc', async (job) => {
+    worker = new Worker('commission-calc', async (job) => {
       return await processCommissionJob(job.data);
     }, { connection, concurrency: 1 });
 
@@ -85,4 +86,9 @@ async function queueCommissionRecalc(month, ctvId = null) {
   return { queued: false, ...result };
 }
 
-module.exports = { initCommissionQueue, queueCommissionRecalc };
+async function closeCommissionWorker() {
+  if (worker) await worker.close();
+  if (queue) await queue.close();
+}
+
+module.exports = { initCommissionQueue, queueCommissionRecalc, closeCommissionWorker };
