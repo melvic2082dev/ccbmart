@@ -79,28 +79,33 @@ async function processSyncJob(data) {
 }
 
 /**
- * Simulate batch sync from KiotViet
+ * Execute batch sync from KiotViet.
+ * PLACEHOLDER: Replace with real KiotViet API call when credentials available.
  */
 async function executeBatchSync(data) {
-  const recordCount = Math.floor(Math.random() * 50) + 10;
+  console.warn('[SyncQueue] KiotViet sync not configured — using placeholder. Set KIOTVIET_API_URL and credentials in .env to enable real sync.');
 
-  // Create sync log
+  // PLACEHOLDER: Replace with real KiotViet API call when credentials available.
+  // const response = await fetch(`${process.env.KIOTVIET_API_URL}/invoices`, { headers: { ... } });
+  // const orders = await response.json();
+  // recordCount = orders.length; process each order...
+  const recordCount = 0;
+
   const syncLog = await prisma.syncLog.create({
     data: {
       source: 'kiotviet',
       recordsSynced: recordCount,
-      status: 'success',
+      status: 'placeholder',
     },
   });
 
-  // Invalidate caches
   invalidateCommissionCache();
   await invalidateCache('admin:dashboard:*');
   await invalidateCache('ctv:dashboard:*');
   await invalidateCache('agency:dashboard:*');
 
-  console.log(`[SyncQueue] Batch sync completed: ${recordCount} records`);
-  return { syncLogId: syncLog.id, recordsSynced: recordCount };
+  console.log(`[SyncQueue] Placeholder sync completed: ${recordCount} records`);
+  return { syncLogId: syncLog.id, recordsSynced: recordCount, placeholder: true };
 }
 
 /**

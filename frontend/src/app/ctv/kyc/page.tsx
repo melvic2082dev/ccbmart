@@ -37,8 +37,8 @@ export default function CtvKycPage() {
   const [status, setStatus] = useState<KycStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [idNumber, setIdNumber] = useState('');
-  const [idFrontImage, setIdFrontImage] = useState('');
-  const [idBackImage, setIdBackImage] = useState('');
+  const [idFrontFile, setIdFrontFile] = useState<File | null>(null);
+  const [idBackFile, setIdBackFile] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState('');
 
@@ -55,11 +55,26 @@ export default function CtvKycPage() {
 
   useEffect(() => { fetchStatus(); }, []);
 
+  const uploadFile = async (file: File): Promise<string> => {
+    const fd = new FormData();
+    fd.append('file', file);
+    const result = await api.ctvUploadKycFile(fd);
+    return result.url as string;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!idFrontFile || !idBackFile) {
+      setMessage('Vui lòng chọn ảnh mặt trước và mặt sau CCCD');
+      return;
+    }
     setSubmitting(true);
     setMessage('');
     try {
+      const [idFrontImage, idBackImage] = await Promise.all([
+        uploadFile(idFrontFile),
+        uploadFile(idBackFile),
+      ]);
       await api.ctvKycSubmit({ idNumber, idFrontImage, idBackImage });
       setMessage('Đã nộp hồ sơ KYC thành công. Vui lòng chờ xét duyệt.');
       fetchStatus();
@@ -132,25 +147,23 @@ export default function CtvKycPage() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium mb-1">URL ảnh CCCD mặt trước</label>
+                    <label className="block text-sm font-medium mb-1">Ảnh CCCD mặt trước</label>
                     <input
-                      type="text"
-                      value={idFrontImage}
-                      onChange={(e) => setIdFrontImage(e.target.value)}
+                      type="file"
+                      accept="image/*"
                       required
-                      className="w-full px-3 py-2 border rounded-lg"
-                      placeholder="/uploads/kyc/front.jpg"
+                      onChange={(e) => setIdFrontFile(e.target.files?.[0] ?? null)}
+                      className="w-full px-3 py-2 border rounded-lg text-sm"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium mb-1">URL ảnh CCCD mặt sau</label>
+                    <label className="block text-sm font-medium mb-1">Ảnh CCCD mặt sau</label>
                     <input
-                      type="text"
-                      value={idBackImage}
-                      onChange={(e) => setIdBackImage(e.target.value)}
+                      type="file"
+                      accept="image/*"
                       required
-                      className="w-full px-3 py-2 border rounded-lg"
-                      placeholder="/uploads/kyc/back.jpg"
+                      onChange={(e) => setIdBackFile(e.target.files?.[0] ?? null)}
+                      className="w-full px-3 py-2 border rounded-lg text-sm"
                     />
                   </div>
                   {message && (

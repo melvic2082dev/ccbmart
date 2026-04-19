@@ -155,10 +155,11 @@ export const api = {
   adminResetConfig: () => fetchAPI('/admin/config/reset-default', { method: 'POST' }),
   adminReports: (months = 6) => fetchAPI(`/admin/reports/financial?months=${months}`),
   adminKpiLogs: () => fetchAPI('/admin/kpi-logs'),
-  adminReassignCtv: (id: number, newParentId: number | null) =>
-    fetchAPI(`/admin/ctv/${id}/reassign`, { method: 'POST', body: JSON.stringify({ newParentId }) }),
-  adminChangeRank: (id: number, newRank: string, reason: string) =>
-    fetchAPI(`/admin/ctv/${id}/rank`, { method: 'POST', body: JSON.stringify({ newRank, reason }) }),
+  adminTransferRetry: (id: number) =>
+    fetchAPI(`/admin/transfers/${id}/retry`, { method: 'POST' }),
+  adminDashboardTargets: () => fetchAPI('/admin/dashboard-targets'),
+  adminTaxExportXmlUrl: (month: string) => `${API_BASE}/admin/tax/export-xml?month=${month}`,
+  ctvUploadKycFile: (formData: FormData) => fetchMultipart('/uploads/kyc', formData),
   adminSync: () => fetchAPI('/admin/sync', { method: 'POST' }),
   adminRunRankEvaluation: () => fetchAPI('/admin/rank-evaluation', { method: 'POST' }),
 
@@ -348,41 +349,6 @@ export const api = {
     }),
   adminMarkBreakawayFeePaid: (id: number) =>
     fetchAPI(`/admin/breakaway-fees/${id}/mark-paid`, { method: 'POST' }),
-
-  // C12.3: Failover & manual override
-  adminFailoverSummary: () => fetchAPI('/admin/failover/summary'),
-  adminRetryTransfer: (id: number) =>
-    fetchAPI(`/admin/failover/transfers/${id}/retry`, { method: 'POST' }),
-  adminMarkTransferSuccess: (id: number, adminNote?: string) =>
-    fetchAPI(`/admin/failover/transfers/${id}/mark-success`, {
-      method: 'POST',
-      body: JSON.stringify({ adminNote }),
-    }),
-  adminMarkTransferFailed: (id: number, reason?: string) =>
-    fetchAPI(`/admin/failover/transfers/${id}/mark-failed`, {
-      method: 'POST',
-      body: JSON.stringify({ reason }),
-    }),
-  adminResendOtp: (trainingLogId: number, method: string = 'SMS') =>
-    fetchAPI(`/admin/failover/training/${trainingLogId}/resend-otp`, {
-      method: 'POST',
-      body: JSON.stringify({ method }),
-    }),
-  adminVerifyTrainingManual: (trainingLogId: number, reason?: string) =>
-    fetchAPI(`/admin/failover/training/${trainingLogId}/verify-manual`, {
-      method: 'POST',
-      body: JSON.stringify({ reason }),
-    }),
-  adminVerifyKycManual: (userId: number, approved: boolean, reason?: string) =>
-    fetchAPI(`/admin/failover/kyc/${userId}/verify-manual`, {
-      method: 'POST',
-      body: JSON.stringify({ approved, reason }),
-    }),
-  adminMarkInvoiceIssued: (id: number, data: { externalId?: string; pdfUrl?: string; reason?: string }) =>
-    fetchAPI(`/admin/failover/invoices/${id}/mark-issued`, {
-      method: 'POST',
-      body: JSON.stringify(data),
-    }),
 
   // C13.3.1: Audit log viewer
   adminAuditLogs: (params: {

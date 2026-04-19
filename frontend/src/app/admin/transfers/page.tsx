@@ -44,9 +44,7 @@ export default function AdminTransfersPage() {
 
   const handleRetry = async (id: number) => {
     try {
-      // TODO: replace with real retry API
-      await new Promise(r => setTimeout(r, 400));
-      alert(`Đã gửi yêu cầu chạy lại transfer #${id}`);
+      await api.adminTransferRetry(id);
       load();
     } catch (e) {
       alert((e as Error).message);
@@ -58,9 +56,7 @@ export default function AdminTransfersPage() {
     if (failed.length === 0) return;
     if (!confirm(`Chạy lại ${failed.length} giao dịch FAILED?`)) return;
     try {
-      // TODO: replace with real bulk-retry API
-      await new Promise(r => setTimeout(r, 600));
-      alert(`Đã gửi yêu cầu chạy lại ${failed.length} giao dịch`);
+      await Promise.all(failed.map(t => api.adminTransferRetry(t.id)));
       load();
     } catch (e) {
       alert((e as Error).message);

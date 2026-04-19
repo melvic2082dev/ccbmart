@@ -14,7 +14,8 @@ async function createMomoPayment(amount, orderId, returnUrl, notifyUrl) {
   const signature = crypto.createHmac('sha256', secretKey).update(rawSignature).digest('hex');
 
   try {
-    const res = await fetch('https://test-payment.momo.vn/v2/gateway/api/create', {
+    const momoBaseUrl = process.env.MOMO_API_URL || 'https://test-payment.momo.vn';
+    const res = await fetch(`${momoBaseUrl}/v2/gateway/api/create`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -49,7 +50,8 @@ async function createZaloPayPayment(amount, orderId, returnUrl, callbackUrl) {
   const mac = crypto.createHmac('sha256', key1).update(macData).digest('hex');
 
   try {
-    const res = await fetch('https://sb-openapi.zalopay.vn/v2/create', {
+    const zaloPayBaseUrl = process.env.ZALOPAY_API_URL || 'https://sb-openapi.zalopay.vn';
+    const res = await fetch(`${zaloPayBaseUrl}/v2/create`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

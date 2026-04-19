@@ -27,6 +27,9 @@ interface BreakFeeRecord {
   amount: number;
   month: string;
   status: string;
+  paidAt: string | null;
+  paymentMethod: string | null;
+  reference: string | null;
   fromUser: { id: number; name: string; rank: string | null };
   toUser: { id: number; name: string; rank: string | null };
 }
@@ -300,10 +303,9 @@ export default function AdminBreakawayLogsPage() {
               </div>
               <div className="flex justify-between"><span className="text-gray-500">Từ (người vượt cấp):</span> <span className="font-medium">{paymentDetailFee.fromUser.name}</span></div>
               <div className="flex justify-between"><span className="text-gray-500">Đến (người nhận):</span> <span className="font-medium">{paymentDetailFee.toUser.name} ({paymentDetailFee.toUser.rank})</span></div>
-            </div>
-            <div className="rounded-md border border-gray-100 bg-gray-50 p-2 text-xs text-gray-500">
-              Chi tiết phương thức thanh toán, mã giao dịch và chứng từ sẽ được cập nhật khi Admin bấm &ldquo;Đã trả&rdquo;
-              (TODO: mở rộng bảng BreakawayFee với paidAt / paymentMethod / reference).
+              <div className="flex justify-between"><span className="text-gray-500">Ngày thanh toán:</span> <span>{paymentDetailFee.paidAt ? new Date(paymentDetailFee.paidAt).toLocaleDateString('vi-VN') : 'Chưa thanh toán'}</span></div>
+              <div className="flex justify-between"><span className="text-gray-500">Phương thức:</span> <span>{paymentDetailFee.paymentMethod || '—'}</span></div>
+              <div className="flex justify-between"><span className="text-gray-500">Mã giao dịch:</span> <span className="font-mono text-xs">{paymentDetailFee.reference || '—'}</span></div>
             </div>
             <button
               onClick={() => setPaymentDetailFee(null)}

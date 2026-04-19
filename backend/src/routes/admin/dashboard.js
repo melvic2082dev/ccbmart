@@ -223,4 +223,12 @@ router.get('/reports/financial', asyncHandler(async (req, res) => {
   res.json(reports);
 }));
 
+// GET /dashboard-targets — return configurable revenue/profit targets for dashboard (#13)
+router.get('/dashboard-targets', asyncHandler(async (req, res) => {
+  res.json({
+    revenueTarget: parseInt(process.env.DASHBOARD_REVENUE_TARGET || '600000000', 10),
+    netProfitTarget: parseInt(process.env.DASHBOARD_NET_PROFIT_TARGET || '30000000', 10),
+  });
+}));
+
 module.exports = router;

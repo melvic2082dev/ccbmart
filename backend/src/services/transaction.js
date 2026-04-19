@@ -7,13 +7,13 @@ const { createNotification, notifyAdmins } = require('./notification');
 const prisma = new PrismaClient();
 
 const BANK_ACCOUNT = {
-  bankName: 'Vietcombank',
-  accountNo: '1903698888',
-  accountName: 'CONG TY TNHH CCB MART',
+  bankName: process.env.BANK_NAME || 'Vietcombank',
+  accountNo: process.env.BANK_ACCOUNT_NO || '1903698888',
+  accountName: process.env.BANK_ACCOUNT_NAME || 'CONG TY TNHH CCB MART',
 };
 
-const COMBO_PRICE = 2000000;
-const COMBO_COGS_PCT = 0.50;
+const COMBO_PRICE = parseInt(process.env.COMBO_PRICE || '2000000', 10);
+const COMBO_COGS_PCT = parseFloat(process.env.COMBO_COGS_PCT || '0.50');
 
 /**
  * Generate VietQR-style content for bank transfer
@@ -64,23 +64,14 @@ async function createCtvTransaction(ctvId, { customerId, customerName, customerP
     if (!customer) throw new Error('Khach hang khong ton tai');
   } else if (customerName && customerPhone) {
     customer = await prisma.customer.upsert({
-      where: { id: -1 }, // force create
+      where: { phone: customerPhone },
       create: {
         name: customerName,
         phone: customerPhone,
         ctvId,
         firstPurchase: new Date(),
       },
-      update: {},
-    });
-    // Actually use create since upsert with -1 won't work
-    customer = await prisma.customer.create({
-      data: {
-        name: customerName,
-        phone: customerPhone,
-        ctvId,
-        firstPurchase: new Date(),
-      },
+      update: { name: customerName },
     });
   } else {
     throw new Error('Can cung cap customerId hoac customerName + customerPhone');

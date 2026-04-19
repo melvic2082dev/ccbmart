@@ -209,7 +209,7 @@ model TransactionItem {
 model Customer {
   id            Int      @id @default(autoincrement())
   name          String
-  phone         String?
+  phone         String?  @unique
   ctvId         Int?     @map("ctv_id")
   agencyId      Int?     @map("agency_id")
   firstPurchase DateTime? @map("first_purchase")
@@ -741,6 +741,9 @@ model BreakawayFee {
   amount         Decimal  @db.Decimal(15, 0)
   month          String
   status         String   @default("PENDING")
+  paidAt         DateTime? @map("paid_at")
+  paymentMethod  String?   @map("payment_method")
+  reference      String?
   createdAt      DateTime @default(now()) @map("created_at")
 
   breakawayLog   BreakawayLog @relation(fields: [breakawayLogId], references: [id])

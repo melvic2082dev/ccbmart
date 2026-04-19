@@ -88,9 +88,8 @@ const RANK_LABEL: Record<string, string> = {
 // COGS blended ratio across channels (50% of revenue)
 const COGS_RATIO = 0.5
 
-// TODO: replace with real API for revenue/profit targets
-const BASE_REVENUE_TARGET = 600_000_000
-const BASE_NET_PROFIT_TARGET = 30_000_000
+const DEFAULT_REVENUE_TARGET = 600_000_000
+const DEFAULT_NET_PROFIT_TARGET = 30_000_000
 
 function getSalaryFundColor(pct: number) {
   if (pct >= 100) return { bar: 'bg-red-500', text: 'text-red-700', bg: 'bg-red-50 border-red-200' }
@@ -145,13 +144,22 @@ export default function AdminDashboardPage() {
   const [loading, setLoading] = useState(true)
   const [period, setPeriod] = useState<Period>('month')
   const [updatedAt, setUpdatedAt] = useState<Date | null>(null)
+  const [baseRevenueTarget, setBaseRevenueTarget] = useState(DEFAULT_REVENUE_TARGET)
+  const [baseNetProfitTarget, setBaseNetProfitTarget] = useState(DEFAULT_NET_PROFIT_TARGET)
 
   useEffect(() => {
     async function fetchData() {
       try {
-        const result = await api.adminDashboard()
+        const [result, targets] = await Promise.all([
+          api.adminDashboard(),
+          api.adminDashboardTargets().catch(() => null),
+        ])
         setData(result)
         setUpdatedAt(new Date())
+        if (targets) {
+          if (targets.revenueTarget) setBaseRevenueTarget(targets.revenueTarget)
+          if (targets.netProfitTarget) setBaseNetProfitTarget(targets.netProfitTarget)
+        }
       } catch (err) {
         console.error('Failed to fetch admin dashboard:', err)
       } finally {
@@ -162,8 +170,8 @@ export default function AdminDashboardPage() {
   }, [])
 
   const mult = periodMultiplier(period)
-  const revenueTarget = BASE_REVENUE_TARGET * mult
-  const profitTarget = BASE_NET_PROFIT_TARGET * mult
+  const revenueTarget = baseRevenueTarget * mult
+  const profitTarget = baseNetProfitTarget * mult
 
   const channelRows = data
     ? (Object.keys(CHANNEL_LABEL) as (keyof ChannelRevenue)[]).map((k) => {

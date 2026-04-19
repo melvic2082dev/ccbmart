@@ -103,8 +103,9 @@ async function processMonthlyTransfer(month, year) {
 }
 
 /**
- * Generate a simple invoice PDF URL placeholder.
- * In production this would call a PDF library (pdfkit/puppeteer).
+ * Generate invoice PDF.
+ * Currently returns a placeholder path — PDF generation requires pdfkit or puppeteer.
+ * Install pdfkit and implement real generation before using in production.
  */
 async function generateInvoicePDF(invoiceId) {
   const invoice = await prisma.invoice.findUnique({
@@ -113,12 +114,15 @@ async function generateInvoicePDF(invoiceId) {
   });
   if (!invoice) throw new Error('Invoice not found');
 
+  // PDF generation not yet implemented — would require pdfkit/puppeteer
   const pdfUrl = `/uploads/invoices/${invoice.invoiceNumber}.pdf`;
+  console.warn(`[AutoTransfer] generateInvoicePDF: PDF file not actually generated for ${invoice.invoiceNumber}. Install pdfkit to enable real PDF creation.`);
+
   await prisma.invoice.update({
     where: { id: invoiceId },
     data: { pdfUrl },
   });
-  return { invoiceId, pdfUrl, invoiceNumber: invoice.invoiceNumber };
+  return { invoiceId, pdfUrl, invoiceNumber: invoice.invoiceNumber, generated: false, message: 'PDF generation not implemented — placeholder URL stored' };
 }
 
 module.exports = {

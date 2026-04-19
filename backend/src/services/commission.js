@@ -64,7 +64,10 @@ async function getCommissionRates() {
   return getCachedOrCompute('commission:rates:config', 300, async () => {
     try {
       const dbRates = await prisma.commissionConfig.findMany();
-      if (!dbRates || dbRates.length === 0) return COMMISSION_RATES;
+      if (!dbRates || dbRates.length === 0) {
+        console.warn('[Commission] No commission rates in DB — using hardcoded fallback rates');
+        return COMMISSION_RATES;
+      }
       const rates = {};
       for (const r of dbRates) {
         rates[r.tier] = {
@@ -76,7 +79,8 @@ async function getCommissionRates() {
         };
       }
       return rates;
-    } catch {
+    } catch (err) {
+      console.warn('[Commission] Failed to load commission rates from DB — using hardcoded fallback rates:', err.message);
       return COMMISSION_RATES;
     }
   });
@@ -89,7 +93,10 @@ async function getAgencyCommissionRates() {
   return getCachedOrCompute('commission:agency:config', 300, async () => {
     try {
       const dbRates = await prisma.agencyCommissionConfig.findMany();
-      if (!dbRates || dbRates.length === 0) return AGENCY_COMMISSION;
+      if (!dbRates || dbRates.length === 0) {
+        console.warn('[Commission] No agency commission rates in DB — using hardcoded fallback rates');
+        return AGENCY_COMMISSION;
+      }
       const rates = {};
       for (const r of dbRates) {
         rates[r.group] = {
@@ -98,7 +105,8 @@ async function getAgencyCommissionRates() {
         };
       }
       return rates;
-    } catch {
+    } catch (err) {
+      console.warn('[Commission] Failed to load agency commission rates from DB — using hardcoded fallback rates:', err.message);
       return AGENCY_COMMISSION;
     }
   });

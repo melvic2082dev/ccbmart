@@ -58,20 +58,25 @@ export default function AdminTaxPage() {
   );
   const totalPages = Math.max(1, Math.ceil(records.length / PAGE_SIZE_TAX));
 
-  // Mock: deterministic "ngày nộp" when PAID
   const paymentInfo = (r: TaxRecord) => {
-    if (r.status !== 'PAID') return { paidAt: null as string | null, cert: null as string | null };
-    const day = 1 + (r.id % 28);
-    const d = new Date(`${r.month}-${String(day).padStart(2, '0')}`);
-    return {
-      paidAt: d.toISOString(),
-      cert: `CT-${r.month.replace('-', '')}-${String(r.id).padStart(5, '0')}`,
-    };
+    return { paidAt: null as string | null, cert: null as string | null };
   };
 
-  const exportTaxReport = () => {
-    // TODO: replace with real XML export
-    alert(`Sẽ xuất báo cáo thuế tháng ${month} theo chuẩn Tổng cục Thuế (XML)`);
+  const exportTaxReport = async () => {
+    try {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+      const url = api.adminTaxExportXmlUrl(month);
+      const res = await fetch(url, { headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) } });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const blob = await res.blob();
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `tax-report-${month}.xml`;
+      a.click();
+      URL.revokeObjectURL(a.href);
+    } catch (e) {
+      alert(`Xuất XML thất bại: ${(e as Error).message}`);
+    }
   };
 
   const runProcess = async () => {

@@ -39,24 +39,6 @@ const LEVEL_COLOR: Record<number, string> = {
   3: 'bg-purple-100 text-purple-700',
 };
 
-// Mock: payment log for a fee row (TODO: replace with real API)
-interface PaymentInfo {
-  paidAt?: string | null;
-  reference?: string | null;
-  method?: string | null;
-}
-function mockPaymentInfo(feeId: number, status: string): PaymentInfo {
-  if (status !== 'PAID') return { paidAt: null, reference: null, method: null };
-  // Deterministic mock derived from feeId
-  const day = 1 + (feeId % 28);
-  const now = new Date();
-  const paidAt = new Date(now.getFullYear(), now.getMonth(), day, 9, 30).toISOString();
-  return {
-    paidAt,
-    reference: `CT-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}-${String(feeId).padStart(5, '0')}`,
-    method: 'Chuyển khoản',
-  };
-}
 
 export default function AdminManagementFeesPage() {
   const [month, setMonth] = useState(currentMonth());
@@ -161,9 +143,7 @@ export default function AdminManagementFeesPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {data.records.map((r) => {
-                        const pi = mockPaymentInfo(r.id, r.status);
-                        return (
+                      {data.records.map((r) => (
                           <tr key={r.id} className="border-b last:border-0 hover:bg-gray-50/60">
                             <td className="py-2 px-2 font-mono text-xs">{r.month}</td>
                             <td className="py-2 px-2"><Badge className={`${LEVEL_COLOR[r.level]} text-xs`}>{LEVEL_LABEL[r.level]}</Badge></td>
@@ -173,10 +153,8 @@ export default function AdminManagementFeesPage() {
                             <td className="py-2 px-2">
                               <Badge className={r.status === 'PAID' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}>{r.status}</Badge>
                             </td>
-                            <td className="py-2 px-2 text-xs text-gray-600">
-                              {pi.paidAt ? new Date(pi.paidAt).toLocaleDateString('vi-VN') : '—'}
-                            </td>
-                            <td className="py-2 px-2 font-mono text-xs text-gray-600">{pi.reference || '—'}</td>
+                            <td className="py-2 px-2 text-xs text-gray-600">—</td>
+                            <td className="py-2 px-2 font-mono text-xs text-gray-600">—</td>
                             <td className="py-2 px-2">
                               <div className="flex items-center gap-1">
                                 {r.status === 'PENDING' && (
@@ -197,8 +175,7 @@ export default function AdminManagementFeesPage() {
                               </div>
                             </td>
                           </tr>
-                        );
-                      })}
+                      ))}
                     </tbody>
                   </table>
                 </div>

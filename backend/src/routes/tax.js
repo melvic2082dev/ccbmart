@@ -76,6 +76,41 @@ router.post('/admin/tax/mark-paid/:id', authorize('admin'), async (req, res) => 
   }
 });
 
+// GET /api/admin/tax/export-xml?month=YYYY-MM — export tax records as XML (#12)
+router.get('/admin/tax/export-xml', authorize('admin'), async (req, res) => {
+  try {
+    const { month } = req.query;
+    if (!month) return res.status(400).json({ error: 'month (YYYY-MM) is required' });
+    const records = await prisma.taxRecord.findMany({
+      where: { month },
+      include: { user: { select: { id: true, name: true, idNumber: true } } },
+      orderBy: { id: 'asc' },
+    });
+    const rows = records.map(r => `    <TaxRecord>
+      <Id>${r.id}</Id>
+      <Month>${r.month}</Month>
+      <TaxpayerName>${r.user.name}</TaxpayerName>
+      <IdNumber>${r.user.idNumber || ''}</IdNumber>
+      <TaxableIncome>${r.taxableIncome}</TaxableIncome>
+      <TaxAmount>${r.taxAmount}</TaxAmount>
+      <Status>${r.status}</Status>
+    </TaxRecord>`).join('\n');
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<TaxReport>
+  <Month>${month}</Month>
+  <GeneratedAt>${new Date().toISOString()}</GeneratedAt>
+  <Records count="${records.length}">
+${rows}
+  </Records>
+</TaxReport>`;
+    res.setHeader('Content-Type', 'application/xml; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="tax-report-${month}.xml"`);
+    res.send(xml);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // GET /api/ctv/tax/preview?month=YYYY-MM — CTV previews own tax
 router.get('/ctv/tax/preview', authorize('ctv'), async (req, res) => {
   try {

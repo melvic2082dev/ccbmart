@@ -4,6 +4,8 @@ const express = require('express');
 const helmet = require('helmet');
 const cors = require('cors');
 const path = require('path');
+const fs = require('fs');
+const multer = require('multer');
 const authRoutes = require('./routes/auth');
 const ctvRoutes = require('./routes/ctv');
 const agencyRoutes = require('./routes/agency');
@@ -215,6 +217,26 @@ app.get('/api/events', (req, res) => {
     }
   });
 });
+
+// KYC file upload endpoint (#15)
+const kycUploadDir = path.join(__dirname, '../uploads/kyc');
+if (!fs.existsSync(kycUploadDir)) fs.mkdirSync(kycUploadDir, { recursive: true });
+const kycStorage = multer.diskStorage({
+  destination: (_req, _file, cb) => cb(null, kycUploadDir),
+  filename: (_req, file, cb) => {
+    const ext = path.extname(file.originalname);
+    cb(null, `${Date.now()}-${Math.random().toString(36).slice(2)}${ext}`);
+  },
+});
+const kycUpload = multer({ storage: kycStorage, limits: { fileSize: 5 * 1024 * 1024 }, fileFilter: (_req, file, cb) => {
+  if (file.mimetype.startsWith('image/')) cb(null, true);
+  else cb(new Error('Only image files are allowed'));
+} });
+app.post('/api/uploads/kyc', authMw, kycUpload.single('file'), (req, res) => {
+  if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+  const url = `/uploads/kyc/${req.file.filename}`;
+  res.json({ url });
+})
 
 // Centralized error handler (must be after all routes)
 app.use(errorHandler);
