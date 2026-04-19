@@ -34,7 +34,7 @@ router.get('/admin', authorize('admin'), validate(schemas.trainingLogQuery, 'que
 
     res.json({ logs, total, page: parseInt(page), totalPages: Math.ceil(total / parseInt(limit)) });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("[route]", err); res.status(500).json({ error: "Internal server error" });
   }
 });
 
@@ -81,7 +81,7 @@ router.get('/my', authorize('ctv'), async (req, res) => {
     });
     res.json(logs);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("[route]", err); res.status(500).json({ error: "Internal server error" });
   }
 });
 

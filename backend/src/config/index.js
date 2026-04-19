@@ -68,6 +68,7 @@ const config = {
     clientId: process.env.KIOTVIET_CLIENT_ID || '',
     clientSecret: process.env.KIOTVIET_CLIENT_SECRET || '',
     retailer: process.env.KIOTVIET_RETAILER || '',
+    webhookSecret: process.env.KIOTVIET_WEBHOOK_SECRET || '',
   },
 };
 

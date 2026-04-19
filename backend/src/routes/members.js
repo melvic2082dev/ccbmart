@@ -26,7 +26,7 @@ router.get('/wallet', async (req, res) => {
     const wallet = await getWalletDetails(req.user.id);
     res.json(wallet);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("[route]", err); res.status(500).json({ error: "Internal server error" });
   }
 });
 
@@ -95,7 +95,7 @@ router.get('/transactions', validate(schemas.pagination, 'query'), async (req, r
       totalPages: Math.ceil(totalDeposits / parseInt(limit)),
     });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("[route]", err); res.status(500).json({ error: "Internal server error" });
   }
 });
 
@@ -105,7 +105,7 @@ router.get('/referral-stats', async (req, res) => {
     const stats = await getReferralStats(req.user.id);
     res.json(stats);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("[route]", err); res.status(500).json({ error: "Internal server error" });
   }
 });
 

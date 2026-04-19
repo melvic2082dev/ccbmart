@@ -11,7 +11,9 @@ COPY prisma ./prisma
 RUN npx prisma generate
 
 COPY src ./src
-RUN mkdir -p uploads logs
+RUN mkdir -p uploads logs && chown -R node:node /app
+
+USER node
 
 EXPOSE 4000
 

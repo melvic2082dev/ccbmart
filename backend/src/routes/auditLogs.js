@@ -62,7 +62,7 @@ router.get('/audit-logs', async (req, res) => {
       limit,
     });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("[route]", err); res.status(500).json({ error: "Internal server error" });
   }
 });
 
@@ -76,7 +76,7 @@ router.get('/audit-logs/actions', async (_req, res) => {
     });
     res.json({ actions: rows.map(r => ({ action: r.action, count: r._count.action })) });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("[route]", err); res.status(500).json({ error: "Internal server error" });
   }
 });
 

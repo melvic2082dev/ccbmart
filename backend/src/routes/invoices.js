@@ -33,7 +33,7 @@ router.get('/admin/invoices', authorize('admin'), validate(schemas.invoicesQuery
 
     res.json({ invoices, total, page: parseInt(page, 10) });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("[route]", err); res.status(500).json({ error: "Internal server error" });
   }
 });
 
@@ -47,7 +47,7 @@ router.post('/admin/invoices/process-monthly', authorize('admin'), validate(sche
     const result = await processMonthlyTransfer(m, y);
     res.json(result);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("[route]", err); res.status(500).json({ error: "Internal server error" });
   }
 });
 
@@ -74,7 +74,7 @@ router.get('/admin/transfers', authorize('admin'), validate(schemas.invoicesQuer
 
     res.json({ transfers, total, page: parseInt(page, 10) });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("[route]", err); res.status(500).json({ error: "Internal server error" });
   }
 });
 
@@ -96,7 +96,7 @@ router.get('/ctv/invoices/my', authorize('ctv'), async (req, res) => {
     });
     res.json(invoices);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("[route]", err); res.status(500).json({ error: "Internal server error" });
   }
 });
 

@@ -32,7 +32,7 @@ router.get('/admin/tax', authorize('admin'), validate(schemas.taxQuery, 'query')
 
     res.json({ records, totalTax, totalIncome, count: records.length });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("[route]", err); res.status(500).json({ error: "Internal server error" });
   }
 });
 
@@ -44,7 +44,7 @@ router.post('/admin/tax/process', authorize('admin'), validate(schemas.taxProces
     const result = await processMonthlyTax(month);
     res.json(result);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("[route]", err); res.status(500).json({ error: "Internal server error" });
   }
 });
 
@@ -106,7 +106,7 @@ ${rows}
     res.setHeader('Content-Disposition', `attachment; filename="tax-report-${month}.xml"`);
     res.send(xml);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("[route]", err); res.status(500).json({ error: "Internal server error" });
   }
 });
 
@@ -117,7 +117,7 @@ router.get('/ctv/tax/preview', authorize('ctv'), async (req, res) => {
     const result = await calculateTax(req.user.id, month);
     res.json(result);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("[route]", err); res.status(500).json({ error: "Internal server error" });
   }
 });
 

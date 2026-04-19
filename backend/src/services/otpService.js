@@ -24,24 +24,40 @@ async function generateOTP(trainingLogId) {
     data: { otpCode: code, otpExpiresAt: expiresAt },
   });
 
-  // In production this would be sent via SMS/Zalo. Here we return it so
-  // the frontend can display it to the trainee for demo purposes.
-  return { trainingLogId, code, expiresAt };
+  // In production: send OTP via SMS/Zalo to the trainee. Do not expose OTP in response.
+  return { trainingLogId, message: 'OTP sent', expiresAt };
 }
 
 /**
  * Verify the OTP submitted by the trainee.
  * On success the training log is marked menteeConfirmed=true and status=VERIFIED.
  */
+const OTP_MAX_FAIL = 5;
+
 async function verifyOTP(trainingLogId, submittedCode) {
   const log = await prisma.trainingLog.findUnique({ where: { id: trainingLogId } });
   if (!log) throw new Error('Training log not found');
   if (!log.otpCode) throw new Error('No OTP issued for this log');
+
+  if (log.otpBlockedUntil && new Date() < log.otpBlockedUntil) {
+    throw new Error('OTP bị khóa do nhập sai quá nhiều lần. Vui lòng thử lại sau.');
+  }
+
   if (log.otpExpiresAt && new Date() > log.otpExpiresAt) {
     throw new Error('OTP đã hết hạn');
   }
+
   if (log.otpCode !== submittedCode) {
-    throw new Error('OTP không chính xác');
+    const newFailCount = (log.otpFailCount || 0) + 1;
+    const blocked = newFailCount >= OTP_MAX_FAIL;
+    await prisma.trainingLog.update({
+      where: { id: trainingLogId },
+      data: {
+        otpFailCount: newFailCount,
+        ...(blocked ? { otpBlockedUntil: new Date(Date.now() + 30 * 60 * 1000) } : {}),
+      },
+    });
+    throw new Error(blocked ? 'OTP bị khóa do nhập sai quá nhiều lần' : 'OTP không chính xác');
   }
 
   return prisma.trainingLog.update({
@@ -52,6 +68,8 @@ async function verifyOTP(trainingLogId, submittedCode) {
       verifiedAt: new Date(),
       otpCode: null,
       otpExpiresAt: null,
+      otpFailCount: 0,
+      otpBlockedUntil: null,
     },
   });
 }

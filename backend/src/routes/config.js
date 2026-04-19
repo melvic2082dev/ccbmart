@@ -17,7 +17,7 @@ router.get('/commission', async (req, res) => {
       prisma.agencyCommissionConfig.findMany({ orderBy: { id: 'asc' } }),
     ]);
     res.json({ ctvConfig, agencyConfig, rates: COMMISSION_RATES, agencyRates: AGENCY_COMMISSION });
-  } catch (err) { res.status(500).json({ error: err.message }); }
+  } catch (err) { console.error("[route]", err); res.status(500).json({ error: "Internal server error" }); }
 });
 
 router.put('/commission/:tier', async (req, res) => {
@@ -61,7 +61,7 @@ router.get('/kpi', async (req, res) => {
   try {
     const configs = await prisma.kpiConfig.findMany({ orderBy: { id: 'asc' } });
     res.json(configs);
-  } catch (err) { res.status(500).json({ error: err.message }); }
+  } catch (err) { console.error("[route]", err); res.status(500).json({ error: "Internal server error" }); }
 });
 
 router.put('/kpi/:rank', async (req, res) => {
@@ -82,7 +82,7 @@ router.get('/agency', async (req, res) => {
   try {
     const configs = await prisma.agencyCommissionConfig.findMany({ orderBy: { id: 'asc' } });
     res.json(configs);
-  } catch (err) { res.status(500).json({ error: err.message }); }
+  } catch (err) { console.error("[route]", err); res.status(500).json({ error: "Internal server error" }); }
 });
 
 router.put('/agency/:group', async (req, res) => {
@@ -105,7 +105,7 @@ router.get('/cogs', async (req, res) => {
   try {
     const configs = await prisma.cogsConfig.findMany({ orderBy: { id: 'asc' } });
     res.json(configs);
-  } catch (err) { res.status(500).json({ error: err.message }); }
+  } catch (err) { console.error("[route]", err); res.status(500).json({ error: "Internal server error" }); }
 });
 
 router.put('/cogs/:phase', async (req, res) => {
@@ -171,7 +171,7 @@ router.post('/reset-default', async (req, res) => {
 
     invalidateCommissionCache();
     res.json({ success: true, message: 'Da reset ve mac dinh' });
-  } catch (err) { res.status(500).json({ error: err.message }); }
+  } catch (err) { console.error("[route]", err); res.status(500).json({ error: "Internal server error" }); }
 });
 
 module.exports = router;

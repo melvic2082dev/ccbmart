@@ -5,6 +5,7 @@ const config = require('../config');
 const { loginLimiter } = require('../middleware/rateLimiter');
 const { validate, schemas } = require('../middleware/validate');
 const { logAudit } = require('../middleware/auditLog');
+const { authenticate: authMw } = require('../middleware/auth');
 
 const router = express.Router();
 const prisma = require('../lib/prisma');
@@ -71,7 +72,8 @@ router.post('/login', loginLimiter, validate(schemas.login), async (req, res) =>
       },
     });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('[auth/login]', err);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
@@ -98,19 +100,18 @@ router.post('/logout', async (req, res) => {
   res.json({ success: true });
 });
 
-router.get('/me', async (req, res) => {
-  const authHeader = req.headers.authorization;
-  if (!authHeader) return res.status(401).json({ error: 'Unauthorized' });
+router.get('/me', authMw, async (req, res) => {
   try {
-    const token = authHeader.split(' ')[1];
-    const decoded = jwt.verify(token, config.jwt.secret);
     const user = await prisma.user.findUnique({
-      where: { id: decoded.id },
-      select: { id: true, email: true, role: true, rank: true, name: true, phone: true },
+      where: { id: req.user.id },
+      select: { id: true, email: true, role: true, rank: true, name: true, phone: true, isActive: true },
     });
-    res.json(user);
-  } catch {
-    res.status(401).json({ error: 'Invalid token' });
+    if (!user || !user.isActive) return res.status(401).json({ error: 'Account inactive or not found' });
+    const { isActive, ...safeUser } = user;
+    res.json(safeUser);
+  } catch (err) {
+    console.error('[auth/me]', err);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 

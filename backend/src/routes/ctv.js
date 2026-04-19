@@ -42,9 +42,9 @@ router.get('/dashboard', async (req, res) => {
         prisma.user.count({ where: { parentId: userId, role: 'ctv', isActive: true } }),
       ]);
 
-      const currentRevenue = currentMonthTxns.reduce((sum, t) => sum + t.totalAmount, 0);
+      const currentRevenue = currentMonthTxns.reduce((sum, t) => sum + Number(t.totalAmount), 0);
       const currentCombos = currentMonthTxns.length;
-      const lastRevenue = lastMonthTxns.reduce((sum, t) => sum + t.totalAmount, 0);
+      const lastRevenue = lastMonthTxns.reduce((sum, t) => sum + Number(t.totalAmount), 0);
 
       const commission = await calculateCtvCommission(userId, monthStr);
 
@@ -79,7 +79,7 @@ router.get('/dashboard', async (req, res) => {
           where: { ctvId: userId, channel: 'ctv', createdAt: { gte: d, lt: dEnd } },
           select: { totalAmount: true },
         });
-        const revenue = txns.reduce((sum, t) => sum + t.totalAmount, 0);
+        const revenue = txns.reduce((sum, t) => sum + Number(t.totalAmount), 0);
         chartData.push({
           month: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`,
           revenue,
@@ -106,7 +106,7 @@ router.get('/dashboard', async (req, res) => {
 
     res.json(dashboard);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('[ctv]', err); res.status(500).json({ error: 'Internal server error' });
   }
 });
 
@@ -172,7 +172,7 @@ router.get('/tree', async (req, res) => {
 
     res.json(tree);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('[ctv]', err); res.status(500).json({ error: 'Internal server error' });
   }
 });
 
@@ -185,7 +185,7 @@ router.get('/customers', async (req, res) => {
     });
     res.json(customers);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('[ctv]', err); res.status(500).json({ error: 'Internal server error' });
   }
 });
 
@@ -208,7 +208,7 @@ router.get('/transactions', validate(schemas.pagination, 'query'), async (req, r
 
     res.json({ transactions, total, page: parseInt(page), totalPages: Math.ceil(total / parseInt(limit)) });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('[ctv]', err); res.status(500).json({ error: 'Internal server error' });
   }
 });
 
@@ -231,7 +231,7 @@ router.get('/management-fees', validate(schemas.monthQuery, 'query'), async (req
       records: detailed,
     });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('[ctv]', err); res.status(500).json({ error: 'Internal server error' });
   }
 });
 
@@ -262,7 +262,7 @@ router.get('/breakaway-fees', validate(schemas.monthQuery, 'query'), async (req,
       records: detailed,
     });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('[ctv]', err); res.status(500).json({ error: 'Internal server error' });
   }
 });
 
@@ -272,7 +272,7 @@ router.get('/products', async (req, res) => {
     const products = await prisma.product.findMany({ orderBy: { category: 'asc' } });
     res.json(products);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('[ctv]', err); res.status(500).json({ error: 'Internal server error' });
   }
 });
 
@@ -288,7 +288,7 @@ router.get('/loyalty-points', async (req, res) => {
       .reduce((sum, p) => sum + p.points, 0);
     res.json({ balance, history: points });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('[ctv]', err); res.status(500).json({ error: 'Internal server error' });
   }
 });
 
@@ -301,7 +301,7 @@ router.get('/promotion-status', async (req, res) => {
     });
     res.json(promotions);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('[ctv]', err); res.status(500).json({ error: 'Internal server error' });
   }
 });
 
@@ -314,7 +314,7 @@ router.get('/team-bonus', async (req, res) => {
     });
     res.json(bonuses);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('[ctv]', err); res.status(500).json({ error: 'Internal server error' });
   }
 });
 

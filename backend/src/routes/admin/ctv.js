@@ -62,7 +62,7 @@ router.post('/ctv/:id/toggle-active', asyncHandler(async (req, res) => {
 }));
 
 // POST /ctv — create new CTV (#4)
-router.post('/ctv', asyncHandler(async (req, res) => {
+router.post('/ctv', validate(schemas.createCtv), asyncHandler(async (req, res) => {
   const { name, email, phone, password, parentId, rank } = req.body;
   if (!name || !email || !password) throw new AppError('name, email, password are required', 400, 'MISSING_FIELDS');
   const existing = await prisma.user.findUnique({ where: { email } });
@@ -325,6 +325,7 @@ router.get('/agencies/:id/transactions/export', asyncHandler(async (req, res) =>
 router.post('/notifications/bulk', asyncHandler(async (req, res) => {
   const { userIds, title, content, type } = req.body;
   if (!Array.isArray(userIds) || userIds.length === 0) throw new AppError('userIds array is required', 400, 'MISSING_FIELDS');
+  if (userIds.length > 500) throw new AppError('Cannot send to more than 500 users at once', 400, 'TOO_MANY_RECIPIENTS');
   if (!title || !content) throw new AppError('title and content are required', 400, 'MISSING_FIELDS');
   const results = await Promise.allSettled(
     userIds.map(uid => createNotification(uid, type || 'ADMIN_BROADCAST', title, content, {}))

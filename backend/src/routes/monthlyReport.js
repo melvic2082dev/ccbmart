@@ -35,48 +35,51 @@ router.get('/ctv/monthly-report', authorize('ctv'), validate(schemas.monthlyRepo
     const endDate = new Date(startDate);
     endDate.setMonth(endDate.getMonth() + 1);
 
-    // Personal revenue
-    const personalTxns = await prisma.transaction.findMany({
-      where: {
-        ctvId: userId,
-        channel: 'ctv',
-        createdAt: { gte: startDate, lt: endDate },
-      },
+    // Build hierarchy map once — avoids N+1 queries
+    const allCtvsInTree = await prisma.user.findMany({
+      where: { role: 'ctv', isActive: true },
+      select: { id: true, parentId: true },
     });
-    const personalRevenue = personalTxns.reduce((sum, t) => sum + t.totalAmount, 0);
-
-    // Team revenue (downline direct + level 2)
-    let teamRevenue = personalRevenue;
-    const directReports = await prisma.user.findMany({
-      where: { parentId: userId, role: 'ctv', isActive: true },
-    });
-    for (const f1 of directReports) {
-      const f1Txns = await prisma.transaction.findMany({
-        where: { ctvId: f1.id, channel: 'ctv', createdAt: { gte: startDate, lt: endDate } },
-      });
-      teamRevenue += f1Txns.reduce((sum, t) => sum + t.totalAmount, 0);
-
-      const level2 = await prisma.user.findMany({
-        where: { parentId: f1.id, role: 'ctv', isActive: true },
-      });
-      for (const f2 of level2) {
-        const f2Txns = await prisma.transaction.findMany({
-          where: { ctvId: f2.id, channel: 'ctv', createdAt: { gte: startDate, lt: endDate } },
-        });
-        teamRevenue += f2Txns.reduce((sum, t) => sum + t.totalAmount, 0);
+    const childrenMap = new Map();
+    for (const ctv of allCtvsInTree) {
+      if (ctv.parentId !== null) {
+        if (!childrenMap.has(ctv.parentId)) childrenMap.set(ctv.parentId, []);
+        childrenMap.get(ctv.parentId).push(ctv.id);
       }
     }
 
-    // Training/invoice fees (received/paid)
-    const feeReceivedInvoices = await prisma.invoice.findMany({
-      where: { toUserId: userId, issuedAt: { gte: startDate, lt: endDate } },
-    });
-    const trainingFeeReceived = feeReceivedInvoices.reduce((sum, i) => sum + i.amount, 0);
+    const directIds = childrenMap.get(userId) || [];
+    const level2Ids = directIds.flatMap(id => childrenMap.get(id) || []);
+    const allRelevantIds = [userId, ...directIds, ...level2Ids];
 
-    const feePaidInvoices = await prisma.invoice.findMany({
-      where: { fromUserId: userId, issuedAt: { gte: startDate, lt: endDate } },
-    });
-    const feePaid = feePaidInvoices.reduce((sum, i) => sum + i.amount, 0);
+    // Single batch query for all team transactions
+    const [allTeamTxns, feeReceivedInvoices, feePaidInvoices] = await Promise.all([
+      prisma.transaction.findMany({
+        where: {
+          ctvId: { in: allRelevantIds },
+          channel: 'ctv',
+          createdAt: { gte: startDate, lt: endDate },
+        },
+        select: { ctvId: true, totalAmount: true },
+      }),
+      prisma.invoice.findMany({
+        where: { toUserId: userId, issuedAt: { gte: startDate, lt: endDate } },
+      }),
+      prisma.invoice.findMany({
+        where: { fromUserId: userId, issuedAt: { gte: startDate, lt: endDate } },
+      }),
+    ]);
+
+    const revenueMap = new Map();
+    for (const txn of allTeamTxns) {
+      revenueMap.set(txn.ctvId, (revenueMap.get(txn.ctvId) || 0) + Number(txn.totalAmount));
+    }
+
+    const personalRevenue = revenueMap.get(userId) || 0;
+    const teamRevenue = allRelevantIds.reduce((sum, id) => sum + (revenueMap.get(id) || 0), 0);
+
+    const trainingFeeReceived = feeReceivedInvoices.reduce((sum, i) => sum + Number(i.amount), 0);
+    const feePaid = feePaidInvoices.reduce((sum, i) => sum + Number(i.amount), 0);
 
     // Commission
     const commission = await calculateCtvCommission(userId, month);
@@ -153,7 +156,8 @@ router.get('/ctv/monthly-report', authorize('ctv'), validate(schemas.monthlyRepo
       ],
     });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('[monthlyReport]', err);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 

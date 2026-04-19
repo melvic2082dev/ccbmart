@@ -43,8 +43,8 @@ router.get('/dashboard', async (req, res) => {
         }),
       ]);
 
-      const currentRevenue = currentTxns.reduce((sum, t) => sum + t.totalAmount, 0);
-      const lastRevenue = lastTxns.reduce((sum, t) => sum + t.totalAmount, 0);
+      const currentRevenue = currentTxns.reduce((sum, t) => sum + Number(t.totalAmount), 0);
+      const lastRevenue = lastTxns.reduce((sum, t) => sum + Number(t.totalAmount), 0);
       const estimatedCommission = currentRevenue * 0.15;
       const rewardPoints = Math.floor(currentRevenue * 0.05);
 
@@ -57,7 +57,7 @@ router.get('/dashboard', async (req, res) => {
           where: { agencyId: agency.id, createdAt: { gte: d, lt: dEnd } },
           select: { totalAmount: true },
         });
-        const revenue = txns.reduce((sum, t) => sum + t.totalAmount, 0);
+        const revenue = txns.reduce((sum, t) => sum + Number(t.totalAmount), 0);
         chartData.push({
           month: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`,
           revenue,
@@ -87,7 +87,7 @@ router.get('/dashboard', async (req, res) => {
 
     res.json(dashboard);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('[agency]', err); res.status(500).json({ error: 'Internal server error' });
   }
 });
 
@@ -108,7 +108,7 @@ router.get('/inventory', async (req, res) => {
 
     res.json({ warnings, products });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('[agency]', err); res.status(500).json({ error: 'Internal server error' });
   }
 });
 
@@ -134,7 +134,7 @@ router.get('/transactions', validate(schemas.pagination, 'query'), async (req, r
 
     res.json({ transactions, total, page: parseInt(page), totalPages: Math.ceil(total / parseInt(limit)) });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('[agency]', err); res.status(500).json({ error: 'Internal server error' });
   }
 });
 

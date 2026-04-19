@@ -62,7 +62,7 @@ async function processMonthlyTransfer(month, year) {
           amount: actualAmount,
           feeTier: feeResult.tier,
           invoiceNumber,
-          pdfUrl: `/uploads/invoices/${invoiceNumber}.pdf`,
+          pdfUrl: null,
           status: 'SENT',
         },
       });
@@ -113,15 +113,12 @@ async function generateInvoicePDF(invoiceId) {
   });
   if (!invoice) throw new Error('Invoice not found');
 
-  // PDF generation not yet implemented — would require pdfkit/puppeteer
-  const pdfUrl = `/uploads/invoices/${invoice.invoiceNumber}.pdf`;
-  console.warn(`[AutoTransfer] generateInvoicePDF: PDF file not actually generated for ${invoice.invoiceNumber}. Install pdfkit to enable real PDF creation.`);
+  // PDF generation not yet implemented — requires pdfkit/puppeteer integration
+  // Known limitation: install pdfkit or puppeteer and implement real PDF generation before production use
+  const logger = require('./logger');
+  logger.warn('[AutoTransfer] generateInvoicePDF: PDF generation not implemented', { invoiceId, invoiceNumber: invoice.invoiceNumber });
 
-  await prisma.invoice.update({
-    where: { id: invoiceId },
-    data: { pdfUrl },
-  });
-  return { invoiceId, pdfUrl, invoiceNumber: invoice.invoiceNumber, generated: false, message: 'PDF generation not implemented — placeholder URL stored' };
+  return { invoiceId, pdfUrl: null, invoiceNumber: invoice.invoiceNumber, generated: false, message: 'PDF generation not implemented' };
 }
 
 module.exports = {

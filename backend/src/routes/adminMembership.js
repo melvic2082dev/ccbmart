@@ -18,7 +18,7 @@ router.get('/tiers', async (req, res) => {
     });
     res.json(tiers);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("[route]", err); res.status(500).json({ error: "Internal server error" });
   }
 });
 
@@ -64,7 +64,7 @@ router.get('/deposits', async (req, res) => {
 
     res.json({ deposits, total, page: parseInt(page), totalPages: Math.ceil(total / parseInt(limit)) });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("[route]", err); res.status(500).json({ error: "Internal server error" });
   }
 });
 
@@ -125,7 +125,7 @@ router.get('/referral-report', async (req, res) => {
       totalCount: summary._count.id,
     });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("[route]", err); res.status(500).json({ error: "Internal server error" });
   }
 });
 
@@ -154,7 +154,7 @@ router.get('/wallets', async (req, res) => {
 
     res.json({ wallets, total, page: parseInt(page), totalPages: Math.ceil(total / parseInt(limit)) });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("[route]", err); res.status(500).json({ error: "Internal server error" });
   }
 });
 

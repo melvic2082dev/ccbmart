@@ -1,4 +1,5 @@
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 const prisma = require('../lib/prisma');
 
 // V13.3: Thanh khoản — khóa 30% trên mỗi phiếu nạp
@@ -8,9 +9,10 @@ const AVAILABLE_RATE = 1 - RESERVE_RATE;
 async function generateReferralCode() {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
   for (let attempt = 0; attempt < 10; attempt++) {
+    const bytes = crypto.randomBytes(6);
     let code = 'CCB_';
     for (let i = 0; i < 6; i++) {
-      code += chars[Math.floor(Math.random() * chars.length)];
+      code += chars[bytes[i] % chars.length];
     }
     const existing = await prisma.memberWallet.findUnique({ where: { referralCode: code } });
     if (!existing) return code;
@@ -42,7 +44,7 @@ async function registerMember({ email, password, name, phone, depositAmount = 0,
 
   const result = await prisma.$transaction(async (tx) => {
     const user = await tx.user.create({
-      data: { email, passwordHash, role: 'member', name, phone, isMember: true },
+      data: { email, passwordHash, role: 'member', name, phone },
     });
 
     const wallet = await tx.memberWallet.create({
@@ -50,9 +52,7 @@ async function registerMember({ email, password, name, phone, depositAmount = 0,
         userId: user.id,
         tierId: tier.id,
         balance: 0,
-        availableBalance: 0,
-        reserveBalance: 0,
-        totalDeposited: 0,
+        totalDeposit: 0,
         referralCode: myReferralCode,
         referredById: referrerWallet?.id || null,
       },
@@ -121,7 +121,6 @@ async function processReferralCommission(walletId, depositAmount) {
       where: { id: referrer.id },
       data: {
         balance: { increment: actualCommission },
-        availableBalance: { increment: actualCommission },
         referralEarned: { increment: actualCommission },
         monthlyReferralEarned: { increment: actualCommission },
       },
@@ -140,10 +139,6 @@ async function confirmDeposit(depositId, adminId) {
   if (!deposit) throw new Error('Phieu nap tien khong ton tai');
   if (deposit.status !== 'PENDING') throw new Error('Phieu nap tien khong o trang thai PENDING');
 
-  // V13.3: split 70/30 vào available/reserve
-  const availableAdd = Math.floor(Number(deposit.amount) * AVAILABLE_RATE);
-  const reserveAdd = Number(deposit.amount) - availableAdd;
-
   // Atomic: update deposit + wallet + tier in single transaction
   const wallet = await prisma.$transaction(async (tx) => {
     await tx.depositHistory.update({
@@ -155,16 +150,14 @@ async function confirmDeposit(depositId, adminId) {
       where: { id: deposit.walletId },
       data: {
         balance: { increment: deposit.amount },
-        availableBalance: { increment: availableAdd },
-        reserveBalance: { increment: reserveAdd },
-        totalDeposited: { increment: deposit.amount },
+        totalDeposit: { increment: deposit.amount },
       },
     });
 
     const tiers = await tx.membershipTier.findMany({ orderBy: { minDeposit: 'desc' } });
     let newTier = tiers[tiers.length - 1];
     for (const tier of tiers) {
-      if (Number(updatedWallet.totalDeposited) >= Number(tier.minDeposit)) {
+      if (Number(updatedWallet.totalDeposit) >= Number(tier.minDeposit)) {
         newTier = tier;
         break;
       }
@@ -185,8 +178,6 @@ async function confirmDeposit(depositId, adminId) {
   return {
     walletId: wallet.id,
     depositAmount: deposit.amount,
-    availableAdded: availableAdd,
-    reserveAdded: reserveAdd,
     newBalance: wallet.balance,
     referralResult,
   };

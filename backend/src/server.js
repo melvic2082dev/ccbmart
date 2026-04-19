@@ -44,6 +44,7 @@ const { scheduleAuditLogCleanup } = require('./jobs/auditLogCleanup');
 const { initCommissionQueue } = require('./jobs/commissionCalculation');
 const appEvents = require('./services/eventEmitter');
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 
 const app = express();
 const PORT = config.port;
@@ -176,7 +177,21 @@ app.post('/webhook/zalopay/callback', async (req, res) => {
 });
 
 // Webhook endpoint for KiotViet
-app.post('/webhook/kiotviet/order', validate(schemas.webhookOrder), async (req, res) => {
+app.post('/webhook/kiotviet/order', (req, res, next) => {
+  const secret = config.kiotviet.webhookSecret;
+  if (!secret) {
+    logger.warn('[KiotViet] KIOTVIET_WEBHOOK_SECRET not configured — rejecting webhook request');
+    return res.status(403).json({ error: 'Webhook not configured' });
+  }
+  const signature = req.headers['x-kiotviet-signature'] || req.headers['x-hub-signature-256'] || '';
+  const payload = JSON.stringify(req.body);
+  const expected = crypto.createHmac('sha256', secret).update(payload).digest('hex');
+  if (signature !== expected && signature !== `sha256=${expected}`) {
+    logger.warn('[KiotViet] Invalid webhook signature');
+    return res.status(401).json({ error: 'Invalid signature' });
+  }
+  next();
+}, validate(schemas.webhookOrder), async (req, res) => {
   try {
     await addSyncJob('webhook-order', { order: req.body });
     res.status(200).json({ ok: true });
