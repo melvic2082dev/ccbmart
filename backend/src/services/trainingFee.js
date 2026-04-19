@@ -67,6 +67,7 @@ async function countBranchCombos(userId, startDate, endDate) {
     where: {
       ctvId: userId,
       channel: 'ctv',
+      status: 'CONFIRMED',
       createdAt: { gte: startDate, lt: endDate },
     },
   });
@@ -79,6 +80,7 @@ async function countBranchCombos(userId, startDate, endDate) {
       where: {
         ctvId: { in: downlineIds },
         channel: 'ctv',
+        status: 'CONFIRMED',
         createdAt: { gte: startDate, lt: endDate },
       },
     });
@@ -117,7 +119,7 @@ async function calculateKFactor(month) {
 
   // Total CTV channel revenue
   const txns = await prisma.transaction.findMany({
-    where: { channel: 'ctv', createdAt: { gte: startDate, lt: endDate } },
+    where: { channel: 'ctv', status: 'CONFIRMED', createdAt: { gte: startDate, lt: endDate } },
     select: { totalAmount: true },
   });
   const totalRevenue = txns.reduce((sum, t) => sum + Number(t.totalAmount), 0);
