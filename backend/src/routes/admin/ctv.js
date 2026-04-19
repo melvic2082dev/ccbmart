@@ -143,7 +143,7 @@ router.get('/ctv-tree', asyncHandler(async (req, res) => {
 }));
 
 router.post('/ctv/:id/reassign', validate(schemas.reassignCtv), asyncHandler(async (req, res) => {
-  const { newParentId } = req.body;
+  const { newParentId, reason } = req.body;
   const ctvId = parseInt(req.params.id);
 
   const validation = await validateReassignment(ctvId, newParentId);
@@ -151,9 +151,23 @@ router.post('/ctv/:id/reassign', validate(schemas.reassignCtv), asyncHandler(asy
     throw new AppError(validation.error, 400, 'INVALID_REASSIGNMENT');
   }
 
+  const ctv = await prisma.user.findUnique({ where: { id: ctvId }, select: { parentId: true } });
+
   await prisma.user.update({
     where: { id: ctvId },
     data: { parentId: newParentId },
+  });
+
+  await prisma.auditLog.create({
+    data: {
+      userId: req.user.id,
+      action: 'REASSIGN_CTV',
+      targetType: 'user',
+      targetId: ctvId,
+      oldValue: JSON.stringify({ parentId: ctv?.parentId ?? null }),
+      newValue: JSON.stringify({ parentId: newParentId }),
+      metadata: reason ? JSON.stringify({ reason }) : null,
+    },
   });
 
   invalidateCommissionCache();

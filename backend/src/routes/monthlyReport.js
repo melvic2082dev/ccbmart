@@ -58,6 +58,7 @@ router.get('/ctv/monthly-report', authorize('ctv'), validate(schemas.monthlyRepo
         where: {
           ctvId: { in: allRelevantIds },
           channel: 'ctv',
+          status: 'CONFIRMED',
           createdAt: { gte: startDate, lt: endDate },
         },
         select: { ctvId: true, totalAmount: true },

@@ -283,13 +283,12 @@ async function createCashDeposit(ctvId, transactionIds, notes) {
 async function confirmCashDeposit(depositId, adminId, notes) {
   const deposit = await prisma.cashDeposit.findUnique({ where: { id: depositId } });
   if (!deposit) throw new Error('Phieu nop tien khong ton tai');
-  if (deposit.status !== 'PENDING') throw new Error('Phieu nop tien khong o trang thai PENDING');
 
   const txIds = JSON.parse(deposit.transactionIds);
 
-  // Update deposit
-  await prisma.cashDeposit.update({
-    where: { id: depositId },
+  // Atomic: only updates if still PENDING, prevents double-confirm race condition
+  const result = await prisma.cashDeposit.updateMany({
+    where: { id: depositId, status: 'PENDING' },
     data: {
       status: 'CONFIRMED',
       confirmedBy: adminId,
@@ -297,6 +296,7 @@ async function confirmCashDeposit(depositId, adminId, notes) {
       notes: notes || deposit.notes,
     },
   });
+  if (result.count === 0) throw new Error('Phieu nop tien khong o trang thai PENDING hoac da duoc xu ly boi admin khac');
 
   // Confirm all linked transactions
   await prisma.transaction.updateMany({

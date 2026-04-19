@@ -36,12 +36,18 @@ function shouldBreakaway(traineeRank, mentorRank) {
   return traineeIdx >= mentorIdx && traineeIdx > 0;
 }
 
+const MAX_DEPTH = 20;
+
 async function findNearestGdkdInUpline(userId) {
+  const visited = new Set([userId]);
   let current = await prisma.user.findUnique({
     where: { id: userId },
     select: { parentId: true },
   });
-  while (current?.parentId) {
+  let depth = 0;
+  while (current?.parentId && depth < MAX_DEPTH) {
+    if (visited.has(current.parentId)) break;
+    visited.add(current.parentId);
     const parent = await prisma.user.findUnique({
       where: { id: current.parentId },
       select: { id: true, rank: true, parentId: true, isActive: true },
@@ -49,6 +55,7 @@ async function findNearestGdkdInUpline(userId) {
     if (!parent) break;
     if (parent.rank === 'GDKD' && parent.isActive) return parent;
     current = parent;
+    depth++;
   }
   return null;
 }

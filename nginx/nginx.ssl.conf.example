@@ -1,0 +1,93 @@
+# CCB Mart — nginx HTTPS config template (Let's Encrypt / Certbot)
+#
+# Usage:
+#   1. Obtain cert: certbot certonly --webroot -w /var/www/certbot -d yourdomain.com
+#   2. Copy this file to nginx.conf (or include it from nginx.conf)
+#   3. Replace "yourdomain.com" with your actual domain
+#   4. Run: nginx -t && nginx -s reload
+#
+# Production note: if TLS is terminated at a cloud LB (AWS ALB, GCP LB),
+# keep nginx.conf as-is (HTTP only). Do NOT add a TLS block here —
+# double-TLS termination adds latency with no security benefit.
+
+events {
+  worker_connections 1024;
+}
+
+http {
+  upstream frontend {
+    server frontend:3000;
+  }
+
+  upstream api {
+    server api:4000;
+  }
+
+  # Redirect all HTTP traffic to HTTPS
+  server {
+    listen 80;
+    server_name yourdomain.com;
+
+    location /.well-known/acme-challenge/ {
+      root /var/www/certbot;
+    }
+
+    location / {
+      return 301 https://$host$request_uri;
+    }
+  }
+
+  server {
+    listen 443 ssl http2;
+    server_name yourdomain.com;
+
+    ssl_certificate     /etc/letsencrypt/live/yourdomain.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/yourdomain.com/privkey.pem;
+    ssl_protocols       TLSv1.2 TLSv1.3;
+    ssl_ciphers         HIGH:!aNULL:!MD5;
+    ssl_prefer_server_ciphers on;
+    ssl_session_cache   shared:SSL:10m;
+    ssl_session_timeout 10m;
+
+    add_header Strict-Transport-Security "max-age=63072000; includeSubDomains; preload" always;
+    add_header X-Content-Type-Options nosniff;
+    add_header X-Frame-Options DENY;
+
+    # SSE — disable buffering for streaming
+    location /api/events {
+      proxy_pass http://api;
+      proxy_http_version 1.1;
+      proxy_set_header Host $host;
+      proxy_set_header X-Real-IP $remote_addr;
+      proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+      proxy_set_header X-Forwarded-Proto https;
+      proxy_set_header Connection '';
+      proxy_buffering off;
+      proxy_read_timeout 86400s;
+      proxy_send_timeout 86400s;
+    }
+
+    location /api {
+      proxy_pass http://api;
+      proxy_http_version 1.1;
+      proxy_set_header Upgrade $http_upgrade;
+      proxy_set_header Connection 'upgrade';
+      proxy_set_header Host $host;
+      proxy_set_header X-Real-IP $remote_addr;
+      proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+      proxy_set_header X-Forwarded-Proto https;
+      proxy_cache_bypass $http_upgrade;
+    }
+
+    location / {
+      proxy_pass http://frontend;
+      proxy_http_version 1.1;
+      proxy_set_header Upgrade $http_upgrade;
+      proxy_set_header Connection 'upgrade';
+      proxy_set_header Host $host;
+      proxy_set_header X-Real-IP $remote_addr;
+      proxy_set_header X-Forwarded-Proto https;
+      proxy_cache_bypass $http_upgrade;
+    }
+  }
+}

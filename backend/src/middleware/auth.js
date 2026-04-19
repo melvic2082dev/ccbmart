@@ -7,15 +7,20 @@ async function authenticate(req, res, next) {
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
+  let decoded;
   try {
     const token = authHeader.split(' ')[1];
-    const decoded = jwt.verify(token, config.jwt.secret);
+    decoded = jwt.verify(token, config.jwt.secret);
+  } catch {
+    return res.status(401).json({ error: 'Invalid token' });
+  }
+  try {
     const dbUser = await prisma.user.findUnique({ where: { id: decoded.id }, select: { isActive: true } });
     if (!dbUser || dbUser.isActive === false) return res.status(401).json({ error: 'Account deactivated' });
     req.user = { ...decoded, isActive: dbUser.isActive };
     next();
   } catch {
-    return res.status(401).json({ error: 'Invalid token' });
+    return res.status(503).json({ error: 'Service temporarily unavailable' });
   }
 }
 

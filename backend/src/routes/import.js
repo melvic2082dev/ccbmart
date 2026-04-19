@@ -40,8 +40,18 @@ router.post('/ctv', upload.single('file'), async (req, res) => {
     const rows = await parseExcel(req.file.buffer);
     const results = { success: [], failed: [], passwords: [], total: rows.length };
 
+    // Pre-hash all passwords outside the transaction to avoid timeout on large batches
+    const preHashed = [];
+    for (const row of rows) {
+      const plain = crypto.randomBytes(12).toString('hex');
+      const hash = await bcrypt.hash(plain, 10);
+      preHashed.push({ plain, hash });
+    }
+
     await prisma.$transaction(async (tx) => {
-      for (const row of rows) {
+      for (let i = 0; i < rows.length; i++) {
+        const row = rows[i];
+        const { plain: plainPassword, hash: passwordHash } = preHashed[i];
         try {
           if (!row.email || !row.name) throw new Error('Thieu email hoac name');
           const existing = await tx.user.findUnique({ where: { email: row.email } });
@@ -51,8 +61,6 @@ router.post('/ctv', upload.single('file'), async (req, res) => {
             const parent = await tx.user.findUnique({ where: { email: row.parentEmail } });
             if (parent) parentId = parent.id;
           }
-          const plainPassword = crypto.randomBytes(12).toString('hex');
-          const passwordHash = await bcrypt.hash(plainPassword, 10);
           await tx.user.create({
             data: { email: row.email, passwordHash, role: 'ctv', name: row.name, phone: row.phone || null, rank: row.rank || 'CTV', parentId },
           });
@@ -73,15 +81,17 @@ router.post('/products', upload.single('file'), async (req, res) => {
     const rows = await parseExcel(req.file.buffer);
     const results = { success: [], failed: [], total: rows.length };
 
-    for (const row of rows) {
-      try {
-        if (!row.name || !row.price) throw new Error('Thieu name hoac price');
-        await prisma.product.create({
-          data: { name: row.name, category: row.category || 'FMCG', price: parseFloat(row.price), cogsPct: parseFloat(row.cogsPct || 0.5), unit: row.unit || 'cai' },
-        });
-        results.success.push(row.name);
-      } catch (err) { results.failed.push({ name: row.name || 'N/A', error: err.message }); }
-    }
+    await prisma.$transaction(async (tx) => {
+      for (const row of rows) {
+        try {
+          if (!row.name || !row.price) throw new Error('Thieu name hoac price');
+          await tx.product.create({
+            data: { name: row.name, category: row.category || 'FMCG', price: parseFloat(row.price), cogsPct: parseFloat(row.cogsPct || 0.5), unit: row.unit || 'cai' },
+          });
+          results.success.push(row.name);
+        } catch (err) { results.failed.push({ name: row.name || 'N/A', error: err.message }); }
+      }
+    });
     await prisma.importLog.create({ data: { type: 'product', fileName: req.file.originalname, totalRows: results.total, successRows: results.success.length, failedRows: results.failed.length, importedBy: req.user.id, details: JSON.stringify(results.failed) } });
     res.json(results);
   } catch (err) { console.error('[import]', err); res.status(500).json({ error: 'Internal server error' }); }
@@ -97,21 +107,31 @@ router.post('/members', upload.single('file'), async (req, res) => {
     const greenTier = await prisma.membershipTier.findFirst({ orderBy: { minDeposit: 'asc' } });
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
 
+    // Pre-hash all passwords outside the transaction to avoid timeout on large batches
+    const memberPreHashed = [];
     for (const row of rows) {
-      try {
-        if (!row.email || !row.name) throw new Error('Thieu email hoac name');
-        const existing = await prisma.user.findUnique({ where: { email: row.email } });
-        if (existing) throw new Error('Email da ton tai');
-        const plainPassword = crypto.randomBytes(12).toString('hex');
-        const passwordHash = await bcrypt.hash(plainPassword, 10);
-        const user = await prisma.user.create({ data: { email: row.email, passwordHash, role: 'member', name: row.name, phone: row.phone || null } });
-        const codeBytes = crypto.randomBytes(6);
-        const code = 'CCB_' + Array.from(codeBytes).map(b => chars[b % chars.length]).join('');
-        await prisma.memberWallet.create({ data: { userId: user.id, tierId: greenTier?.id || 1, referralCode: code } });
-        results.success.push(row.email);
-        results.passwords.push({ email: row.email, password: plainPassword });
-      } catch (err) { results.failed.push({ email: row.email || 'N/A', error: err.message }); }
+      const plain = crypto.randomBytes(12).toString('hex');
+      const hash = await bcrypt.hash(plain, 10);
+      memberPreHashed.push({ plain, hash });
     }
+
+    await prisma.$transaction(async (tx) => {
+      for (let i = 0; i < rows.length; i++) {
+        const row = rows[i];
+        const { plain: plainPassword, hash: passwordHash } = memberPreHashed[i];
+        try {
+          if (!row.email || !row.name) throw new Error('Thieu email hoac name');
+          const existing = await tx.user.findUnique({ where: { email: row.email } });
+          if (existing) throw new Error('Email da ton tai');
+          const user = await tx.user.create({ data: { email: row.email, passwordHash, role: 'member', name: row.name, phone: row.phone || null } });
+          const codeBytes = crypto.randomBytes(6);
+          const code = 'CCB_' + Array.from(codeBytes).map(b => chars[b % chars.length]).join('');
+          await tx.memberWallet.create({ data: { userId: user.id, tierId: greenTier?.id || 1, referralCode: code } });
+          results.success.push(row.email);
+          results.passwords.push({ email: row.email, password: plainPassword });
+        } catch (err) { results.failed.push({ email: row.email || 'N/A', error: err.message }); }
+      }
+    });
     await prisma.importLog.create({ data: { type: 'member', fileName: req.file.originalname, totalRows: results.total, successRows: results.success.length, failedRows: results.failed.length, importedBy: req.user.id, details: JSON.stringify(results.failed) } });
     res.json(results);
   } catch (err) { console.error('[import]', err); res.status(500).json({ error: 'Internal server error' }); }
