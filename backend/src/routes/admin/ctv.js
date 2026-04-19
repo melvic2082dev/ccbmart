@@ -221,7 +221,7 @@ router.get('/agencies', asyncHandler(async (req, res) => {
   const agencyIds = agencies.map(a => a.id);
   const revenues = await prisma.transaction.groupBy({
     by: ['agencyId'],
-    where: { agencyId: { in: agencyIds } },
+    where: { agencyId: { in: agencyIds }, status: 'CONFIRMED' },
     _sum: { totalAmount: true },
   });
 
@@ -259,9 +259,9 @@ router.get('/agencies/:id/details', asyncHandler(async (req, res) => {
   });
   if (!agency) throw new AppError('Agency not found', 404, 'AGENCY_NOT_FOUND');
   const [revenueAgg, monthlyAgg] = await Promise.all([
-    prisma.transaction.aggregate({ where: { agencyId }, _sum: { totalAmount: true } }),
+    prisma.transaction.aggregate({ where: { agencyId, status: 'CONFIRMED' }, _sum: { totalAmount: true } }),
     prisma.transaction.aggregate({
-      where: { agencyId, createdAt: { gte: new Date(new Date().getFullYear(), new Date().getMonth(), 1) } },
+      where: { agencyId, status: 'CONFIRMED', createdAt: { gte: new Date(new Date().getFullYear(), new Date().getMonth(), 1) } },
       _sum: { totalAmount: true },
     }),
   ]);
