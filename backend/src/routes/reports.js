@@ -22,15 +22,15 @@ async function generateFinancialReport(months = 6) {
     const monthStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 
     const txns = await prisma.transaction.findMany({
-      where: { createdAt: { gte: d, lt: dEnd } },
+      where: { createdAt: { gte: d, lt: dEnd }, status: 'CONFIRMED' },
     });
 
     const revenue = { ctv: 0, agency: 0, showroom: 0, total: 0 };
     let cogs = 0;
     for (const t of txns) {
-      revenue[t.channel] += t.totalAmount;
-      revenue.total += t.totalAmount;
-      cogs += t.cogsAmount;
+      revenue[t.channel] += Number(t.totalAmount);
+      revenue.total += Number(t.totalAmount);
+      cogs += Number(t.cogsAmount);
     }
 
     const grossProfit = revenue.total - cogs;

@@ -20,11 +20,11 @@ router.get('/dashboard', asyncHandler(async (req, res) => {
 
     const [allTxns, chartTxns] = await Promise.all([
       prisma.transaction.findMany({
-        where: { createdAt: { gte: startOfMonth } },
+        where: { createdAt: { gte: startOfMonth }, status: 'CONFIRMED' },
         select: { channel: true, totalAmount: true, cogsAmount: true },
       }),
       prisma.transaction.findMany({
-        where: { createdAt: { gte: sixMonthsAgo } },
+        where: { createdAt: { gte: sixMonthsAgo }, status: 'CONFIRMED' },
         select: { channel: true, totalAmount: true, cogsAmount: true, createdAt: true },
       }),
     ]);
@@ -175,7 +175,7 @@ router.get('/reports/financial', asyncHandler(async (req, res) => {
 
     // Single query covering all months (replaces N sequential findMany)
     const allTxns = await prisma.transaction.findMany({
-      where: { createdAt: { gte: monthList[0].d } },
+      where: { createdAt: { gte: monthList[0].d }, status: 'CONFIRMED' },
       select: { channel: true, totalAmount: true, cogsAmount: true, createdAt: true },
     });
 

@@ -28,6 +28,7 @@ jest.mock('@prisma/client', () => {
       create: jest.fn(),
       findMany: jest.fn(),
     },
+    $transaction: jest.fn((fn) => fn(mockPrisma)),
   };
   return { PrismaClient: jest.fn(() => mockPrisma) };
 });

@@ -27,7 +27,7 @@ router.get('/dashboard', async (req, res) => {
       // Parallel queries
       const [currentMonthTxns, lastMonthTxns, totalCustomers, teamSize] = await Promise.all([
         prisma.transaction.findMany({
-          where: { ctvId: userId, channel: 'ctv', createdAt: { gte: startOfMonth } },
+          where: { ctvId: userId, channel: 'ctv', createdAt: { gte: startOfMonth }, status: 'CONFIRMED' },
           select: { totalAmount: true },
         }),
         prisma.transaction.findMany({
@@ -35,6 +35,7 @@ router.get('/dashboard', async (req, res) => {
             ctvId: userId,
             channel: 'ctv',
             createdAt: { gte: startOfLastMonth, lt: startOfMonth },
+            status: 'CONFIRMED',
           },
           select: { totalAmount: true },
         }),
@@ -76,7 +77,7 @@ router.get('/dashboard', async (req, res) => {
         const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
         const dEnd = new Date(d.getFullYear(), d.getMonth() + 1, 1);
         const txns = await prisma.transaction.findMany({
-          where: { ctvId: userId, channel: 'ctv', createdAt: { gte: d, lt: dEnd } },
+          where: { ctvId: userId, channel: 'ctv', createdAt: { gte: d, lt: dEnd }, status: 'CONFIRMED' },
           select: { totalAmount: true },
         });
         const revenue = txns.reduce((sum, t) => sum + Number(t.totalAmount), 0);

@@ -27,8 +27,8 @@ router.get('/admin/tax', authorize('admin'), validate(schemas.taxQuery, 'query')
       take: 200,
     });
 
-    const totalTax = records.reduce((sum, r) => sum + r.taxAmount, 0);
-    const totalIncome = records.reduce((sum, r) => sum + r.taxableIncome, 0);
+    const totalTax = records.reduce((sum, r) => sum + Number(r.taxAmount), 0);
+    const totalIncome = records.reduce((sum, r) => sum + Number(r.taxableIncome), 0);
 
     res.json({ records, totalTax, totalIncome, count: records.length });
   } catch (err) {

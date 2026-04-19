@@ -81,83 +81,87 @@ async function handleBreakaway(traineeId, mentorId) {
   const now = new Date();
   const grandParentId = mentor.parentId; // cấp trên của mentor cũ
 
-  // 1. Terminate active B2B contract with old mentor
+  // 1. Find active contract before transaction (read-only, safe outside)
   const activeContract = await prisma.b2BContract.findFirst({
     where: { trainerId: mentorId, traineeId, status: 'active' },
   });
-  if (activeContract) {
-    await prisma.b2BContract.update({
-      where: { id: activeContract.id },
-      data: {
-        status: 'terminated',
-        terminatedAt: now,
-        terminationReason: `Breakaway: ${trainee.name} đạt cấp ${trainee.rank}, ngang/vượt mentor ${mentor.rank}`,
-      },
-    });
-  }
 
-  // 2. Mentee register as HKD if chưa
-  await prisma.businessHousehold.upsert({
-    where: { userId: traineeId },
-    create: {
-      userId: traineeId,
-      businessName: `HKD ${trainee.name}`,
-      status: 'active',
-    },
-    update: { status: 'active' },
-  });
-  await prisma.user.update({
-    where: { id: traineeId },
-    data: { isBusinessHousehold: true },
-  });
-
-  // 3. Update parentId -> grandParent (C12.4: KHÔNG để lơ lửng null)
-  //    Nếu mentor không có parent → mentee thành root (parentId = null).
-  if (trainee.parentId === mentorId) {
-    await prisma.user.update({
-      where: { id: traineeId },
-      data: { parentId: grandParentId ?? null },
-    });
-  }
-
-  // 4. Create new B2BContract với grandParent nếu có
-  let newContractNo = null;
-  if (grandParentId) {
-    const newContractNoStr = `B2B-BRK-${traineeId}-${Date.now().toString(36).toUpperCase()}`;
-    await prisma.b2BContract.create({
-      data: {
-        contractNo: newContractNoStr,
-        trainerId: grandParentId,
-        traineeId,
-        status: 'active',
-        expiredAt: new Date(now.getFullYear() + 1, now.getMonth(), now.getDate()),
-      },
-    });
-    newContractNo = newContractNoStr;
-  }
-
-  // 5. Create BreakawayLog (12-month window cho phí giai đoạn 1)
   const expireAt = new Date(now);
   expireAt.setMonth(expireAt.getMonth() + 12);
 
-  // Upsert: nếu user đã từng thoát ly, update (unique userId)
-  const log = await prisma.breakawayLog.upsert({
-    where: { userId: traineeId },
-    create: {
-      userId: traineeId,
-      oldParentId: mentorId,
-      newParentId: grandParentId ?? mentorId, // fallback (hiếm khi xảy ra)
-      breakawayAt: now,
-      expireAt,
-      status: 'ACTIVE',
-    },
-    update: {
-      oldParentId: mentorId,
-      newParentId: grandParentId ?? mentorId,
-      breakawayAt: now,
-      expireAt,
-      status: 'ACTIVE',
-    },
+  const newContractNoStr = grandParentId
+    ? `B2B-BRK-${traineeId}-${Date.now().toString(36).toUpperCase()}`
+    : null;
+
+  // Wrap all 5 writes atomically
+  const log = await prisma.$transaction(async (tx) => {
+    // 1. Terminate active B2B contract with old mentor
+    if (activeContract) {
+      await tx.b2BContract.update({
+        where: { id: activeContract.id },
+        data: {
+          status: 'terminated',
+          terminatedAt: now,
+          terminationReason: `Breakaway: ${trainee.name} đạt cấp ${trainee.rank}, ngang/vượt mentor ${mentor.rank}`,
+        },
+      });
+    }
+
+    // 2. Mentee register as HKD if chưa
+    await tx.businessHousehold.upsert({
+      where: { userId: traineeId },
+      create: {
+        userId: traineeId,
+        businessName: `HKD ${trainee.name}`,
+        status: 'active',
+      },
+      update: { status: 'active' },
+    });
+    await tx.user.update({
+      where: { id: traineeId },
+      data: { isBusinessHousehold: true },
+    });
+
+    // 3. Update parentId -> grandParent (C12.4: KHÔNG để lơ lửng null)
+    if (trainee.parentId === mentorId) {
+      await tx.user.update({
+        where: { id: traineeId },
+        data: { parentId: grandParentId ?? null },
+      });
+    }
+
+    // 4. Create new B2BContract với grandParent nếu có
+    if (grandParentId && newContractNoStr) {
+      await tx.b2BContract.create({
+        data: {
+          contractNo: newContractNoStr,
+          trainerId: grandParentId,
+          traineeId,
+          status: 'active',
+          expiredAt: new Date(now.getFullYear() + 1, now.getMonth(), now.getDate()),
+        },
+      });
+    }
+
+    // 5. Create/update BreakawayLog (12-month window cho phí giai đoạn 1)
+    return tx.breakawayLog.upsert({
+      where: { userId: traineeId },
+      create: {
+        userId: traineeId,
+        oldParentId: mentorId,
+        newParentId: grandParentId ?? mentorId,
+        breakawayAt: now,
+        expireAt,
+        status: 'ACTIVE',
+      },
+      update: {
+        oldParentId: mentorId,
+        newParentId: grandParentId ?? mentorId,
+        breakawayAt: now,
+        expireAt,
+        status: 'ACTIVE',
+      },
+    });
   });
 
   return {
@@ -166,7 +170,7 @@ async function handleBreakaway(traineeId, mentorId) {
     mentorId,
     grandParentId,
     contractTerminated: activeContract?.contractNo || null,
-    newContractNo,
+    newContractNo: newContractNoStr,
     breakawayLogId: log.id,
     expireAt,
     newRank: trainee.rank,
