@@ -61,6 +61,10 @@ services:
     volumes:
       - uploads:/app/uploads
       - logs:/app/logs
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
     depends_on:
       postgres:
         condition: service_healthy

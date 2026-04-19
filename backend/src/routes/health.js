@@ -1,8 +1,6 @@
 const router = require('express').Router();
-const { PrismaClient } = require('@prisma/client');
+const prisma = require('../lib/prisma');
 const { getRedisClient } = require('../services/cache');
-
-const prisma = new PrismaClient();
 
 router.get('/', async (req, res) => {
   const checks = {};

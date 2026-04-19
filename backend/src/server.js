@@ -48,6 +48,9 @@ const jwt = require('jsonwebtoken');
 const app = express();
 const PORT = config.port;
 
+// Trust reverse proxy (nginx/load balancer) so rate limiter uses real client IP
+app.set('trust proxy', 1);
+
 app.use(helmet());
 app.use(cors({
   origin: (origin, callback) => {
@@ -60,7 +63,9 @@ app.use(cors({
 }));
 app.use(express.json({ limit: '1mb' }));
 
-// Serve uploaded files
+// Block direct access to KYC directory — use authenticated API route instead
+app.use('/uploads/kyc', (req, res) => res.status(403).json({ error: 'Forbidden' }));
+// Serve non-sensitive uploaded files (product images, etc.) publicly
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // Global rate limiting
@@ -239,9 +244,18 @@ const kycUpload = multer({ storage: kycStorage, limits: { fileSize: 5 * 1024 * 1
 } });
 app.post('/api/uploads/kyc', authMw, kycUpload.single('file'), (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
-  const url = `/uploads/kyc/${req.file.filename}`;
+  const url = `/api/uploads/kyc/${req.file.filename}`;
   res.json({ url });
-})
+});
+
+// Authenticated KYC file serving — prevents public access via static route
+app.get('/api/uploads/kyc/:filename', authMw, (req, res) => {
+  const filename = path.basename(req.params.filename);
+  const filePath = path.join(__dirname, '../uploads/kyc', filename);
+  res.sendFile(filePath, (err) => {
+    if (err) res.status(404).json({ error: 'File not found' });
+  });
+});
 
 // Centralized error handler (must be after all routes)
 app.use(errorHandler);
