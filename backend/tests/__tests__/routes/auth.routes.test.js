@@ -175,6 +175,7 @@ describe('GET /api/auth/me', () => {
       rank: 'PP',
       name: 'Me User',
       phone: '0900000001',
+      isActive: true,
     });
 
     const res = await request(app)

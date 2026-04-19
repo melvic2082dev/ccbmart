@@ -1,5 +1,6 @@
 const { getCachedOrCompute, invalidateCache } = require('./cache');
 const prisma = require('../lib/prisma');
+const logger = require('./logger');
 
 // Default hardcoded rates (used as fallback when DB is unavailable)
 const COMMISSION_RATES = {
@@ -64,7 +65,7 @@ async function getCommissionRates() {
     try {
       const dbRates = await prisma.commissionConfig.findMany();
       if (!dbRates || dbRates.length === 0) {
-        console.warn('[Commission] No commission rates in DB — using hardcoded fallback rates');
+        logger.warn('[Commission] No commission rates in DB — using hardcoded fallback rates');
         return COMMISSION_RATES;
       }
       const rates = {};
@@ -79,7 +80,7 @@ async function getCommissionRates() {
       }
       return rates;
     } catch (err) {
-      console.warn('[Commission] Failed to load commission rates from DB — using hardcoded fallback rates:', err.message);
+      logger.warn('[Commission] Failed to load commission rates from DB — using hardcoded fallback rates', { error: err.message });
       return COMMISSION_RATES;
     }
   });
@@ -93,7 +94,7 @@ async function getAgencyCommissionRates() {
     try {
       const dbRates = await prisma.agencyCommissionConfig.findMany();
       if (!dbRates || dbRates.length === 0) {
-        console.warn('[Commission] No agency commission rates in DB — using hardcoded fallback rates');
+        logger.warn('[Commission] No agency commission rates in DB — using hardcoded fallback rates');
         return AGENCY_COMMISSION;
       }
       const rates = {};
@@ -105,7 +106,7 @@ async function getAgencyCommissionRates() {
       }
       return rates;
     } catch (err) {
-      console.warn('[Commission] Failed to load agency commission rates from DB — using hardcoded fallback rates:', err.message);
+      logger.warn('[Commission] Failed to load agency commission rates from DB — using hardcoded fallback rates', { error: err.message });
       return AGENCY_COMMISSION;
     }
   });
@@ -134,7 +135,7 @@ async function calculateCtvCommission(ctvId, month) {
   // Aggregate revenue per CTV in DB — avoids loading raw transaction rows
   const revenueRows = await prisma.$queryRaw`
     SELECT "ctvId", COALESCE(SUM("totalAmount"), 0)::float8 AS revenue
-    FROM "Transaction"
+    FROM "transactions"
     WHERE channel = 'ctv' AND status = 'CONFIRMED'
       AND "createdAt" >= ${startDate} AND "createdAt" < ${endDate}
       AND "ctvId" IS NOT NULL
@@ -236,7 +237,7 @@ async function calculateAllCtvCommissions(month) {
   const [revenueRows, allRates] = await Promise.all([
     prisma.$queryRaw`
       SELECT "ctvId", COALESCE(SUM("totalAmount"), 0)::float8 AS revenue
-      FROM "Transaction"
+      FROM "transactions"
       WHERE channel = 'ctv' AND status = 'CONFIRMED'
         AND "createdAt" >= ${startDate} AND "createdAt" < ${endDate}
         AND "ctvId" IS NOT NULL
@@ -387,7 +388,7 @@ function invalidateCommissionCache(ctvId = null) {
   invalidateCache('commission:rates:config');
   invalidateCache('commission:agency:config');
   invalidateCache('salary-fund:*');
-  console.log(`[Cache] Commission cache invalidated${ctvId ? ` for CTV ${ctvId}` : ' (all)'}`);
+  logger.info(`[Cache] Commission cache invalidated${ctvId ? ` for CTV ${ctvId}` : ' (all)'}`);
 }
 
 module.exports = {

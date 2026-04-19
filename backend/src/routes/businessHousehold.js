@@ -39,7 +39,7 @@ router.get('/', async (req, res) => {
 
     res.json(result);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("[route]", err); res.status(500).json({ error: "Internal server error" });
   }
 });
 
@@ -98,7 +98,7 @@ router.get('/:id/details', async (req, res) => {
       b2bContracts: trainingContracts,
     });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("[route]", err); res.status(500).json({ error: "Internal server error" });
   }
 });
 
@@ -121,7 +121,7 @@ router.post('/:id/renew', validate(schemas.businessHouseholdRenew), async (req, 
     const updated = await prisma.businessHousehold.update({ where: { id }, data });
     res.json({ success: true, hkd: updated });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("[route]", err); res.status(500).json({ error: "Internal server error" });
   }
 });
 
@@ -139,7 +139,7 @@ router.post('/:id/update-bank', validate(schemas.businessHouseholdUpdateBank), a
     });
     res.json({ success: true, hkd: updated });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("[route]", err); res.status(500).json({ error: "Internal server error" });
   }
 });
 

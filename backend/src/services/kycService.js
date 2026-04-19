@@ -32,13 +32,14 @@ async function submitKyc(userId, { idNumber, idFrontImage, idBackImage, deviceId
     throw new Error(`Thiet bi da duoc dang ky boi user khac (userId=${devDup.id})`);
   }
 
-  // 3) IP duy nhất — IP đã gắn cho user khác thì từ chối
-  const ipDup = await prisma.user.findFirst({
+  // 3) IP check — warn but allow (shared IPs are common in offices/households).
+  // Only block if same IP was used by >3 different users (likely fraud).
+  const ipDups = await prisma.user.findMany({
     where: { kycIpAddress: ipAddress, NOT: { id: userId } },
     select: { id: true },
   });
-  if (ipDup) {
-    throw new Error(`IP da duoc su dung boi user khac (userId=${ipDup.id})`);
+  if (ipDups.length >= 3) {
+    throw new Error(`IP ${ipAddress} da duoc su dung boi nhieu user khac — co the la gian lan`);
   }
 
   return prisma.user.update({

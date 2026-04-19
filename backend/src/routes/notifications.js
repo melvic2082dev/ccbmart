@@ -17,7 +17,7 @@ router.get('/', async (req, res) => {
     });
     res.json(result);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("[route]", err); res.status(500).json({ error: "Internal server error" });
   }
 });
 
@@ -27,7 +27,7 @@ router.post('/:id/read', async (req, res) => {
     await markAsRead(parseInt(req.params.id), req.user.id);
     res.json({ success: true });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("[route]", err); res.status(500).json({ error: "Internal server error" });
   }
 });
 
@@ -37,7 +37,7 @@ router.post('/read-all', async (req, res) => {
     await markAllAsRead(req.user.id);
     res.json({ success: true });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("[route]", err); res.status(500).json({ error: "Internal server error" });
   }
 });
 

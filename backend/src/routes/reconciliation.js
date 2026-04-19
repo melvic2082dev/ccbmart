@@ -43,7 +43,7 @@ router.get('/pending', validate(schemas.reconciliationQuery, 'query'), async (re
       summary,
     });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("[route]", err); res.status(500).json({ error: "Internal server error" });
   }
 });
 
@@ -76,7 +76,7 @@ router.get('/stats', async (req, res) => {
     const stats = await getReconciliationStats();
     res.json(stats);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("[route]", err); res.status(500).json({ error: "Internal server error" });
   }
 });
 
@@ -96,7 +96,7 @@ router.get('/cash-deposits/pending', async (req, res) => {
       transactionIds: JSON.parse(d.transactionIds),
     })));
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("[route]", err); res.status(500).json({ error: "Internal server error" });
   }
 });
 
@@ -168,7 +168,7 @@ router.get('/all', validate(schemas.reconciliationQuery, 'query'), async (req, r
 
     res.json({ transactions, total, page: parseInt(page), totalPages: Math.ceil(total / parseInt(limit)) });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("[route]", err); res.status(500).json({ error: "Internal server error" });
   }
 });
 

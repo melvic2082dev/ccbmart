@@ -8,17 +8,18 @@ datasource db {
 }
 
 model User {
-  id            Int      @id @default(autoincrement())
-  email         String   @unique
-  passwordHash  String   @map("password_hash")
-  role          String   // ctv, agency, admin
-  name          String
-  phone         String?
-  rank          String?  // CTV, PP, TP, GDV, GDKD
-  parentId      Int?     @map("parent_id")
-  agencyId      Int?     @map("agency_id")
-  isActive      Boolean  @default(true) @map("is_active")
-  createdAt     DateTime @default(now()) @map("created_at")
+  id           Int      @id @default(autoincrement())
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  role         String // ctv, agency, admin
+  name         String
+  phone        String?
+  rank         String? // CTV, PP, TP, GDV, GDKD
+  parentId     Int?     @map("parent_id")
+  agencyId     Int?     @map("agency_id")
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
 
   isBusinessHousehold Boolean @default(false) @map("is_business_household")
 
@@ -36,47 +37,48 @@ model User {
   kycDeviceId     String?   @map("kyc_device_id")
   kycIpAddress    String?   @map("kyc_ip_address")
 
-  parent        User?    @relation("UserHierarchy", fields: [parentId], references: [id])
-  children      User[]   @relation("UserHierarchy")
-  agency        Agency?  @relation("AgencyUser", fields: [agencyId], references: [id])
+  parent   User?   @relation("UserHierarchy", fields: [parentId], references: [id])
+  children User[]  @relation("UserHierarchy")
+  agency   Agency? @relation("AgencyUser", fields: [agencyId], references: [id])
 
-  managedCtvs   CtvHierarchy[] @relation("Manager")
-  asCtvEntry    CtvHierarchy[] @relation("Ctv")
-  transactions  Transaction[]  @relation("CtvTransactions")
-  customers     Customer[]     @relation("CtvCustomers")
-  kpiLogs       KpiLog[]
-  rankHistory   RankHistory[]
-  ownedAgency   Agency?        @relation("AgencyOwner")
-  notifications Notification[]
-  cashDeposits        CashDeposit[] @relation("CtvDeposits")
-  confirmedDeposits   CashDeposit[] @relation("AdminConfirmedDeposits")
-  memberWallet        MemberWallet? @relation("MemberWallet")
-  pushSubscriptions   PushSubscription[]
-  importLogs          ImportLog[]
+  managedCtvs            CtvHierarchy[]         @relation("Manager")
+  asCtvEntry             CtvHierarchy[]         @relation("Ctv")
+  transactions           Transaction[]          @relation("CtvTransactions")
+  customers              Customer[]             @relation("CtvCustomers")
+  kpiLogs                KpiLog[]
+  rankHistory            RankHistory[]
+  ownedAgency            Agency?                @relation("AgencyOwner")
+  notifications          Notification[]
+  cashDeposits           CashDeposit[]          @relation("CtvDeposits")
+  confirmedDeposits      CashDeposit[]          @relation("AdminConfirmedDeposits")
+  memberWallet           MemberWallet?          @relation("MemberWallet")
+  pushSubscriptions      PushSubscription[]
+  importLogs             ImportLog[]
   promotionEligibilities PromotionEligibility[] @relation("CtvPromotions")
-  teamBonuses         TeamBonus[]    @relation("CtvTeamBonuses")
-  loyaltyPoints       LoyaltyPoint[] @relation("UserLoyaltyPoints")
-  professionalTitle   ProfessionalTitle?
+  teamBonuses            TeamBonus[]            @relation("CtvTeamBonuses")
+  loyaltyPoints          LoyaltyPoint[]         @relation("UserLoyaltyPoints")
+  professionalTitle      ProfessionalTitle?
 
   // V13 restored relations
-  businessHousehold   BusinessHousehold?
-  trainerContracts    B2BContract[]        @relation("Trainer")
-  traineeContracts    B2BContract[]        @relation("Trainee")
-  trainerLogs         TrainingLog[]        @relation("TrainerLogs")
-  traineeLogs         TrainingLog[]        @relation("TraineeLogs")
-  invoicesFrom        Invoice[]            @relation("InvoicesFrom")
-  invoicesTo          Invoice[]            @relation("InvoicesTo")
-  transfersFrom       AutoTransferLog[]    @relation("TransfersFrom")
-  transfersTo         AutoTransferLog[]    @relation("TransfersTo")
-  taxRecords          TaxRecord[]
-  mgmtFeesFrom        ManagementFee[]      @relation("MgmtFeeFrom")
-  mgmtFeesTo          ManagementFee[]      @relation("MgmtFeeTo")
-  breakawayLog        BreakawayLog?        @relation("BreakawayUser")
-  breakawayOldParent  BreakawayLog[]       @relation("BreakawayOldParent")
-  breakawayNewParent  BreakawayLog[]       @relation("BreakawayNewParent")
-  breakawayFeesFrom   BreakawayFee[]       @relation("BreakFeeFrom")
-  breakawayFeesTo     BreakawayFee[]       @relation("BreakFeeTo")
-  auditLogs           AuditLog[]           @relation("AuditLogs")
+  businessHousehold  BusinessHousehold?
+  trainerContracts   B2BContract[]       @relation("Trainer")
+  traineeContracts   B2BContract[]       @relation("Trainee")
+  trainerLogs        TrainingLog[]       @relation("TrainerLogs")
+  traineeLogs        TrainingLog[]       @relation("TraineeLogs")
+  invoicesFrom       Invoice[]           @relation("InvoicesFrom")
+  invoicesTo         Invoice[]           @relation("InvoicesTo")
+  transfersFrom      AutoTransferLog[]   @relation("TransfersFrom")
+  transfersTo        AutoTransferLog[]   @relation("TransfersTo")
+  taxRecords         TaxRecord[]
+  mgmtFeesFrom       ManagementFee[]     @relation("MgmtFeeFrom")
+  mgmtFeesTo         ManagementFee[]     @relation("MgmtFeeTo")
+  breakawayLog       BreakawayLog?       @relation("BreakawayUser")
+  breakawayOldParent BreakawayLog[]      @relation("BreakawayOldParent")
+  breakawayNewParent BreakawayLog[]      @relation("BreakawayNewParent")
+  breakawayFeesFrom  BreakawayFee[]      @relation("BreakFeeFrom")
+  breakawayFeesTo    BreakawayFee[]      @relation("BreakFeeTo")
+  auditLogs          AuditLog[]          @relation("AuditLogs")
+  adminManualActions AdminManualAction[] @relation("AdminActions")
 
   @@index([parentId])
   @@index([rank])
@@ -89,40 +91,43 @@ model CtvHierarchy {
   id          Int      @id @default(autoincrement())
   ctvId       Int      @map("ctv_id")
   managerId   Int      @map("manager_id")
-  level       String   // DIRECT, INDIRECT2, INDIRECT3
+  level       String // DIRECT, INDIRECT2, INDIRECT3
   appointedAt DateTime @default(now()) @map("appointed_at")
 
-  ctv         User     @relation("Ctv", fields: [ctvId], references: [id])
-  manager     User     @relation("Manager", fields: [managerId], references: [id])
+  ctv     User @relation("Ctv", fields: [ctvId], references: [id])
+  manager User @relation("Manager", fields: [managerId], references: [id])
 
+  @@index([ctvId])
+  @@index([managerId])
   @@map("ctv_hierarchy")
 }
 
 model Agency {
-  id              Int      @id @default(autoincrement())
-  userId          Int      @unique @map("user_id")
-  name            String
-  depositAmount   Decimal  @db.Decimal(15, 0) @map("deposit_amount")
-  depositTier     String   @map("deposit_tier")
-  address         String?
+  id            Int      @id @default(autoincrement())
+  userId        Int      @unique @map("user_id")
+  name          String
+  depositAmount Decimal  @map("deposit_amount") @db.Decimal(15, 0)
+  depositTier   String   @map("deposit_tier")
+  address       String?
+  createdAt     DateTime @default(now()) @map("created_at")
 
-  user            User     @relation("AgencyOwner", fields: [userId], references: [id])
-  users           User[]   @relation("AgencyUser")
-  transactions    Transaction[] @relation("AgencyTransactions")
-  customers       Customer[]    @relation("AgencyCustomers")
+  user              User               @relation("AgencyOwner", fields: [userId], references: [id])
+  users             User[]             @relation("AgencyUser")
+  transactions      Transaction[]      @relation("AgencyTransactions")
+  customers         Customer[]         @relation("AgencyCustomers")
   inventoryWarnings InventoryWarning[]
 
   @@map("agencies")
 }
 
 model CommissionConfig {
-  id            Int     @id @default(autoincrement())
-  tier          String  @unique
-  selfSalePct   Decimal @db.Decimal(5, 4) @map("self_sale_pct")
-  directPct     Decimal @db.Decimal(5, 4) @map("direct_pct")
-  indirect2Pct  Decimal @db.Decimal(5, 4) @map("indirect2_pct")
-  indirect3Pct  Decimal @db.Decimal(5, 4) @map("indirect3_pct")
-  fixedSalary   Decimal @db.Decimal(15, 0) @map("fixed_salary")
+  id           Int     @id @default(autoincrement())
+  tier         String  @unique
+  selfSalePct  Decimal @map("self_sale_pct") @db.Decimal(5, 4)
+  directPct    Decimal @map("direct_pct") @db.Decimal(5, 4)
+  indirect2Pct Decimal @map("indirect2_pct") @db.Decimal(5, 4)
+  indirect3Pct Decimal @map("indirect3_pct") @db.Decimal(5, 4)
+  fixedSalary  Decimal @map("fixed_salary") @db.Decimal(15, 0)
 
   @@map("commission_config")
 }
@@ -130,8 +135,8 @@ model CommissionConfig {
 model AgencyCommissionConfig {
   id            Int     @id @default(autoincrement())
   group         String  @unique
-  commissionPct Decimal @db.Decimal(5, 4) @map("commission_pct")
-  bonusPct      Decimal @db.Decimal(5, 4) @map("bonus_pct")
+  commissionPct Decimal @map("commission_pct") @db.Decimal(5, 4)
+  bonusPct      Decimal @map("bonus_pct") @db.Decimal(5, 4)
 
   @@map("agency_commission_config")
 }
@@ -141,42 +146,42 @@ model Product {
   name     String
   category String
   price    Decimal @db.Decimal(15, 0)
-  cogsPct  Decimal @db.Decimal(5, 4) @map("cogs_pct")
+  cogsPct  Decimal @map("cogs_pct") @db.Decimal(5, 4)
   unit     String
 
-  transactionItems TransactionItem[]
+  transactionItems  TransactionItem[]
   inventoryWarnings InventoryWarning[]
 
   @@map("products")
 }
 
 model Transaction {
-  id              Int      @id @default(autoincrement())
-  kiotvietOrderId String?  @map("kiotviet_order_id")
-  customerId      Int?     @map("customer_id")
-  ctvId           Int?     @map("ctv_id")
-  agencyId        Int?     @map("agency_id")
-  channel         String   // ctv, agency, showroom
-  totalAmount     Decimal  @db.Decimal(15, 0) @map("total_amount")
-  cogsAmount      Decimal  @db.Decimal(15, 0) @map("cogs_amount")
-  status          String   @default("CONFIRMED") // PENDING, CONFIRMED, REJECTED
-  paymentMethod   String?  @map("payment_method") // bank_transfer, cash
-  bankCode        String?  @map("bank_code") // last 4 digits
-  qrCodeData      String?  @map("qr_code_data")
-  bankReference   String?  @map("bank_reference")
+  id              Int       @id @default(autoincrement())
+  kiotvietOrderId String?   @map("kiotviet_order_id")
+  customerId      Int?      @map("customer_id")
+  ctvId           Int?      @map("ctv_id")
+  agencyId        Int?      @map("agency_id")
+  channel         String // ctv, agency, showroom
+  totalAmount     Decimal   @map("total_amount") @db.Decimal(15, 0)
+  cogsAmount      Decimal   @map("cogs_amount") @db.Decimal(15, 0)
+  status          String    @default("CONFIRMED") // PENDING, CONFIRMED, REJECTED
+  paymentMethod   String?   @map("payment_method") // bank_transfer, cash
+  bankCode        String?   @map("bank_code") // last 4 digits
+  qrCodeData      String?   @map("qr_code_data")
+  bankReference   String?   @map("bank_reference")
   ctvSubmittedAt  DateTime? @map("ctv_submitted_at")
-  confirmedBy     Int?     @map("confirmed_by")
+  confirmedBy     Int?      @map("confirmed_by")
   confirmedAt     DateTime? @map("confirmed_at")
-  rejectedReason  String?  @map("rejected_reason")
-  cashDepositId   Int?     @map("cash_deposit_id")
-  createdAt       DateTime @default(now()) @map("created_at")
+  rejectedReason  String?   @map("rejected_reason")
+  cashDepositId   Int?      @map("cash_deposit_id")
+  createdAt       DateTime  @default(now()) @map("created_at")
 
-  customer        Customer?    @relation(fields: [customerId], references: [id])
-  ctv             User?        @relation("CtvTransactions", fields: [ctvId], references: [id])
-  agency          Agency?      @relation("AgencyTransactions", fields: [agencyId], references: [id])
-  items           TransactionItem[]
-  paymentProof    PaymentProof?
-  cashDeposit     CashDeposit? @relation(fields: [cashDepositId], references: [id])
+  customer     Customer?         @relation(fields: [customerId], references: [id])
+  ctv          User?             @relation("CtvTransactions", fields: [ctvId], references: [id])
+  agency       Agency?           @relation("AgencyTransactions", fields: [agencyId], references: [id])
+  items        TransactionItem[]
+  paymentProof PaymentProof?
+  cashDeposit  CashDeposit?      @relation(fields: [cashDepositId], references: [id])
 
   @@index([ctvId])
   @@index([agencyId])
@@ -195,11 +200,11 @@ model TransactionItem {
   transactionId Int     @map("transaction_id")
   productId     Int     @map("product_id")
   quantity      Int
-  unitPrice     Decimal @db.Decimal(15, 0) @map("unit_price")
-  totalPrice    Decimal @db.Decimal(15, 0) @map("total_price")
+  unitPrice     Decimal @map("unit_price") @db.Decimal(15, 0)
+  totalPrice    Decimal @map("total_price") @db.Decimal(15, 0)
 
-  transaction   Transaction @relation(fields: [transactionId], references: [id])
-  product       Product     @relation(fields: [productId], references: [id])
+  transaction Transaction @relation(fields: [transactionId], references: [id])
+  product     Product     @relation(fields: [productId], references: [id])
 
   @@index([transactionId])
   @@index([productId])
@@ -207,18 +212,19 @@ model TransactionItem {
 }
 
 model Customer {
-  id            Int      @id @default(autoincrement())
+  id            Int       @id @default(autoincrement())
   name          String
-  phone         String?  @unique
-  ctvId         Int?     @map("ctv_id")
-  agencyId      Int?     @map("agency_id")
+  phone         String?   @unique
+  ctvId         Int?      @map("ctv_id")
+  agencyId      Int?      @map("agency_id")
   firstPurchase DateTime? @map("first_purchase")
-  totalSpent    Decimal  @db.Decimal(15, 0) @default(0) @map("total_spent")
+  totalSpent    Decimal   @default(0) @map("total_spent") @db.Decimal(15, 0)
+  createdAt     DateTime  @default(now()) @map("created_at")
 
-  ctv           User?    @relation("CtvCustomers", fields: [ctvId], references: [id])
-  agency        Agency?  @relation("AgencyCustomers", fields: [agencyId], references: [id])
-  transactions  Transaction[]
-  memberWallet  MemberWallet?
+  ctv          User?         @relation("CtvCustomers", fields: [ctvId], references: [id])
+  agency       Agency?       @relation("AgencyCustomers", fields: [agencyId], references: [id])
+  transactions Transaction[]
+  memberWallet MemberWallet?
 
   @@map("customers")
 }
@@ -232,7 +238,7 @@ model KpiLog {
   rankBefore    String @map("rank_before")
   rankAfter     String @map("rank_after")
 
-  ctv           User   @relation(fields: [ctvId], references: [id])
+  ctv User @relation(fields: [ctvId], references: [id])
 
   @@unique([ctvId, month])
   @@index([month])
@@ -240,15 +246,16 @@ model KpiLog {
 }
 
 model RankHistory {
-  id        Int      @id @default(autoincrement())
-  ctvId     Int      @map("ctv_id")
-  oldRank   String   @map("old_rank")
-  newRank   String   @map("new_rank")
-  reason    String
-  changedAt DateTime @default(now()) @map("changed_at")
-  changedBy String   @map("changed_by")
+  id          Int      @id @default(autoincrement())
+  ctvId       Int      @map("ctv_id")
+  oldRank     String   @map("old_rank")
+  newRank     String   @map("new_rank")
+  reason      String
+  changedAt   DateTime @default(now()) @map("changed_at")
+  changedBy   String   @map("changed_by")
+  changedById Int?     @map("changed_by_id")
 
-  ctv       User     @relation(fields: [ctvId], references: [id])
+  ctv User @relation(fields: [ctvId], references: [id])
 
   @@map("rank_history")
 }
@@ -262,8 +269,8 @@ model InventoryWarning {
   warningType String   @map("warning_type")
   createdAt   DateTime @default(now()) @map("created_at")
 
-  product     Product  @relation(fields: [productId], references: [id])
-  agency      Agency?  @relation(fields: [agencyId], references: [id])
+  product Product @relation(fields: [productId], references: [id])
+  agency  Agency? @relation(fields: [agencyId], references: [id])
 
   @@map("inventory_warnings")
 }
@@ -288,7 +295,7 @@ model Notification {
   isRead    Boolean  @default(false) @map("is_read")
   createdAt DateTime @default(now()) @map("created_at")
 
-  user      User     @relation(fields: [userId], references: [id])
+  user User @relation(fields: [userId], references: [id])
 
   @@index([userId])
   @@index([userId, isRead])
@@ -304,7 +311,7 @@ model PaymentProof {
   uploadedAt    DateTime @default(now()) @map("uploaded_at")
   notes         String?
 
-  transaction   Transaction @relation(fields: [transactionId], references: [id])
+  transaction Transaction @relation(fields: [transactionId], references: [id])
 
   @@map("payment_proofs")
 }
@@ -313,16 +320,16 @@ model CashDeposit {
   id             Int       @id @default(autoincrement())
   ctvId          Int       @map("ctv_id")
   amount         Decimal   @db.Decimal(15, 0)
-  transactionIds String    @db.Text @map("transaction_ids") // JSON array
+  transactionIds String    @map("transaction_ids") @db.Text // JSON array
   depositedAt    DateTime  @default(now()) @map("deposited_at")
   confirmedBy    Int?      @map("confirmed_by")
   confirmedAt    DateTime? @map("confirmed_at")
   status         String    @default("PENDING") // PENDING, CONFIRMED, REJECTED
   notes          String?
 
-  ctv            User      @relation("CtvDeposits", fields: [ctvId], references: [id])
-  confirmAdmin   User?     @relation("AdminConfirmedDeposits", fields: [confirmedBy], references: [id])
-  transactions   Transaction[]
+  ctv          User          @relation("CtvDeposits", fields: [ctvId], references: [id])
+  confirmAdmin User?         @relation("AdminConfirmedDeposits", fields: [confirmedBy], references: [id])
+  transactions Transaction[]
 
   @@index([ctvId])
   @@index([status])
@@ -330,11 +337,11 @@ model CashDeposit {
 }
 
 model KpiConfig {
-  id              Int    @id @default(autoincrement())
-  rank            String @unique
-  minSelfCombo    Int    @map("min_self_combo")
-  minPortfolio    Int    @map("min_portfolio")
-  fallbackRank    String @map("fallback_rank")
+  id           Int    @id @default(autoincrement())
+  rank         String @unique
+  minSelfCombo Int    @map("min_self_combo")
+  minPortfolio Int    @map("min_portfolio")
+  fallbackRank String @map("fallback_rank")
 
   @@map("kpi_config")
 }
@@ -343,7 +350,7 @@ model CogsConfig {
   id          Int     @id @default(autoincrement())
   phase       String  @unique
   name        String
-  cogsPct     Decimal @db.Decimal(5, 4) @map("cogs_pct")
+  cogsPct     Decimal @map("cogs_pct") @db.Decimal(5, 4)
   description String?
 
   @@map("cogs_config")
@@ -352,14 +359,14 @@ model CogsConfig {
 model MembershipTier {
   id                 Int      @id @default(autoincrement())
   name               String   @unique
-  minDeposit         Decimal  @db.Decimal(15, 0) @map("min_deposit")
-  discountPct        Decimal  @db.Decimal(5, 4) @map("discount_pct")
-  referralPct        Decimal  @db.Decimal(5, 4) @map("referral_pct")
-  monthlyReferralCap Decimal  @db.Decimal(15, 0) @map("monthly_referral_cap")
+  minDeposit         Decimal  @map("min_deposit") @db.Decimal(15, 0)
+  discountPct        Decimal  @map("discount_pct") @db.Decimal(5, 4)
+  referralPct        Decimal  @map("referral_pct") @db.Decimal(5, 4)
+  monthlyReferralCap Decimal  @map("monthly_referral_cap") @db.Decimal(15, 0)
   color              String   @default("gray")
   createdAt          DateTime @default(now()) @map("created_at")
 
-  wallets            MemberWallet[]
+  wallets MemberWallet[]
 
   @@map("membership_tiers")
 }
@@ -369,22 +376,22 @@ model MemberWallet {
   userId                Int      @unique @map("user_id")
   customerId            Int?     @unique @map("customer_id")
   tierId                Int      @map("tier_id")
-  balance               Decimal  @db.Decimal(15, 0) @default(0)
-  totalDeposit          Decimal  @db.Decimal(15, 0) @default(0) @map("total_deposit")
+  balance               Decimal  @default(0) @db.Decimal(15, 0)
+  totalDeposit          Decimal  @default(0) @map("total_deposit") @db.Decimal(15, 0)
   referralCode          String   @unique @map("referral_code")
   referredById          Int?     @map("referred_by_id")
-  referralEarned        Decimal  @db.Decimal(15, 0) @default(0) @map("referral_earned")
-  monthlyReferralEarned Decimal  @db.Decimal(15, 0) @default(0) @map("monthly_referral_earned")
+  referralEarned        Decimal  @default(0) @map("referral_earned") @db.Decimal(15, 0)
+  monthlyReferralEarned Decimal  @default(0) @map("monthly_referral_earned") @db.Decimal(15, 0)
   createdAt             DateTime @default(now()) @map("created_at")
 
-  user                  User              @relation("MemberWallet", fields: [userId], references: [id])
-  customer              Customer?         @relation(fields: [customerId], references: [id])
-  tier                  MembershipTier    @relation(fields: [tierId], references: [id])
-  referredBy            MemberWallet?     @relation("Referrals", fields: [referredById], references: [id])
-  referrals             MemberWallet[]    @relation("Referrals")
-  deposits              DepositHistory[]
-  commissionsEarned     ReferralCommission[] @relation("CommissionEarner")
-  commissionsGenerated  ReferralCommission[] @relation("CommissionGenerator")
+  user                 User                 @relation("MemberWallet", fields: [userId], references: [id])
+  customer             Customer?            @relation(fields: [customerId], references: [id])
+  tier                 MembershipTier       @relation(fields: [tierId], references: [id])
+  referredBy           MemberWallet?        @relation("Referrals", fields: [referredById], references: [id])
+  referrals            MemberWallet[]       @relation("Referrals")
+  deposits             DepositHistory[]
+  commissionsEarned    ReferralCommission[] @relation("CommissionEarner")
+  commissionsGenerated ReferralCommission[] @relation("CommissionGenerator")
 
   @@index([referralCode])
   @@index([tierId])
@@ -392,19 +399,19 @@ model MemberWallet {
 }
 
 model DepositHistory {
-  id          Int       @id @default(autoincrement())
-  walletId    Int       @map("wallet_id")
-  amount      Decimal   @db.Decimal(15, 0)
-  method      String    // bank_transfer, cash, momo, zalopay
-  status      String    @default("PENDING")
-  provider    String?   // momo, zalopay
-  providerTxId String?  @map("provider_tx_id")
-  confirmedBy Int?      @map("confirmed_by")
-  confirmedAt DateTime? @map("confirmed_at")
-  notes       String?
-  createdAt   DateTime  @default(now()) @map("created_at")
+  id           Int       @id @default(autoincrement())
+  walletId     Int       @map("wallet_id")
+  amount       Decimal   @db.Decimal(15, 0)
+  method       String // bank_transfer, cash, momo, zalopay
+  status       String    @default("PENDING")
+  provider     String? // momo, zalopay
+  providerTxId String?   @map("provider_tx_id")
+  confirmedBy  Int?      @map("confirmed_by")
+  confirmedAt  DateTime? @map("confirmed_at")
+  notes        String?
+  createdAt    DateTime  @default(now()) @map("created_at")
 
-  wallet      MemberWallet @relation(fields: [walletId], references: [id])
+  wallet MemberWallet @relation(fields: [walletId], references: [id])
 
   @@index([walletId])
   @@index([status])
@@ -412,16 +419,16 @@ model DepositHistory {
 }
 
 model ReferralCommission {
-  id              Int      @id @default(autoincrement())
-  earnerWalletId  Int      @map("earner_wallet_id")
-  sourceWalletId  Int      @map("source_wallet_id")
-  amount          Decimal  @db.Decimal(15, 0)
-  ratePct         Decimal  @db.Decimal(5, 4) @map("rate_pct")
-  month           String
-  createdAt       DateTime @default(now()) @map("created_at")
+  id             Int      @id @default(autoincrement())
+  earnerWalletId Int      @map("earner_wallet_id")
+  sourceWalletId Int      @map("source_wallet_id")
+  amount         Decimal  @db.Decimal(15, 0)
+  ratePct        Decimal  @map("rate_pct") @db.Decimal(5, 4)
+  month          String
+  createdAt      DateTime @default(now()) @map("created_at")
 
-  earnerWallet    MemberWallet @relation("CommissionEarner", fields: [earnerWalletId], references: [id])
-  sourceWallet    MemberWallet @relation("CommissionGenerator", fields: [sourceWalletId], references: [id])
+  earnerWallet MemberWallet @relation("CommissionEarner", fields: [earnerWalletId], references: [id])
+  sourceWallet MemberWallet @relation("CommissionGenerator", fields: [sourceWalletId], references: [id])
 
   @@index([earnerWalletId])
   @@index([month])
@@ -437,7 +444,7 @@ model PushSubscription {
   userAgent String?  @map("user_agent")
   createdAt DateTime @default(now()) @map("created_at")
 
-  user      User     @relation(fields: [userId], references: [id])
+  user User @relation(fields: [userId], references: [id])
 
   @@index([userId])
   @@map("push_subscriptions")
@@ -445,7 +452,7 @@ model PushSubscription {
 
 model ImportLog {
   id          Int      @id @default(autoincrement())
-  type        String   // ctv, product, agency, member
+  type        String // ctv, product, agency, member
   fileName    String   @map("file_name")
   totalRows   Int      @map("total_rows")
   successRows Int      @map("success_rows")
@@ -454,7 +461,7 @@ model ImportLog {
   importedAt  DateTime @default(now()) @map("imported_at")
   details     String?  @db.Text // JSON
 
-  importer    User     @relation(fields: [importedBy], references: [id])
+  importer User @relation(fields: [importedBy], references: [id])
 
   @@map("import_logs")
 }
@@ -462,34 +469,34 @@ model ImportLog {
 // ===== V10 NEW MODELS =====
 
 model PromotionEligibility {
-  id              Int       @id @default(autoincrement())
-  ctvId           Int       @map("ctv_id")
-  targetRank      String    @map("target_rank")
-  qualifiedMonth  String    @map("qualified_month")
-  effectiveDate   DateTime  @map("effective_date")
-  status          String    @default("PENDING") // PENDING, APPROVED, ACTIVATED
-  approvedBy      Int?      @map("approved_by")
-  approvedAt      DateTime? @map("approved_at")
-  createdAt       DateTime  @default(now()) @map("created_at")
-  ctv             User      @relation("CtvPromotions", fields: [ctvId], references: [id])
+  id             Int       @id @default(autoincrement())
+  ctvId          Int       @map("ctv_id")
+  targetRank     String    @map("target_rank")
+  qualifiedMonth String    @map("qualified_month")
+  effectiveDate  DateTime  @map("effective_date")
+  status         String    @default("PENDING") // PENDING, APPROVED, ACTIVATED
+  approvedBy     Int?      @map("approved_by")
+  approvedAt     DateTime? @map("approved_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  ctv            User      @relation("CtvPromotions", fields: [ctvId], references: [id])
 
   @@map("promotion_eligibility")
 }
 
 model TeamBonus {
-  id                  Int       @id @default(autoincrement())
-  ctvId               Int       @map("ctv_id")
-  month               String
-  directMemberCount   Int       @map("direct_member_count")
-  teamRevenue         Decimal   @db.Decimal(15, 0) @map("team_revenue")
-  bonusRate           Decimal   @db.Decimal(5, 4) @map("bonus_rate")
-  bonusAmount         Decimal   @db.Decimal(15, 0) @map("bonus_amount")
-  cashAmount          Decimal   @db.Decimal(15, 0) @map("cash_amount")
-  pointAmount         Decimal   @db.Decimal(15, 0) @map("point_amount")
-  status              String    @default("PENDING")
-  paidAt              DateTime? @map("paid_at")
-  createdAt           DateTime  @default(now()) @map("created_at")
-  ctv                 User      @relation("CtvTeamBonuses", fields: [ctvId], references: [id])
+  id                Int       @id @default(autoincrement())
+  ctvId             Int       @map("ctv_id")
+  month             String
+  directMemberCount Int       @map("direct_member_count")
+  teamRevenue       Decimal   @map("team_revenue") @db.Decimal(15, 0)
+  bonusRate         Decimal   @map("bonus_rate") @db.Decimal(5, 4)
+  bonusAmount       Decimal   @map("bonus_amount") @db.Decimal(15, 0)
+  cashAmount        Decimal   @map("cash_amount") @db.Decimal(15, 0)
+  pointAmount       Decimal   @map("point_amount") @db.Decimal(15, 0)
+  status            String    @default("PENDING")
+  paidAt            DateTime? @map("paid_at")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  ctv               User      @relation("CtvTeamBonuses", fields: [ctvId], references: [id])
 
   @@map("team_bonuses")
 }
@@ -498,7 +505,7 @@ model LoyaltyPoint {
   id          Int       @id @default(autoincrement())
   userId      Int       @map("user_id")
   points      Int
-  source      String    // TEAM_BONUS, PERSONAL_PURCHASE, MILESTONE
+  source      String // TEAM_BONUS, PERSONAL_PURCHASE, MILESTONE
   referenceId Int?      @map("reference_id")
   expiresAt   DateTime  @map("expires_at")
   usedAt      DateTime? @map("used_at")
@@ -509,15 +516,15 @@ model LoyaltyPoint {
 }
 
 model ProfessionalTitle {
-  id          Int       @id @default(autoincrement())
-  userId      Int       @unique @map("user_id")
-  title       String    // EXPERT_LEADER, SENIOR_EXPERT, STRATEGIC_ADVISOR
-  directCount Int       @map("direct_count")
-  awardedAt   DateTime  @default(now()) @map("awarded_at")
-  renewedAt   DateTime  @map("renewed_at")
-  expiresAt   DateTime  @map("expires_at")
-  isActive    Boolean   @default(true) @map("is_active")
-  user        User      @relation(fields: [userId], references: [id])
+  id          Int      @id @default(autoincrement())
+  userId      Int      @unique @map("user_id")
+  title       String // EXPERT_LEADER, SENIOR_EXPERT, STRATEGIC_ADVISOR
+  directCount Int      @map("direct_count")
+  awardedAt   DateTime @default(now()) @map("awarded_at")
+  renewedAt   DateTime @map("renewed_at")
+  expiresAt   DateTime @map("expires_at")
+  isActive    Boolean  @default(true) @map("is_active")
+  user        User     @relation(fields: [userId], references: [id])
 
   @@map("professional_titles")
 }
@@ -533,7 +540,7 @@ model FeeConfig {
   tier        String   @unique
   minCombo    Int      @map("min_combo")
   maxCombo    Int?     @map("max_combo")
-  feeAmount   Decimal  @db.Decimal(15, 0) @map("fee_amount")
+  feeAmount   Decimal  @map("fee_amount") @db.Decimal(15, 0)
   description String?
   isActive    Boolean  @default(true) @map("is_active")
   updatedAt   DateTime @updatedAt @map("updated_at")
@@ -550,44 +557,44 @@ model BusinessHousehold {
   registeredAt    DateTime @default(now()) @map("registered_at")
   status          String   @default("active")
 
-  dealerContractNo   String?   @map("dealer_contract_no")
-  dealerSignedAt     DateTime? @map("dealer_signed_at")
-  dealerExpiredAt    DateTime? @map("dealer_expired_at")
-  dealerTermMonths   Int?      @default(12) @map("dealer_term_months")
-  dealerPdfUrl       String?   @map("dealer_pdf_url")
+  dealerContractNo String?   @map("dealer_contract_no")
+  dealerSignedAt   DateTime? @map("dealer_signed_at")
+  dealerExpiredAt  DateTime? @map("dealer_expired_at")
+  dealerTermMonths Int?      @default(12) @map("dealer_term_months")
+  dealerPdfUrl     String?   @map("dealer_pdf_url")
 
-  trainingContractNo   String?   @map("training_contract_no")
-  trainingSignedAt     DateTime? @map("training_signed_at")
-  trainingExpiredAt    DateTime? @map("training_expired_at")
-  trainingTermMonths   Int?      @default(12) @map("training_term_months")
-  trainingPdfUrl       String?   @map("training_pdf_url")
+  trainingContractNo String?   @map("training_contract_no")
+  trainingSignedAt   DateTime? @map("training_signed_at")
+  trainingExpiredAt  DateTime? @map("training_expired_at")
+  trainingTermMonths Int?      @default(12) @map("training_term_months")
+  trainingPdfUrl     String?   @map("training_pdf_url")
 
-  bankName           String?   @map("bank_name")
-  bankAccountNo      String?   @map("bank_account_no")
-  bankAccountHolder  String?   @map("bank_account_holder")
+  bankName          String? @map("bank_name")
+  bankAccountNo     String? @map("bank_account_no")
+  bankAccountHolder String? @map("bank_account_holder")
 
   trainingLineRegistered Boolean @default(false) @map("training_line_registered")
 
-  user            User     @relation(fields: [userId], references: [id])
+  user User @relation(fields: [userId], references: [id])
 
   @@map("business_households")
 }
 
 model B2BContract {
-  id                  Int       @id @default(autoincrement())
-  contractNo          String    @unique @map("contract_no")
-  trainerId           Int       @map("trainer_id")
-  traineeId           Int       @map("trainee_id")
-  signedAt            DateTime  @default(now()) @map("signed_at")
-  expiredAt           DateTime? @map("expired_at")
-  status              String    @default("active")
-  terminatedAt        DateTime? @map("terminated_at")
-  terminationReason   String?   @db.Text @map("termination_reason")
-  terminatedBy        Int?      @map("terminated_by")
+  id                Int       @id @default(autoincrement())
+  contractNo        String    @unique @map("contract_no")
+  trainerId         Int       @map("trainer_id")
+  traineeId         Int       @map("trainee_id")
+  signedAt          DateTime  @default(now()) @map("signed_at")
+  expiredAt         DateTime? @map("expired_at")
+  status            String    @default("active")
+  terminatedAt      DateTime? @map("terminated_at")
+  terminationReason String?   @map("termination_reason") @db.Text
+  terminatedBy      Int?      @map("terminated_by")
 
-  trainer             User      @relation("Trainer", fields: [trainerId], references: [id])
-  trainee             User      @relation("Trainee", fields: [traineeId], references: [id])
-  invoices            Invoice[]
+  trainer  User      @relation("Trainer", fields: [trainerId], references: [id])
+  trainee  User      @relation("Trainee", fields: [traineeId], references: [id])
+  invoices Invoice[]
 
   @@map("b2b_contracts")
 }
@@ -617,9 +624,11 @@ model TrainingLog {
   adminVerifiedBy Int?      @map("admin_verified_by")
   adminVerifiedAt DateTime? @map("admin_verified_at")
 
-  trainer         User      @relation("TrainerLogs", fields: [trainerId], references: [id])
-  trainee         User      @relation("TraineeLogs", fields: [traineeId], references: [id])
+  trainer User @relation("TrainerLogs", fields: [trainerId], references: [id])
+  trainee User @relation("TraineeLogs", fields: [traineeId], references: [id])
 
+  @@index([trainerId])
+  @@index([traineeId])
   @@map("training_logs")
 }
 
@@ -642,9 +651,9 @@ model Invoice {
   issuedBy       Int?      @map("issued_by")
   issuedAtManual DateTime? @map("issued_at_manual")
 
-  contract      B2BContract? @relation(fields: [contractId], references: [id])
-  fromUser      User         @relation("InvoicesFrom", fields: [fromUserId], references: [id])
-  toUser        User         @relation("InvoicesTo", fields: [toUserId], references: [id])
+  contract B2BContract? @relation(fields: [contractId], references: [id])
+  fromUser User         @relation("InvoicesFrom", fields: [fromUserId], references: [id])
+  toUser   User         @relation("InvoicesTo", fields: [toUserId], references: [id])
 
   @@index([fromUserId])
   @@index([toUserId])
@@ -660,7 +669,7 @@ model AutoTransferLog {
   transferDate DateTime @default(now()) @map("transfer_date")
   reference    Int?
   status       String   @default("PENDING")
-  errorMessage String?  @db.Text @map("error_message")
+  errorMessage String?  @map("error_message") @db.Text
 
   retryCount     Int       @default(0) @map("retry_count")
   maxRetry       Int       @default(3) @map("max_retry")
@@ -668,10 +677,10 @@ model AutoTransferLog {
   manualResolved Boolean   @default(false) @map("manual_resolved")
   resolvedBy     Int?      @map("resolved_by")
   resolvedAt     DateTime? @map("resolved_at")
-  adminNote      String?   @db.Text @map("admin_note")
+  adminNote      String?   @map("admin_note") @db.Text
 
-  fromUser     User     @relation("TransfersFrom", fields: [fromUserId], references: [id])
-  toUser       User     @relation("TransfersTo", fields: [toUserId], references: [id])
+  fromUser User @relation("TransfersFrom", fields: [fromUserId], references: [id])
+  toUser   User @relation("TransfersTo", fields: [toUserId], references: [id])
 
   @@index([fromUserId])
   @@index([status])
@@ -679,15 +688,15 @@ model AutoTransferLog {
 }
 
 model TaxRecord {
-  id             Int      @id @default(autoincrement())
-  userId         Int      @map("user_id")
-  month          String
-  taxableIncome  Decimal  @db.Decimal(15, 0) @map("taxable_income")
-  taxAmount      Decimal  @db.Decimal(15, 0) @map("tax_amount")
-  status         String   @default("PENDING")
-  createdAt      DateTime @default(now()) @map("created_at")
+  id            Int      @id @default(autoincrement())
+  userId        Int      @map("user_id")
+  month         String
+  taxableIncome Decimal  @map("taxable_income") @db.Decimal(15, 0)
+  taxAmount     Decimal  @map("tax_amount") @db.Decimal(15, 0)
+  status        String   @default("PENDING")
+  createdAt     DateTime @default(now()) @map("created_at")
 
-  user           User     @relation(fields: [userId], references: [id])
+  user User @relation(fields: [userId], references: [id])
 
   @@unique([userId, month])
   @@map("tax_records")
@@ -703,8 +712,8 @@ model ManagementFee {
   status     String   @default("PENDING")
   createdAt  DateTime @default(now()) @map("created_at")
 
-  fromUser   User     @relation("MgmtFeeFrom", fields: [fromUserId], references: [id])
-  toUser     User     @relation("MgmtFeeTo",   fields: [toUserId],   references: [id])
+  fromUser User @relation("MgmtFeeFrom", fields: [fromUserId], references: [id])
+  toUser   User @relation("MgmtFeeTo", fields: [toUserId], references: [id])
 
   @@index([toUserId, month])
   @@index([fromUserId, month])
@@ -712,17 +721,17 @@ model ManagementFee {
 }
 
 model BreakawayLog {
-  id           Int      @id @default(autoincrement())
-  userId       Int      @unique @map("user_id")
-  oldParentId  Int      @map("old_parent_id")
-  newParentId  Int      @map("new_parent_id")
-  breakawayAt  DateTime @default(now()) @map("breakaway_at")
-  expireAt     DateTime @map("expire_at")
-  status       String   @default("ACTIVE")
+  id          Int      @id @default(autoincrement())
+  userId      Int      @unique @map("user_id")
+  oldParentId Int      @map("old_parent_id")
+  newParentId Int      @map("new_parent_id")
+  breakawayAt DateTime @default(now()) @map("breakaway_at")
+  expireAt    DateTime @map("expire_at")
+  status      String   @default("ACTIVE")
 
-  user         User         @relation("BreakawayUser",      fields: [userId],       references: [id])
-  oldParent    User         @relation("BreakawayOldParent", fields: [oldParentId],  references: [id])
-  newParent    User         @relation("BreakawayNewParent", fields: [newParentId],  references: [id])
+  user          User           @relation("BreakawayUser", fields: [userId], references: [id])
+  oldParent     User           @relation("BreakawayOldParent", fields: [oldParentId], references: [id])
+  newParent     User           @relation("BreakawayNewParent", fields: [newParentId], references: [id])
   breakawayFees BreakawayFee[]
 
   @@index([status, expireAt])
@@ -733,22 +742,22 @@ model BreakawayLog {
 }
 
 model BreakawayFee {
-  id             Int      @id @default(autoincrement())
-  breakawayLogId Int      @map("breakaway_log_id")
-  fromUserId     Int      @map("from_user_id")
-  toUserId       Int      @map("to_user_id")
+  id             Int       @id @default(autoincrement())
+  breakawayLogId Int       @map("breakaway_log_id")
+  fromUserId     Int       @map("from_user_id")
+  toUserId       Int       @map("to_user_id")
   level          Int
-  amount         Decimal  @db.Decimal(15, 0)
+  amount         Decimal   @db.Decimal(15, 0)
   month          String
-  status         String   @default("PENDING")
+  status         String    @default("PENDING")
   paidAt         DateTime? @map("paid_at")
   paymentMethod  String?   @map("payment_method")
   reference      String?
-  createdAt      DateTime @default(now()) @map("created_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
 
-  breakawayLog   BreakawayLog @relation(fields: [breakawayLogId], references: [id])
-  fromUser       User         @relation("BreakFeeFrom", fields: [fromUserId], references: [id])
-  toUser         User         @relation("BreakFeeTo",   fields: [toUserId],   references: [id])
+  breakawayLog BreakawayLog @relation(fields: [breakawayLogId], references: [id])
+  fromUser     User         @relation("BreakFeeFrom", fields: [fromUserId], references: [id])
+  toUser       User         @relation("BreakFeeTo", fields: [toUserId], references: [id])
 
   @@index([toUserId, month])
   @@index([breakawayLogId, month])
@@ -756,20 +765,20 @@ model BreakawayFee {
 }
 
 model AuditLog {
-  id          Int      @id @default(autoincrement())
-  userId      Int?     @map("user_id")
-  action      String
-  targetType  String?  @map("target_type")
-  targetId    Int?     @map("target_id")
-  oldValue    String?  @db.Text @map("old_value")
-  newValue    String?  @db.Text @map("new_value")
-  ipAddress   String?  @map("ip_address")
-  userAgent   String?  @map("user_agent")
-  status      String   @default("SUCCESS")
-  metadata    String?  @db.Text
-  createdAt   DateTime @default(now())     @map("created_at")
+  id         Int      @id @default(autoincrement())
+  userId     Int?     @map("user_id")
+  action     String
+  targetType String?  @map("target_type")
+  targetId   Int?     @map("target_id")
+  oldValue   String?  @map("old_value") @db.Text
+  newValue   String?  @map("new_value") @db.Text
+  ipAddress  String?  @map("ip_address")
+  userAgent  String?  @map("user_agent")
+  status     String   @default("SUCCESS")
+  metadata   String?  @db.Text
+  createdAt  DateTime @default(now()) @map("created_at")
 
-  user        User?    @relation("AuditLogs", fields: [userId], references: [id])
+  user User? @relation("AuditLogs", fields: [userId], references: [id])
 
   @@index([userId])
   @@index([action])
@@ -779,15 +788,17 @@ model AuditLog {
 }
 
 model AdminManualAction {
-  id          Int      @id @default(autoincrement())
-  adminId     Int      @map("admin_id")
-  actionType  String   @map("action_type")
-  targetType  String   @map("target_type")
-  targetId    Int      @map("target_id")
-  oldStatus   String?  @map("old_status")
-  newStatus   String?  @map("new_status")
-  reason      String?
-  createdAt   DateTime @default(now()) @map("created_at")
+  id         Int      @id @default(autoincrement())
+  adminId    Int      @map("admin_id")
+  actionType String   @map("action_type")
+  targetType String   @map("target_type")
+  targetId   Int      @map("target_id")
+  oldStatus  String?  @map("old_status")
+  newStatus  String?  @map("new_status")
+  reason     String?
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  admin User @relation("AdminActions", fields: [adminId], references: [id])
 
   @@index([adminId])
   @@index([actionType])

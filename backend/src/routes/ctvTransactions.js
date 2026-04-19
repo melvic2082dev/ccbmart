@@ -78,7 +78,7 @@ router.get('/pending', async (req, res) => {
 
     res.json({ transactions, total, page: parseInt(page), totalPages: Math.ceil(total / parseInt(limit)) });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("[route]", err); res.status(500).json({ error: "Internal server error" });
   }
 });
 
@@ -103,7 +103,7 @@ router.get('/history', async (req, res) => {
 
     res.json({ transactions, total, page: parseInt(page), totalPages: Math.ceil(total / parseInt(limit)) });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("[route]", err); res.status(500).json({ error: "Internal server error" });
   }
 });
 
@@ -122,10 +122,10 @@ router.get('/pending-cash', async (req, res) => {
       orderBy: { createdAt: 'desc' },
     });
 
-    const totalAmount = transactions.reduce((s, t) => s + t.totalAmount, 0);
+    const totalAmount = transactions.reduce((s, t) => s + Number(t.totalAmount), 0);
     res.json({ transactions, totalAmount });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("[route]", err); res.status(500).json({ error: "Internal server error" });
   }
 });
 
@@ -148,7 +148,7 @@ router.get('/pending-count', async (req, res) => {
     });
     res.json({ count });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("[route]", err); res.status(500).json({ error: "Internal server error" });
   }
 });
 

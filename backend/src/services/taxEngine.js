@@ -51,30 +51,34 @@ async function processMonthlyTax(month) {
     where: { role: 'ctv', isActive: true },
   });
 
-  const created = [];
-  let totalTax = 0;
-
+  // Calculate taxes outside the transaction (read-only)
+  const taxData = [];
   for (const user of users) {
     const tax = await calculateTax(user.id, month);
-    if (tax.taxableIncome <= 0) continue;
-
-    const record = await prisma.taxRecord.upsert({
-      where: { userId_month: { userId: user.id, month } },
-      create: {
-        userId: user.id,
-        month,
-        taxableIncome: tax.taxableIncome,
-        taxAmount: tax.taxAmount,
-        status: 'PENDING',
-      },
-      update: {
-        taxableIncome: tax.taxableIncome,
-        taxAmount: tax.taxAmount,
-      },
-    });
-    created.push(record);
-    totalTax += tax.taxAmount;
+    if (tax.taxableIncome > 0) taxData.push({ user, tax });
   }
+
+  // Atomic write: upsert all tax records in a single transaction
+  const created = await prisma.$transaction(
+    taxData.map(({ user, tax }) =>
+      prisma.taxRecord.upsert({
+        where: { userId_month: { userId: user.id, month } },
+        create: {
+          userId: user.id,
+          month,
+          taxableIncome: tax.taxableIncome,
+          taxAmount: tax.taxAmount,
+          status: 'PENDING',
+        },
+        update: {
+          taxableIncome: tax.taxableIncome,
+          taxAmount: tax.taxAmount,
+        },
+      })
+    )
+  );
+
+  const totalTax = taxData.reduce((sum, { tax }) => sum + tax.taxAmount, 0);
 
   return {
     month,

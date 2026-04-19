@@ -40,7 +40,7 @@ router.get('/kyc/status', authorize('ctv'), async (req, res) => {
     const status = await getKycStatus(req.user.id);
     res.json(status);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("[route]", err); res.status(500).json({ error: "Internal server error" });
   }
 });
 
@@ -50,7 +50,7 @@ router.get('/admin/kyc/pending', authorize('admin'), async (req, res) => {
     const list = await listPendingKyc();
     res.json(list);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("[route]", err); res.status(500).json({ error: "Internal server error" });
   }
 });
 

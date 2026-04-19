@@ -174,7 +174,7 @@ router.get('/export/excel', async (req, res) => {
     res.end();
   } catch (err) {
     console.error('[Export] Excel error:', err);
-    res.status(500).json({ error: err.message });
+    console.error("[route]", err); res.status(500).json({ error: "Internal server error" });
   }
 });
 
@@ -264,7 +264,7 @@ router.get('/export/pdf', async (req, res) => {
     res.send(html);
   } catch (err) {
     console.error('[Export] PDF error:', err);
-    res.status(500).json({ error: err.message });
+    console.error("[route]", err); res.status(500).json({ error: "Internal server error" });
   }
 });
 
