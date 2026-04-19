@@ -68,6 +68,7 @@ async function getPersonalComboRevenue(userId, month) {
     where: {
       ctvId: userId,
       channel: 'ctv',
+      status: 'CONFIRMED',
       createdAt: { gte: start, lt: end },
     },
     select: { totalAmount: true },
@@ -135,6 +136,7 @@ async function calculateMonthlyManagementFees(month) {
 
   const created = [];
 
+  // TODO: N+1 known limitation — each CTV triggers separate revenue query; batch with raw SQL for large datasets
   for (const ctv of ctvs) {
     const revenue = await getPersonalComboRevenue(ctv.id, month);
     if (revenue <= 0) continue;

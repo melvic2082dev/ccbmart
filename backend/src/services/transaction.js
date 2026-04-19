@@ -151,14 +151,18 @@ async function confirmTransaction(transactionId, adminId, notes) {
   if (!tx) throw new Error('Giao dich khong ton tai');
   if (tx.status !== 'PENDING') throw new Error('Giao dich khong o trang thai PENDING');
 
-  const updated = await prisma.transaction.update({
-    where: { id: transactionId },
+  // Atomic: only updates if still PENDING, prevents double-confirm race condition
+  const result = await prisma.transaction.updateMany({
+    where: { id: transactionId, status: 'PENDING' },
     data: {
       status: 'CONFIRMED',
       confirmedBy: adminId,
       confirmedAt: new Date(),
     },
   });
+  if (result.count === 0) throw new Error('Giao dich da duoc xu ly boi admin khac');
+
+  const updated = { ...tx, status: 'CONFIRMED', confirmedBy: adminId, confirmedAt: new Date() };
 
   // Update customer totalSpent
   if (tx.customerId) {
@@ -245,7 +249,7 @@ async function createCashDeposit(ctvId, transactionIds, notes) {
     throw new Error('Mot so giao dich khong hop le (khong phai cash, da duoc xu ly, hoac khong thuoc ve ban)');
   }
 
-  const totalAmount = transactions.reduce((sum, tx) => sum + tx.totalAmount, 0);
+  const totalAmount = transactions.reduce((sum, tx) => sum + Number(tx.totalAmount), 0);
 
   const deposit = await prisma.cashDeposit.create({
     data: {
@@ -348,7 +352,7 @@ async function getReconciliationStats() {
   ]);
 
   const pendingCount = pendingTxns.length;
-  const pendingAmount = pendingTxns.reduce((s, t) => s + t.totalAmount, 0);
+  const pendingAmount = pendingTxns.reduce((s, t) => s + Number(t.totalAmount), 0);
   const pendingByMethod = { bank_transfer: 0, cash: 0, momo: 0, zalopay: 0 };
   let totalWaitMs = 0;
 

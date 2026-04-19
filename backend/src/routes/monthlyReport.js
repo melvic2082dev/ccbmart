@@ -85,8 +85,10 @@ router.get('/ctv/monthly-report', authorize('ctv'), validate(schemas.monthlyRepo
     const commission = await calculateCtvCommission(userId, month);
     const selfCommission = commission?.selfCommission || 0;
     const fixedSalary = commission?.fixedSalary || 0;
-    const teamBonus = commission?.teamBonus || 0;
-    const marketFundReceived = commission?.marketFund || 0;
+    // TODO: integrate when team bonus table is calculated (not in commission service yet)
+    const teamBonus = 0;
+    // TODO: integrate when market fund table is calculated (not in commission service yet)
+    const marketFundReceived = 0;
 
     // C12.4: Management fees received (F1/F2/F3)
     const mgmtSummary = await getReceivedManagementFeesSummary(userId, month);
@@ -118,7 +120,7 @@ router.get('/ctv/monthly-report', authorize('ctv'), validate(schemas.monthlyRepo
       feePaid;
 
     const taxResult = await calculateTax(userId, month);
-    const tax = Math.floor(Math.max(0, totalIncome) * 0.10);
+    const tax = taxResult.taxAmount;
     const netIncome = totalIncome - tax;
 
     res.json({

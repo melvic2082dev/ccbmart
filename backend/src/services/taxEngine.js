@@ -36,9 +36,7 @@ async function calculateTax(userId, month) {
     exempt: false,
     breakdown: {
       selfCommission: commissionData.selfCommission,
-      trainingFee: commissionData.trainingFee,
       fixedSalary: commissionData.fixedSalary,
-      teamBonus: commissionData.teamBonus,
     },
   };
 }

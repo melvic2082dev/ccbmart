@@ -1,7 +1,8 @@
 const jwt = require('jsonwebtoken');
 const config = require('../config');
+const prisma = require('../lib/prisma');
 
-function authenticate(req, res, next) {
+async function authenticate(req, res, next) {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return res.status(401).json({ error: 'Unauthorized' });
@@ -9,7 +10,9 @@ function authenticate(req, res, next) {
   try {
     const token = authHeader.split(' ')[1];
     const decoded = jwt.verify(token, config.jwt.secret);
-    req.user = decoded;
+    const dbUser = await prisma.user.findUnique({ where: { id: decoded.id }, select: { isActive: true } });
+    if (!dbUser || dbUser.isActive === false) return res.status(401).json({ error: 'Account deactivated' });
+    req.user = { ...decoded, isActive: dbUser.isActive };
     next();
   } catch {
     return res.status(401).json({ error: 'Invalid token' });

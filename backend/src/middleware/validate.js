@@ -31,6 +31,7 @@ const schemas = {
 
   reassignCtv: Joi.object({
     newParentId: Joi.number().integer().allow(null).required(),
+    reason: Joi.string().max(500).optional(),
   }),
 
   changeRank: Joi.object({

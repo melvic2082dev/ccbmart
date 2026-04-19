@@ -32,6 +32,8 @@ router.get('/management-fees', asyncHandler(async (req, res) => {
 router.post('/management-fees/process-monthly', asyncHandler(async (req, res) => {
   const now = new Date();
   const month = req.body.month || `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  const paidCount = await prisma.managementFee.count({ where: { month, status: { not: 'PENDING' } } });
+  if (paidCount > 0) return res.status(409).json({ error: 'already processed', month, paidCount });
   const result = await calculateMonthlyManagementFees(month);
   res.json(result);
 }));

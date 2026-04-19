@@ -36,10 +36,21 @@ function shouldBreakaway(traineeRank, mentorRank) {
   return traineeIdx >= mentorIdx && traineeIdx > 0;
 }
 
-async function findTopGdkdUser() {
-  return prisma.user.findFirst({
-    where: { rank: 'GDKD', isActive: true },
+async function findNearestGdkdInUpline(userId) {
+  let current = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { parentId: true },
   });
+  while (current?.parentId) {
+    const parent = await prisma.user.findUnique({
+      where: { id: current.parentId },
+      select: { id: true, rank: true, parentId: true, isActive: true },
+    });
+    if (!parent) break;
+    if (parent.rank === 'GDKD' && parent.isActive) return parent;
+    current = parent;
+  }
+  return null;
 }
 
 /**
@@ -185,6 +196,7 @@ async function getSubtreeRevenue(rootUserId, month) {
     where: {
       ctvId: { in: Array.from(ids) },
       channel: 'ctv',
+      status: 'CONFIRMED',
       createdAt: { gte: start, lt: end },
     },
     select: { totalAmount: true },
@@ -224,12 +236,10 @@ async function processMonthlyBreakawayFees(month) {
     where: { status: 'ACTIVE' },
   });
 
-  const gdkdUser = await findTopGdkdUser();
-  if (!gdkdUser) console.warn('No GDKD user found, skipping level 3 fees');
-
   const created = [];
 
   for (const log of activeLogs) {
+    const gdkdUser = await findNearestGdkdInUpline(log.userId);
     // Chỉ tính nếu tháng nằm trong cửa sổ 12 tháng
     const start = new Date(`${month}-01`);
     if (start > log.expireAt || start < new Date(log.breakawayAt.getFullYear(), log.breakawayAt.getMonth(), 1)) {

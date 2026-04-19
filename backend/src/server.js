@@ -202,7 +202,7 @@ app.post('/webhook/kiotviet/order', (req, res, next) => {
 });
 
 // SSE real-time event stream (supports token via query param for EventSource compatibility)
-app.get('/api/events', (req, res) => {
+app.get('/api/events', async (req, res) => {
   const authHeader = req.headers.authorization;
   const queryToken = req.query.token;
   const token = authHeader?.startsWith('Bearer ') ? authHeader.split(' ')[1] : queryToken;
@@ -210,7 +210,9 @@ app.get('/api/events', (req, res) => {
   if (!token) return res.status(401).json({ error: 'Unauthorized' });
   try {
     const decoded = jwt.verify(token, config.jwt.secret);
-    req.user = decoded;
+    const dbUser = await prisma.user.findUnique({ where: { id: decoded.id }, select: { isActive: true } });
+    if (!dbUser || dbUser.isActive === false) return res.status(401).json({ error: 'Account deactivated' });
+    req.user = { ...decoded, isActive: dbUser.isActive };
   } catch {
     return res.status(401).json({ error: 'Invalid token' });
   }

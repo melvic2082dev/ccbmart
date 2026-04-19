@@ -41,6 +41,7 @@ async function calculateMonthlyKpi(ctvId, month) {
     where: {
       ctvId,
       channel: 'ctv',
+      status: 'CONFIRMED',
       createdAt: { gte: startDate, lt: endDate },
     },
     _sum: { totalAmount: true },

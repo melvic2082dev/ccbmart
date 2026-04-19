@@ -40,25 +40,27 @@ router.post('/ctv', upload.single('file'), async (req, res) => {
     const rows = await parseExcel(req.file.buffer);
     const results = { success: [], failed: [], passwords: [], total: rows.length };
 
-    for (const row of rows) {
-      try {
-        if (!row.email || !row.name) throw new Error('Thieu email hoac name');
-        const existing = await prisma.user.findUnique({ where: { email: row.email } });
-        if (existing) throw new Error('Email da ton tai');
-        let parentId = null;
-        if (row.parentEmail) {
-          const parent = await prisma.user.findUnique({ where: { email: row.parentEmail } });
-          if (parent) parentId = parent.id;
-        }
-        const plainPassword = crypto.randomBytes(12).toString('hex');
-        const passwordHash = await bcrypt.hash(plainPassword, 10);
-        await prisma.user.create({
-          data: { email: row.email, passwordHash, role: 'ctv', name: row.name, phone: row.phone || null, rank: row.rank || 'CTV', parentId },
-        });
-        results.success.push(row.email);
-        results.passwords.push({ email: row.email, password: plainPassword });
-      } catch (err) { results.failed.push({ email: row.email || 'N/A', error: err.message }); }
-    }
+    await prisma.$transaction(async (tx) => {
+      for (const row of rows) {
+        try {
+          if (!row.email || !row.name) throw new Error('Thieu email hoac name');
+          const existing = await tx.user.findUnique({ where: { email: row.email } });
+          if (existing) throw new Error('Email da ton tai');
+          let parentId = null;
+          if (row.parentEmail) {
+            const parent = await tx.user.findUnique({ where: { email: row.parentEmail } });
+            if (parent) parentId = parent.id;
+          }
+          const plainPassword = crypto.randomBytes(12).toString('hex');
+          const passwordHash = await bcrypt.hash(plainPassword, 10);
+          await tx.user.create({
+            data: { email: row.email, passwordHash, role: 'ctv', name: row.name, phone: row.phone || null, rank: row.rank || 'CTV', parentId },
+          });
+          results.success.push(row.email);
+          results.passwords.push({ email: row.email, password: plainPassword });
+        } catch (err) { results.failed.push({ email: row.email || 'N/A', error: err.message }); }
+      }
+    });
     await prisma.importLog.create({ data: { type: 'ctv', fileName: req.file.originalname, totalRows: results.total, successRows: results.success.length, failedRows: results.failed.length, importedBy: req.user.id, details: JSON.stringify(results.failed) } });
     res.json(results);
   } catch (err) { console.error('[import]', err); res.status(500).json({ error: 'Internal server error' }); }
