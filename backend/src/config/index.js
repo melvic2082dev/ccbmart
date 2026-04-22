@@ -34,7 +34,7 @@ if (isProduction && !process.env.ALLOWED_ORIGINS) {
 
 const config = {
   nodeEnv,
-  port: parseInt(process.env.PORT || '4000'),
+  port: parseInt(process.env.PORT || '8080'),
   db: {
     url: process.env.DATABASE_URL,
   },
