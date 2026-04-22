@@ -69,6 +69,9 @@ app.use('/uploads/kyc', (req, res) => res.status(403).json({ error: 'Forbidden' 
 // Serve non-sensitive uploaded files (product images, etc.) publicly
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
+// Health check must be public and bypass all rate limiting / auth middleware
+app.use('/api/health', healthRoutes);
+
 // Global rate limiting
 app.use('/api/', globalLimiter);
 
@@ -97,9 +100,6 @@ app.use('/api', monthlyReportRoutes);
 
 // C13.3.1: Audit log viewer (admin)
 app.use('/api/admin', auditLogRoutes);
-
-// Health check (detailed)
-app.use('/api/health', healthRoutes);
 
 // Push notification subscribe/unsubscribe
 app.post('/api/notifications/subscribe', authMw, async (req, res) => {
