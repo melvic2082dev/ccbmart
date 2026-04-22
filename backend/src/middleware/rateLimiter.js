@@ -27,4 +27,14 @@ const apiLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-module.exports = { globalLimiter, loginLimiter, apiLimiter };
+// Write-protection limiter: 60 mutations per minute per IP
+// Applied to admin mutation endpoints that change money, users, or config.
+const writeLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 60,
+  message: { error: 'Write rate limit exceeded, slow down' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+module.exports = { globalLimiter, loginLimiter, apiLimiter, writeLimiter };

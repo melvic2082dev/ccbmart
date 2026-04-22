@@ -49,7 +49,7 @@ export function useSSE(url: string, options: SSEOptions = {}) {
     }, pollIntervalMs);
   }, [onEvent, pollIntervalMs]);
 
-  const connect = useCallback(() => {
+  const connect = useCallback(async () => {
     if (!enabled || !isMounted.current) return;
 
     if (typeof EventSource === 'undefined') {
@@ -59,11 +59,30 @@ export function useSSE(url: string, options: SSEOptions = {}) {
 
     const token =
       typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-    const sseUrl = token
-      ? `${url}?token=${encodeURIComponent(token)}`
-      : url;
+    if (!token) {
+      startPolling();
+      return;
+    }
 
-    const es = new EventSource(sseUrl);
+    // Exchange long-lived JWT for a short-lived SSE ticket (60s, scope=sse).
+    // Prevents leaking session JWT via query-string / referer / access logs.
+    const ticketUrl = url.replace(/\/events$/, '/events/ticket');
+    let ticket: string | null = null;
+    try {
+      const res = await fetch(ticketUrl, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error(`ticket ${res.status}`);
+      const body = await res.json();
+      ticket = body.ticket;
+    } catch {
+      startPolling();
+      return;
+    }
+    if (!isMounted.current || !ticket) return;
+
+    const es = new EventSource(`${url}?ticket=${encodeURIComponent(ticket)}`);
     esRef.current = es;
 
     es.onopen = () => {

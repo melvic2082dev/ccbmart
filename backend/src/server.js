@@ -209,23 +209,30 @@ app.post('/webhook/kiotviet/order', (req, res, next) => {
   }
 });
 
-// SSE real-time event stream (supports token via query param for EventSource compatibility)
-// Trade-off: browser EventSource API cannot set custom headers, so ?token= is required.
-// Security note: tokens in query strings appear in nginx access logs — configure log_format
-// to exclude the `token` query param (e.g., $uri instead of $request) or redact in log pipeline.
-app.get('/api/events', async (req, res) => {
-  const authHeader = req.headers.authorization;
-  const queryToken = req.query.token;
-  const token = authHeader?.startsWith('Bearer ') ? authHeader.split(' ')[1] : queryToken;
+// SSE ticket endpoint: exchange normal JWT for a short-lived (60s) SSE-only token.
+// This avoids leaking the long-lived session JWT via query-string / referer / access logs.
+app.post('/api/events/ticket', authMw, (req, res) => {
+  const ticket = jwt.sign(
+    { id: req.user.id, role: req.user.role, aud: 'sse' },
+    config.jwt.secret,
+    { expiresIn: '60s' }
+  );
+  res.json({ ticket });
+});
 
-  if (!token) return res.status(401).json({ error: 'Unauthorized' });
+// SSE real-time event stream.
+// EventSource API cannot set custom headers — must use ticket query param (scoped, 60s TTL).
+app.get('/api/events', async (req, res) => {
+  const ticket = req.query.ticket;
+  if (!ticket) return res.status(401).json({ error: 'Missing SSE ticket' });
   try {
-    const decoded = jwt.verify(token, config.jwt.secret);
+    const decoded = jwt.verify(ticket, config.jwt.secret);
+    if (decoded.aud !== 'sse') return res.status(401).json({ error: 'Invalid ticket scope' });
     const dbUser = await prisma.user.findUnique({ where: { id: decoded.id }, select: { isActive: true } });
     if (!dbUser || dbUser.isActive === false) return res.status(401).json({ error: 'Account deactivated' });
     req.user = { ...decoded, isActive: dbUser.isActive };
   } catch {
-    return res.status(401).json({ error: 'Invalid token' });
+    return res.status(401).json({ error: 'Invalid or expired ticket' });
   }
 
   res.setHeader('Content-Type', 'text/event-stream');

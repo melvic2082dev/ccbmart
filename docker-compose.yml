@@ -1,4 +1,6 @@
-version: '3.8'
+# Local development compose stack.
+# Primary production runs on Railway+Vercel — see docker-compose.prod.yml for self-hosted.
+
 
 services:
   postgres:
