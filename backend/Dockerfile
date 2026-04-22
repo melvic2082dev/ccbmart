@@ -5,7 +5,8 @@ RUN apk add --no-cache wget
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm ci --production
+# bust cache when dependencies change
+RUN npm ci --omit=dev
 
 COPY prisma ./prisma
 RUN npx prisma generate
