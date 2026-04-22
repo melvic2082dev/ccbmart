@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import DashboardLayout from '@/components/DashboardLayout'
 import { api, formatVND, formatNumber } from '@/lib/api'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -202,7 +201,7 @@ export default function AdminDashboardPage() {
   }
 
   return (
-    <DashboardLayout role="admin">
+    <>
       <div className="space-y-6">
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
@@ -616,6 +615,6 @@ export default function AdminDashboardPage() {
           </>
         )}
       </div>
-    </DashboardLayout>
+    </>
   )
 }

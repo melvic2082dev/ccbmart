@@ -1,6 +1,5 @@
 'use client';
 import { useState } from 'react';
-import DashboardLayout from '@/components/DashboardLayout';
 import { api, formatVND } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';

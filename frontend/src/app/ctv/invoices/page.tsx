@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import DashboardLayout from '@/components/DashboardLayout';
 import { api, formatVND, getUser } from '@/lib/api';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyUser = any;

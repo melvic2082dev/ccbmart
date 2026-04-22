@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import DashboardLayout from '@/components/DashboardLayout';
 import { api, formatVND } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -134,7 +133,7 @@ export default function AdminConfig() {
   ];
 
   return (
-    <DashboardLayout role="admin">
+    <>
       {toast && (
         <div className="fixed top-4 right-4 z-50 bg-gray-900 text-white px-4 py-3 rounded-xl shadow-xl text-sm animate-in fade-in">
           {toast}
@@ -512,6 +511,6 @@ export default function AdminConfig() {
           </div>
         </>
       )}
-    </DashboardLayout>
+    </>
   );
 }

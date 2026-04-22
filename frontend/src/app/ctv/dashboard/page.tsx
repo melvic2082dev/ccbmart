@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import DashboardLayout from '@/components/DashboardLayout'
 import { api, formatVND } from '@/lib/api'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -108,7 +107,7 @@ export default function CTVDashboardPage() {
   }, [])
 
   return (
-    <DashboardLayout role="ctv">
+    <>
       <div className="space-y-6">
         <div className="flex items-center justify-between flex-wrap gap-2">
           <h1 className="text-2xl font-bold text-gray-900">Dashboard CTV</h1>
@@ -317,6 +316,6 @@ export default function CTVDashboardPage() {
           </CardContent>
         </Card>
       </div>
-    </DashboardLayout>
+    </>
   )
 }

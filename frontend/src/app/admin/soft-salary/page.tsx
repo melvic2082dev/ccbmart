@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import DashboardLayout from '@/components/DashboardLayout';
 import { api, formatVND } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -31,7 +30,7 @@ export default function AdminSoftSalary() {
   };
 
   return (
-    <DashboardLayout role="admin">
+    <>
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-bold flex items-center gap-2"><Calculator size={24} /> Luong linh hoat (Soft Salary)</h2>
         {data && <Badge className={BRACKET_LABELS[data.bracket]?.color || ''}>{BRACKET_LABELS[data.bracket]?.label || data.bracket}</Badge>}
@@ -121,6 +120,6 @@ export default function AdminSoftSalary() {
           </Card>
         </div>
       ) : null}
-    </DashboardLayout>
+    </>
   );
 }
