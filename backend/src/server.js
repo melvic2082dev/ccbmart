@@ -69,6 +69,9 @@ app.use('/uploads/kyc', (req, res) => res.status(403).json({ error: 'Forbidden' 
 // Serve non-sensitive uploaded files (product images, etc.) publicly
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
+// Liveness probe — always 200 if process is running (used by Railway healthcheck)
+app.get('/api/ping', (_req, res) => res.json({ ok: true }));
+
 // Health check must be public and bypass all rate limiting / auth middleware
 app.use('/api/health', healthRoutes);
 
