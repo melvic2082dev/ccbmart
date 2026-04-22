@@ -1,3 +1,8 @@
+// Force sync stdout so crash diagnostics never get swallowed by pipe buffering
+try { if (process.stdout._handle) process.stdout._handle.setBlocking(true); } catch (_) {}
+try { if (process.stderr._handle) process.stderr._handle.setBlocking(true); } catch (_) {}
+process.stdout.write('[BOOT] node started PID=' + process.pid + ' PORT=' + process.env.PORT + ' NODE_ENV=' + process.env.NODE_ENV + '\n');
+
 const config = require('./config');
 const logger = require('./services/logger');
 const prisma = require('./lib/prisma');
