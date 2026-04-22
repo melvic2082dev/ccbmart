@@ -286,18 +286,19 @@ app.use(errorHandler);
 // Initialize services and start server
 let server;
 async function start() {
-  await initRedis();
-  await initSyncQueue();
-  await initCommissionQueue();
-  scheduleAutoRankJob();
-  scheduleCashCheckJob();
-  scheduleReferralCapReset();
-  scheduleAuditLogCleanup();
-
+  // Bind port FIRST so healthcheck can respond while background services initialize
   server = app.listen(PORT, () => {
     logger.info(`CCB Mart API running on http://localhost:${PORT}`);
     logger.info(`Environment: ${process.env.NODE_ENV || 'development'}`);
   });
+
+  await initRedis().catch(err => logger.error('Redis init failed', { error: err.message }));
+  await initSyncQueue().catch(err => logger.error('SyncQueue init failed', { error: err.message }));
+  await initCommissionQueue().catch(err => logger.error('CommissionQueue init failed', { error: err.message }));
+  scheduleAutoRankJob();
+  scheduleCashCheckJob();
+  scheduleReferralCapReset();
+  scheduleAuditLogCleanup();
 }
 
 const gracefulShutdown = async (signal) => {

@@ -3,6 +3,13 @@ require('dotenv').config();
 const nodeEnv = process.env.NODE_ENV || 'development';
 const isProduction = nodeEnv === 'production';
 
+// Startup diagnostics — visible in Railway/Docker logs before any validation crash
+console.log('[Config] NODE_ENV:', nodeEnv);
+console.log('[Config] PORT:', process.env.PORT || '(not set, default 4000)');
+console.log('[Config] JWT_SECRET:', process.env.JWT_SECRET ? 'SET' : '*** NOT SET ***');
+console.log('[Config] DATABASE_URL:', process.env.DATABASE_URL ? 'SET' : '*** NOT SET ***');
+console.log('[Config] ALLOWED_ORIGINS:', process.env.ALLOWED_ORIGINS || '(not set)');
+
 const WEAK_JWT_DEFAULTS = ['ccb-mart-change-this-secret', 'dev-only-change-in-prod', 'secret'];
 
 if (!process.env.JWT_SECRET) {
