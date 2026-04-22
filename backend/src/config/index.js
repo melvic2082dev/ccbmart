@@ -22,22 +22,21 @@ if (!process.env.JWT_SECRET) {
   process.exit(1);
 }
 
-if (isProduction) {
-  if (!process.env.DATABASE_URL) {
-    console.error('FATAL: DATABASE_URL is required in production');
-    process.exit(1);
-  }
-  if (!process.env.ALLOWED_ORIGINS) {
-    console.error('FATAL: ALLOWED_ORIGINS is required in production');
-    process.exit(1);
-  }
+if (!process.env.DATABASE_URL) {
+  console.error('FATAL: DATABASE_URL is required');
+  process.exit(1);
+}
+
+if (isProduction && !process.env.ALLOWED_ORIGINS) {
+  console.error('FATAL: ALLOWED_ORIGINS is required in production');
+  process.exit(1);
 }
 
 const config = {
   nodeEnv,
   port: parseInt(process.env.PORT || '4000'),
   db: {
-    url: process.env.DATABASE_URL || 'file:./dev.db',
+    url: process.env.DATABASE_URL,
   },
   jwt: {
     secret: process.env.JWT_SECRET,
