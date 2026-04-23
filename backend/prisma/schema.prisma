@@ -80,6 +80,16 @@ model User {
   auditLogs          AuditLog[]          @relation("AuditLogs")
   adminManualActions AdminManualAction[] @relation("AdminActions")
 
+  // P3: new relations
+  softSalaryAdjustments  SoftSalaryAdjustment[]    @relation("SoftSalaryAdjustments")
+  fastTrackRequests      FastTrackRequest[]         @relation("FastTrackUser")
+  fastTrackNominations   FastTrackRequest[]         @relation("FastTrackNominator")
+  fastTrackApprovals     FastTrackRequest[]         @relation("FastTrackApprover")
+  actingAssignments      ActingManagerAssignment[]  @relation("ActingAssignee")
+  actingCoveredBy        ActingManagerAssignment[]  @relation("ActingVacant")
+  actingAssigned         ActingManagerAssignment[]  @relation("ActingAssignedBy")
+  credibilityScore       TrainingCredibilityScore?  @relation("CredibilityScore")
+
   @@index([parentId])
   @@index([rank])
   @@index([role])
@@ -230,13 +240,15 @@ model Customer {
 }
 
 model KpiLog {
-  id            Int    @id @default(autoincrement())
-  ctvId         Int    @map("ctv_id")
-  month         String
-  selfSales     Int    @map("self_sales")
-  portfolioSize Int    @map("portfolio_size")
-  rankBefore    String @map("rank_before")
-  rankAfter     String @map("rank_after")
+  id                Int    @id @default(autoincrement())
+  ctvId             Int    @map("ctv_id")
+  month             String
+  selfSales         Int    @map("self_sales")
+  portfolioSize     Int    @map("portfolio_size")
+  rankBefore        String @map("rank_before")
+  rankAfter         String @map("rank_after")
+  teamComboCount    Int    @default(0) @map("team_combo_count")
+  consecutiveMonths Int    @default(1) @map("consecutive_months")
 
   ctv User @relation(fields: [ctvId], references: [id])
 
@@ -804,4 +816,98 @@ model AdminManualAction {
   @@index([actionType])
   @@index([targetType, targetId])
   @@map("admin_manual_actions")
+}
+
+// ============================================================
+// P3: Schema additions (2026-04-23)
+// Gap analysis V13.2.1 — Doc 7.6, 7.7, 7.8, 7.10
+// ============================================================
+
+// Doc 7.8: Soft Salary — prorate log when salary fund > 5% CTV channel revenue
+model SoftSalaryAdjustment {
+  id               Int      @id @default(autoincrement())
+  userId           Int      @map("user_id")
+  month            String
+  originalSalary   Decimal  @map("original_salary") @db.Decimal(15, 0)
+  adjustedSalary   Decimal  @map("adjusted_salary") @db.Decimal(15, 0)
+  performanceBonus Decimal  @default(0) @map("performance_bonus") @db.Decimal(15, 0)
+  capFactor        Decimal  @map("cap_factor") @db.Decimal(5, 4)
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  user User @relation("SoftSalaryAdjustments", fields: [userId], references: [id])
+
+  @@unique([userId, month])
+  @@index([month])
+  @@map("soft_salary_adjustments")
+}
+
+// Doc 7.7: Fast-Track promotion — 200% KPI achieved in a single month → T+1 rank up
+model FastTrackRequest {
+  id            Int       @id @default(autoincrement())
+  userId        Int       @map("user_id")
+  requestedRank String    @map("requested_rank")
+  kpiMultiple   Decimal   @map("kpi_multiple") @db.Decimal(5, 2)
+  month         String
+  nominatedById Int?      @map("nominated_by_id")
+  approvedById  Int?      @map("approved_by_id")
+  status        String    @default("PENDING") // PENDING, APPROVED, REJECTED, ACTIVATED
+  createdAt     DateTime  @default(now()) @map("created_at")
+  processedAt   DateTime? @map("processed_at")
+
+  user        User  @relation("FastTrackUser", fields: [userId], references: [id])
+  nominatedBy User? @relation("FastTrackNominator", fields: [nominatedById], references: [id])
+  approvedBy  User? @relation("FastTrackApprover", fields: [approvedById], references: [id])
+
+  @@unique([userId, month])
+  @@index([status])
+  @@map("fast_track_requests")
+}
+
+// Doc 7.10: Acting Manager Assignment — fill vacant manager slot; 50% bonus for up to 6 months
+model ActingManagerAssignment {
+  id            Int       @id @default(autoincrement())
+  assigneeId    Int       @map("assignee_id")
+  vacantUserId  Int       @map("vacant_user_id")
+  startDate     DateTime  @map("start_date")
+  endDate       DateTime? @map("end_date")
+  bonusPct      Decimal   @default(0.5) @map("bonus_pct") @db.Decimal(5, 4)
+  maxMonths     Int       @default(6) @map("max_months")
+  status        String    @default("ACTIVE") // ACTIVE, ENDED
+  assignedById  Int       @map("assigned_by_id")
+  createdAt     DateTime  @default(now()) @map("created_at")
+
+  assignee    User @relation("ActingAssignee", fields: [assigneeId], references: [id])
+  vacantUser  User @relation("ActingVacant", fields: [vacantUserId], references: [id])
+  assignedBy  User @relation("ActingAssignedBy", fields: [assignedById], references: [id])
+
+  @@index([assigneeId])
+  @@index([status])
+  @@map("acting_manager_assignments")
+}
+
+// Doc 7.6: Training Credibility Score — starts at 100; deducted on violations; auto-suspend when ≤ 0
+model TrainingCredibilityScore {
+  id             Int       @id @default(autoincrement())
+  userId         Int       @unique @map("user_id")
+  score          Int       @default(100)
+  suspendedUntil DateTime? @map("suspended_until")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  user   User                      @relation("CredibilityScore", fields: [userId], references: [id])
+  events TrainingCredibilityEvent[]
+
+  @@map("training_credibility_scores")
+}
+
+model TrainingCredibilityEvent {
+  id        Int      @id @default(autoincrement())
+  scoreId   Int      @map("score_id")
+  delta     Int
+  reason    String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  score TrainingCredibilityScore @relation(fields: [scoreId], references: [id])
+
+  @@index([scoreId])
+  @@map("training_credibility_events")
 }
