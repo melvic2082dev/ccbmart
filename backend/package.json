@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "node src/server.js",
     "start": "node src/server.js",
+    "start:web": "WORKER_PROCESS=separate node src/server.js",
+    "start:worker": "node src/worker.js",
     "seed": "node prisma/seed.js",
     "test": "jest",
     "test:watch": "jest --watch",

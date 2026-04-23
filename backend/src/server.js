@@ -284,26 +284,37 @@ app.get('/api/uploads/kyc/:filename', authMw, (req, res) => {
 app.use(errorHandler);
 
 // Initialize services and start server
+// Set WORKER_PROCESS=separate to run workers in a dedicated process (see src/worker.js).
+// Default (unset) = monolith mode: web + workers in one process.
+const workersSeparate = process.env.WORKER_PROCESS === 'separate';
+
 let server;
 async function start() {
   await initRedis();
-  await initSyncQueue();
-  await initCommissionQueue();
-  scheduleAutoRankJob();
-  scheduleCashCheckJob();
-  scheduleReferralCapReset();
-  scheduleAuditLogCleanup();
+
+  if (!workersSeparate) {
+    await initSyncQueue();
+    await initCommissionQueue();
+    scheduleAutoRankJob();
+    scheduleCashCheckJob();
+    scheduleReferralCapReset();
+    scheduleAuditLogCleanup();
+  }
 
   server = app.listen(PORT, () => {
-    logger.info(`CCB Mart API running on http://localhost:${PORT}`);
-    logger.info(`Environment: ${process.env.NODE_ENV || 'development'}`);
+    logger.info(`CCB Mart API running on http://localhost:${PORT}`, {
+      env: process.env.NODE_ENV || 'development',
+      workerMode: workersSeparate ? 'separate' : 'monolith',
+    });
   });
 }
 
 const gracefulShutdown = async (signal) => {
   console.log(`${signal} received, shutting down gracefully...`);
   server.close(async () => {
-    await closeCommissionWorker();
+    if (!workersSeparate) {
+      await closeCommissionWorker();
+    }
     await prisma.$disconnect();
     process.exit(0);
   });

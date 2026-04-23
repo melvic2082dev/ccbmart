@@ -192,8 +192,14 @@ async function getSyncHistory(limit = 20) {
   });
 }
 
+async function closeSyncWorker() {
+  if (syncWorker) await syncWorker.close();
+  if (syncQueue) await syncQueue.close();
+}
+
 module.exports = {
   initSyncQueue,
   addSyncJob,
   getSyncHistory,
+  closeSyncWorker,
 };
