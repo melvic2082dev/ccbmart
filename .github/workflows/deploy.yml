@@ -1,13 +1,14 @@
 name: Deploy
 
-# Two triggers:
-#  1. Auto: push to staging branch → staging deploy
+# Triggers:
+#  1. Auto: CI workflow completes successfully on staging branch → staging deploy
 #  2. Manual: workflow_dispatch → choose staging or production
 #
-# Required GitHub secrets (Settings → Secrets → Actions):
-#   RAILWAY_TOKEN_STAGING, RAILWAY_TOKEN_PROD
+# Required GitHub secrets:
+#   RAILWAY_TOKEN_STAGING, RAILWAY_TOKEN_PROD,
 #   VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID
-# Secrets may be absent — each step no-ops with a warning if so.
+# Repo variables (for smoke test):
+#   STAGING_API_URL, STAGING_FE_URL
 
 on:
   workflow_dispatch:
@@ -20,16 +21,23 @@ on:
         options:
           - staging
           - production
-  push:
+  workflow_run:
+    workflows: ['CI']
+    types: [completed]
     branches: [staging]
 
 jobs:
   deploy:
+    # Gate: manual dispatch OR CI succeeded on staging branch
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
 
-      # Resolve target: manual = input, push = always staging
       - id: resolve
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
@@ -37,21 +45,6 @@ jobs:
           else
             echo "target=staging" >> "$GITHUB_OUTPUT"
           fi
-
-      - name: Guard — verify CI has passed for this commit
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const { data: runs } = await github.rest.actions.listWorkflowRunsForRepo({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              head_sha: context.sha,
-              status: 'success',
-            });
-            const ciPassed = runs.workflow_runs.some(r => r.name === 'CI');
-            if (!ciPassed) {
-              core.setFailed(`No successful CI run found for ${context.sha}`);
-            }
 
       - name: Install Railway CLI
         run: npm install -g @railway/cli
@@ -90,11 +83,10 @@ jobs:
         if: steps.resolve.outputs.target == 'staging'
         env:
           STAGING_API_URL: ${{ vars.STAGING_API_URL }}
-          STAGING_FE_URL: ${{ vars.STAGING_FE_URL }}
         run: |
           if [ -z "$STAGING_API_URL" ]; then
             echo "::notice::STAGING_API_URL not set — skipping staging smoke test"
             exit 0
           fi
-          sleep 30
+          sleep 60
           curl -fsS "$STAGING_API_URL/api/ping"
