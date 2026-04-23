@@ -47,9 +47,12 @@ jobs:
           fi
 
       - name: Install Railway CLI
+        # Only needed when manually deploying production — staging auto-deploys via Railway's git integration.
+        if: github.event_name == 'workflow_dispatch'
         run: npm install -g @railway/cli
 
-      - name: Deploy Railway
+      - name: Deploy Railway (manual dispatch only)
+        if: github.event_name == 'workflow_dispatch'
         env:
           RAILWAY_TOKEN: ${{ steps.resolve.outputs.target == 'production' && secrets.RAILWAY_TOKEN_PROD || secrets.RAILWAY_TOKEN_STAGING }}
           TARGET: ${{ steps.resolve.outputs.target }}
@@ -58,7 +61,18 @@ jobs:
             echo "::warning::RAILWAY_TOKEN for $TARGET not set — skipping Railway deploy"
             exit 0
           fi
-          railway redeploy --service ccbmart --yes
+          # Retry a few times in case Railway is already building
+          for i in 1 2 3; do
+            if railway redeploy --service ccbmart --yes; then break; fi
+            echo "Redeploy attempt $i failed, waiting 30s..."
+            sleep 30
+          done
+
+      - name: Wait for Railway auto-deploy (staging push)
+        if: github.event_name == 'workflow_run'
+        run: |
+          echo "Railway auto-deploys on git push. Waiting 120s for build..."
+          sleep 120
 
       - name: Deploy Vercel (production only)
         if: steps.resolve.outputs.target == 'production'
