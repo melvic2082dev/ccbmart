@@ -144,9 +144,9 @@ Effort: 2 weeks. Non-negotiable.
 **Risk**: `git push main` = production deploy. One bad commit = user-facing breakage.
 
 **Fix**:
-- Railway: add `staging` environment pointing at `develop` branch
+- Railway: add `staging` environment pointing at `staging` branch
 - Vercel: preview deploys for every PR are already automatic
-- Branch flow: `feature/*` → PR → Vercel preview + Railway preview → merge to `develop` → staging test → merge to `main` → production
+- Branch flow: `feature/*` → PR → Vercel preview → merge to `staging` → staging QA → PR to `main` → production
 
 Effort: 1 day. Do this before writing more features.
 

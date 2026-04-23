@@ -1,7 +1,7 @@
 name: Deploy
 
 # Two triggers:
-#  1. Auto: push to develop → staging deploy
+#  1. Auto: push to staging branch → staging deploy
 #  2. Manual: workflow_dispatch → choose staging or production
 #
 # Required GitHub secrets (Settings → Secrets → Actions):
@@ -21,7 +21,7 @@ on:
           - staging
           - production
   push:
-    branches: [develop]
+    branches: [staging]
 
 jobs:
   deploy:

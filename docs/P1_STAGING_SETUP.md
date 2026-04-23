@@ -2,7 +2,10 @@
 
 CLI-automated attempts failed because the project token lacks permission to create new Railway environments (likely a plan restriction). These steps are **manual, one-time** work by the repo owner.
 
-Once complete, the `develop` branch will automatically deploy to staging on every push, giving you a safe testing surface before anything reaches `main` / production.
+Once complete, the `staging` branch will automatically deploy to staging on every push, giving you a safe testing surface before anything reaches `main` / production.
+
+> **Branching strategy**: `main` = production, `staging` = staging, `feature/*` = work in progress.
+> No `develop` branch. Keeps things simple for a small team.
 
 ---
 
@@ -14,11 +17,11 @@ Once complete, the `develop` branch will automatically deploy to staging on ever
    - This copies the `ccbmart`, Postgres, and Redis services with the same config
 4. After creation, the staging environment will have its own isolated DB and Redis
 
-## Step 2 — Point staging service at `develop` branch
+## Step 2 — Point staging service at `staging` branch
 
 1. In the `staging` environment → open the `ccbmart` service
-2. **Settings** → **Source** → change **Production Branch** from `main` to `develop`
-3. Save → Railway will auto-build the current `develop` HEAD
+2. **Settings** → **Source** → change **Production Branch** from `main` to `staging`
+3. Save → Railway will auto-build the current `staging` HEAD
 
 ## Step 3 — Generate staging domain
 
@@ -38,7 +41,15 @@ DATABASE_URL="postgresql://postgres:<PASSWORD>@<PROXY_HOST>:<PORT>/railway" \
 
 This drops staging DB and re-runs migrations + seed. Safe because staging has zero real users.
 
-## Step 5 — Create GitHub secrets
+## Step 5 — Configure Vercel for `staging` branch
+
+1. Vercel dashboard → `ccbmart` project → **Settings** → **Git**
+2. **Production Branch**: keep as `main`
+3. Under **Ignored Build Step** / **Preview Deployments**: ensure **All branches** is enabled
+   - This makes pushes to `staging` create a preview deployment at `ccbmart-git-staging-*.vercel.app`
+4. Optional: **Settings → Domains** → add `staging.ccb.x-wise.io` → assign to `staging` branch
+
+## Step 6 — Create GitHub secrets
 
 Go to `github.com/melvic2082dev/ccbmart/settings/secrets/actions`, add:
 
@@ -55,23 +66,25 @@ And these repository **variables** (`settings/variables/actions`):
 | Variable name | Example value |
 |---|---|
 | `STAGING_API_URL` | `https://staging-api.ccb.x-wise.io` (or Railway-generated URL) |
-| `STAGING_FE_URL` | `https://ccbmart-git-develop-nguyen-quang-minhs-projects-36488a85.vercel.app` |
+| `STAGING_FE_URL` | `https://ccbmart-git-staging-nguyen-quang-minhs-projects-36488a85.vercel.app` |
 
-## Step 6 — Verify auto-deploy
+## Step 7 — Verify auto-deploy
 
 ```bash
-# Make a trivial commit to develop (on your laptop):
-git checkout develop
-git pull origin develop
+# On your laptop:
+git checkout staging
+git pull origin staging
+
+# Trigger deploy via empty commit
 git commit --allow-empty -m "chore: verify staging auto-deploy"
-git push origin develop
+git push origin staging
 ```
 
 Check:
-- GitHub Actions → **Deploy** workflow runs, resolves target=staging
+- GitHub Actions → **Deploy** workflow runs, resolves `target=staging`
 - Railway staging service starts a new build
-- Vercel creates a preview deploy at `ccbmart-git-develop-*.vercel.app`
-- Smoke test (`curl $STAGING_API_URL/api/ping`) returns 200
+- Vercel creates a preview deploy at `ccbmart-git-staging-*.vercel.app`
+- Smoke test: `curl $STAGING_API_URL/api/ping` → `{"ok":true}`
 
 ---
 
@@ -83,20 +96,24 @@ Settings → Branches → Add rule for `main`:
 - Require branches to be up to date
 - Do not allow bypass
 
-For `develop` (lighter):
+For `staging` (lighter):
 - Require status checks: `CI / test`, `CI / build`
 
-Result: no one (including you accidentally) can push directly to `main`. All production deploys go through PR from `develop` → `main`.
+Result: no one (including you accidentally) can push directly to `main`. All production deploys go through PR from `staging` → `main`.
 
 ---
 
-## After setup is verified
+## Day-to-day workflow
 
-- All new work → feature branches off `develop`
-- Merge feature → `develop` triggers staging deploy
-- Once staging is green and tested → PR `develop` → `main` for production
-- Production deploy via **Actions → Deploy → Run workflow → target=production**
+```
+feature/my-change
+      ↓ PR (runs CI)
+   staging  ─────────────→ auto-deploys to staging env (Railway + Vercel)
+      ↓ PR when QA passes (runs CI)
+     main   ─────────────→ manual trigger: Actions → Deploy → target=production
+```
 
 Rollback:
-- If staging deploy breaks: just push a revert commit to `develop`
-- If production deploy breaks: **Railway dashboard** → Deployments → pick last healthy → "Redeploy"
+- Staging breaks: push revert commit to `staging`, or reset `staging` to last good commit
+- Production breaks: Railway dashboard → Deployments → pick last healthy → "Redeploy"
+  (Or: push revert to `main`, manually trigger Deploy workflow)
