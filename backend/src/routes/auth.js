@@ -61,8 +61,15 @@ router.post('/login', loginLimiter, validate(schemas.login), async (req, res) =>
       metadata: { role: user.role, rank: user.rank },
     });
 
+    res.cookie('token', token, {
+      httpOnly: true,
+      secure: config.nodeEnv === 'production',
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+      path: '/',
+    });
+
     res.json({
-      token,
       user: {
         id: user.id,
         email: user.email,
@@ -78,11 +85,15 @@ router.post('/login', loginLimiter, validate(schemas.login), async (req, res) =>
 });
 
 router.post('/logout', async (req, res) => {
+  const cookieToken = req.cookies?.token;
   const authHeader = req.headers.authorization;
+  const rawToken = cookieToken
+    || (authHeader?.startsWith('Bearer ') ? authHeader.split(' ')[1] : null);
+
   let userId = null;
-  if (authHeader && authHeader.startsWith('Bearer ')) {
+  if (rawToken) {
     try {
-      const decoded = jwt.verify(authHeader.split(' ')[1], config.jwt.secret);
+      const decoded = jwt.verify(rawToken, config.jwt.secret);
       userId = decoded.id;
     } catch { /* ignore */ }
   }
@@ -97,6 +108,12 @@ router.post('/logout', async (req, res) => {
       status: 'SUCCESS',
     });
   }
+  res.clearCookie('token', {
+    httpOnly: true,
+    secure: config.nodeEnv === 'production',
+    sameSite: 'lax',
+    path: '/',
+  });
   res.json({ success: true });
 });
 

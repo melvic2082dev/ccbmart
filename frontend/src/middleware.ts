@@ -1,11 +1,16 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-export function middleware(_request: NextRequest) {
-  // Note: actual auth is handled via localStorage tokens on the client side.
-  // This middleware is an SSR guard placeholder — real auth enforcement happens
-  // in page-level useEffect hooks and API route authorization.
+export function middleware(request: NextRequest) {
+  const token = request.cookies.get('token');
+  if (!token) {
+    const loginUrl = new URL('/login', request.url);
+    loginUrl.searchParams.set('from', request.nextUrl.pathname);
+    return NextResponse.redirect(loginUrl);
+  }
   return NextResponse.next();
 }
 
-export const config = { matcher: ['/admin/:path*', '/agency/:path*'] };
+export const config = {
+  matcher: ['/admin/:path*', '/agency/:path*', '/ctv/:path*', '/member/:path*'],
+};

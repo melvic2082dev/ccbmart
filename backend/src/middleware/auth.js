@@ -3,13 +3,15 @@ const config = require('../config');
 const prisma = require('../lib/prisma');
 
 async function authenticate(req, res, next) {
+  const cookieToken = req.cookies?.token;
   const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
+  const bearerToken = authHeader?.startsWith('Bearer ') ? authHeader.split(' ')[1] : null;
+  const token = cookieToken || bearerToken;
+
+  if (!token) return res.status(401).json({ error: 'Unauthorized' });
+
   let decoded;
   try {
-    const token = authHeader.split(' ')[1];
     decoded = jwt.verify(token, config.jwt.secret);
   } catch {
     return res.status(401).json({ error: 'Invalid token' });

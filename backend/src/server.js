@@ -4,6 +4,7 @@ const prisma = require('./lib/prisma');
 const express = require('express');
 const helmet = require('helmet');
 const cors = require('cors');
+const cookieParser = require('cookie-parser');
 const path = require('path');
 const fs = require('fs');
 const multer = require('multer');
@@ -62,6 +63,7 @@ app.use(cors({
   },
   credentials: true,
 }));
+app.use(cookieParser());
 app.use(express.json({ limit: '1mb' }));
 
 // Block direct access to KYC directory — use authenticated API route instead
@@ -201,14 +203,15 @@ app.post('/webhook/kiotviet/order', (req, res, next) => {
   }
 });
 
-// SSE real-time event stream (supports token via query param for EventSource compatibility)
-// Trade-off: browser EventSource API cannot set custom headers, so ?token= is required.
-// Security note: tokens in query strings appear in nginx access logs — configure log_format
-// to exclude the `token` query param (e.g., $uri instead of $request) or redact in log pipeline.
+// SSE real-time event stream.
+// Auth priority: HttpOnly cookie (preferred) → Bearer header → ?token= query param (legacy fallback).
+// The ?token= path exposes the token in nginx access logs — prefer cookie-based auth.
 app.get('/api/events', async (req, res) => {
   const authHeader = req.headers.authorization;
   const queryToken = req.query.token;
-  const token = authHeader?.startsWith('Bearer ') ? authHeader.split(' ')[1] : queryToken;
+  const token = req.cookies?.token
+    || (authHeader?.startsWith('Bearer ') ? authHeader.split(' ')[1] : null)
+    || queryToken;
 
   if (!token) return res.status(401).json({ error: 'Unauthorized' });
   try {

@@ -57,13 +57,7 @@ export function useSSE(url: string, options: SSEOptions = {}) {
       return;
     }
 
-    const token =
-      typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-    const sseUrl = token
-      ? `${url}?token=${encodeURIComponent(token)}`
-      : url;
-
-    const es = new EventSource(sseUrl);
+    const es = new EventSource(url, { withCredentials: true });
     esRef.current = es;
 
     es.onopen = () => {

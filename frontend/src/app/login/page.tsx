@@ -21,7 +21,6 @@ export default function LoginPage() {
     setLoading(true);
     try {
       const data = await api.login(email, password);
-      localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify(data.user));
       const role: string = data.user?.role;
       if (role === 'ctv') router.push('/ctv/dashboard');
