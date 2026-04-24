@@ -2,6 +2,7 @@ const express = require('express');
 const { authenticate, authorize } = require('../middleware/auth');
 const { generateOTP, verifyOTP } = require('../services/otpService');
 const { validate, schemas } = require('../middleware/validate');
+const { getCachedOrCompute } = require('../services/cache');
 
 const router = express.Router();
 const prisma = require('../lib/prisma');
@@ -15,24 +16,27 @@ router.get('/admin', authorize('admin'), validate(schemas.trainingLogQuery, 'que
   try {
     const { status, page = 1, limit = 50 } = req.query;
     const skip = (parseInt(page) - 1) * parseInt(limit);
-
     const where = status ? { status } : {};
+    const cacheKey = `admin:training-logs:${status || 'all'}:${page}:${limit}`;
 
-    const [logs, total] = await Promise.all([
-      prisma.trainingLog.findMany({
-        where,
-        include: {
-          trainer: { select: { id: true, name: true, rank: true } },
-          trainee: { select: { id: true, name: true, rank: true } },
-        },
-        orderBy: { createdAt: 'desc' },
-        skip,
-        take: parseInt(limit),
-      }),
-      prisma.trainingLog.count({ where }),
-    ]);
+    const result = await getCachedOrCompute(cacheKey, 60, async () => {
+      const [logs, total] = await Promise.all([
+        prisma.trainingLog.findMany({
+          where,
+          include: {
+            trainer: { select: { id: true, name: true, rank: true } },
+            trainee: { select: { id: true, name: true, rank: true } },
+          },
+          orderBy: { createdAt: 'desc' },
+          skip,
+          take: parseInt(limit),
+        }),
+        prisma.trainingLog.count({ where }),
+      ]);
+      return { logs, total, page: parseInt(page), totalPages: Math.ceil(total / parseInt(limit)) };
+    });
 
-    res.json({ logs, total, page: parseInt(page), totalPages: Math.ceil(total / parseInt(limit)) });
+    res.json(result);
   } catch (err) {
     console.error("[route]", err); res.status(500).json({ error: "Internal server error" });
   }

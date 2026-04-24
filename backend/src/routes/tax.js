@@ -2,6 +2,7 @@ const express = require('express');
 const { authenticate, authorize } = require('../middleware/auth');
 const { processMonthlyTax, generateTaxReport, calculateTax } = require('../services/taxEngine');
 const { validate, schemas } = require('../middleware/validate');
+const { getCachedOrCompute } = require('../services/cache');
 
 const router = express.Router();
 const prisma = require('../lib/prisma');
@@ -15,22 +16,25 @@ router.get('/admin/tax', authorize('admin'), validate(schemas.taxQuery, 'query')
     const where = {};
     if (month) where.month = month;
     if (status) where.status = status;
+    const cacheKey = `admin:tax:${month || 'all'}:${status || 'all'}`;
 
-    const records = await prisma.taxRecord.findMany({
-      where,
-      include: {
-        user: {
-          select: { id: true, name: true, rank: true, isBusinessHousehold: true },
+    const result = await getCachedOrCompute(cacheKey, 60, async () => {
+      const records = await prisma.taxRecord.findMany({
+        where,
+        include: {
+          user: {
+            select: { id: true, name: true, rank: true, isBusinessHousehold: true },
+          },
         },
-      },
-      orderBy: { month: 'desc' },
-      take: 200,
+        orderBy: { month: 'desc' },
+        take: 200,
+      });
+      const totalTax = records.reduce((sum, r) => sum + Number(r.taxAmount), 0);
+      const totalIncome = records.reduce((sum, r) => sum + Number(r.taxableIncome), 0);
+      return { records, totalTax, totalIncome, count: records.length };
     });
 
-    const totalTax = records.reduce((sum, r) => sum + Number(r.taxAmount), 0);
-    const totalIncome = records.reduce((sum, r) => sum + Number(r.taxableIncome), 0);
-
-    res.json({ records, totalTax, totalIncome, count: records.length });
+    res.json(result);
   } catch (err) {
     console.error("[route]", err); res.status(500).json({ error: "Internal server error" });
   }

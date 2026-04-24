@@ -2,6 +2,7 @@ const express = require('express');
 const { authenticate, authorize } = require('../middleware/auth');
 const { processMonthlyTransfer, generateInvoicePDF } = require('../services/autoTransfer');
 const { validate, schemas } = require('../middleware/validate');
+const { getCachedOrCompute } = require('../services/cache');
 
 const router = express.Router();
 const prisma = require('../lib/prisma');
@@ -13,25 +14,28 @@ router.get('/admin/invoices', authorize('admin'), validate(schemas.invoicesQuery
   try {
     const { status, page = 1, limit = 50 } = req.query;
     const skip = (parseInt(page, 10) - 1) * parseInt(limit, 10);
-
     const where = status ? { status } : {};
+    const cacheKey = `admin:invoices:${status || 'all'}:${page}:${limit}`;
 
-    const [invoices, total] = await Promise.all([
-      prisma.invoice.findMany({
-        where,
-        include: {
-          fromUser: { select: { id: true, name: true, rank: true } },
-          toUser: { select: { id: true, name: true, rank: true } },
-          contract: { select: { id: true, contractNo: true } },
-        },
-        orderBy: { issuedAt: 'desc' },
-        skip,
-        take: parseInt(limit, 10),
-      }),
-      prisma.invoice.count({ where }),
-    ]);
+    const result = await getCachedOrCompute(cacheKey, 60, async () => {
+      const [invoices, total] = await Promise.all([
+        prisma.invoice.findMany({
+          where,
+          include: {
+            fromUser: { select: { id: true, name: true, rank: true } },
+            toUser: { select: { id: true, name: true, rank: true } },
+            contract: { select: { id: true, contractNo: true } },
+          },
+          orderBy: { issuedAt: 'desc' },
+          skip,
+          take: parseInt(limit, 10),
+        }),
+        prisma.invoice.count({ where }),
+      ]);
+      return { invoices, total, page: parseInt(page, 10) };
+    });
 
-    res.json({ invoices, total, page: parseInt(page, 10) });
+    res.json(result);
   } catch (err) {
     console.error("[route]", err); res.status(500).json({ error: "Internal server error" });
   }
@@ -57,22 +61,26 @@ router.get('/admin/transfers', authorize('admin'), validate(schemas.invoicesQuer
     const { status, page = 1, limit = 50 } = req.query;
     const skip = (parseInt(page, 10) - 1) * parseInt(limit, 10);
     const where = status ? { status } : {};
+    const cacheKey = `admin:transfers:${status || 'all'}:${page}:${limit}`;
 
-    const [transfers, total] = await Promise.all([
-      prisma.autoTransferLog.findMany({
-        where,
-        include: {
-          fromUser: { select: { id: true, name: true, rank: true } },
-          toUser: { select: { id: true, name: true, rank: true } },
-        },
-        orderBy: { transferDate: 'desc' },
-        skip,
-        take: parseInt(limit, 10),
-      }),
-      prisma.autoTransferLog.count({ where }),
-    ]);
+    const result = await getCachedOrCompute(cacheKey, 60, async () => {
+      const [transfers, total] = await Promise.all([
+        prisma.autoTransferLog.findMany({
+          where,
+          include: {
+            fromUser: { select: { id: true, name: true, rank: true } },
+            toUser: { select: { id: true, name: true, rank: true } },
+          },
+          orderBy: { transferDate: 'desc' },
+          skip,
+          take: parseInt(limit, 10),
+        }),
+        prisma.autoTransferLog.count({ where }),
+      ]);
+      return { transfers, total, page: parseInt(page, 10) };
+    });
 
-    res.json({ transfers, total, page: parseInt(page, 10) });
+    res.json(result);
   } catch (err) {
     console.error("[route]", err); res.status(500).json({ error: "Internal server error" });
   }
