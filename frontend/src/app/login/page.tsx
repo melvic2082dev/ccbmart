@@ -3,24 +3,30 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { api } from '@/lib/api';
+import { loginSchema, type LoginInput } from '@/lib/schemas/auth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
 export default function LoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<LoginInput>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: { email: '', password: '' },
+  });
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  const onSubmit = handleSubmit(async (values) => {
     setError('');
-    setLoading(true);
     try {
-      const data = await api.login(email, password);
+      const data = await api.login(values.email, values.password);
       localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify(data.user));
       const role: string = data.user?.role;
@@ -31,10 +37,8 @@ export default function LoginPage() {
       else setError('Vai trò không hợp lệ.');
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Đăng nhập thất bại.');
-    } finally {
-      setLoading(false);
     }
-  }
+  });
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4" style={{ background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%)' }}>
@@ -53,24 +57,26 @@ export default function LoginPage() {
             <CardDescription className="text-gray-400">Nhập thông tin tài khoản để tiếp tục</CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-5">
+            <form onSubmit={onSubmit} className="space-y-5" noValidate>
               <div className="space-y-1.5">
                 <Label htmlFor="email" className="text-gray-300 font-medium">Email</Label>
-                <Input id="email" type="email" placeholder="example@ccbmart.vn" value={email} onChange={(e) => setEmail(e.target.value)} required disabled={loading} className="bg-gray-800/50 border-gray-700 text-white placeholder:text-gray-500 rounded-xl focus:border-blue-500 focus:ring-blue-500" />
+                <Input id="email" type="email" placeholder="example@ccbmart.vn" disabled={isSubmitting} className="bg-gray-800/50 border-gray-700 text-white placeholder:text-gray-500 rounded-xl focus:border-blue-500 focus:ring-blue-500" aria-invalid={!!errors.email} {...register('email')} />
+                {errors.email && <p className="text-xs text-red-400">{errors.email.message}</p>}
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="password" className="text-gray-300 font-medium">Mật khẩu</Label>
-                <Input id="password" type="password" placeholder="********" value={password} onChange={(e) => setPassword(e.target.value)} required disabled={loading} className="bg-gray-800/50 border-gray-700 text-white placeholder:text-gray-500 rounded-xl focus:border-blue-500 focus:ring-blue-500" />
+                <Input id="password" type="password" placeholder="********" disabled={isSubmitting} className="bg-gray-800/50 border-gray-700 text-white placeholder:text-gray-500 rounded-xl focus:border-blue-500 focus:ring-blue-500" aria-invalid={!!errors.password} {...register('password')} />
+                {errors.password && <p className="text-xs text-red-400">{errors.password.message}</p>}
               </div>
               {error && (
                 <div className="rounded-xl bg-red-500/10 border border-red-500/30 px-4 py-3 text-sm text-red-400">{error}</div>
               )}
               <button
                 type="submit"
-                disabled={loading}
+                disabled={isSubmitting}
                 className="w-full bg-gradient-to-r from-blue-500 to-blue-700 text-white font-semibold py-2.5 rounded-xl transition-all duration-200 shadow-lg shadow-blue-500/25 hover:shadow-xl hover:shadow-blue-500/30 active:scale-[0.98] disabled:opacity-50"
               >
-                {loading ? 'Đang đăng nhập...' : 'Đăng nhập'}
+                {isSubmitting ? 'Đang đăng nhập...' : 'Đăng nhập'}
               </button>
             </form>
             <p className="text-sm text-center text-gray-500 mt-4">

@@ -2,7 +2,10 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { api, formatVND } from '@/lib/api';
+import { registerSchema, type RegisterInput } from '@/lib/schemas/auth';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,23 +13,34 @@ import { Label } from '@/components/ui/label';
 
 export default function RegisterPage() {
   const router = useRouter();
-  const [form, setForm] = useState({ name: '', email: '', phone: '', password: '', depositAmount: 0, referralCode: '' });
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
+  const {
+    register,
+    handleSubmit,
+    watch,
+    formState: { errors, isSubmitting },
+  } = useForm<RegisterInput>({
+    resolver: zodResolver(registerSchema),
+    defaultValues: { name: '', email: '', phone: '', password: '', depositAmount: 0, referralCode: '' },
+  });
+
+  const depositAmount = watch('depositAmount') ?? 0;
+
+  const onSubmit = handleSubmit(async (values) => {
     setError('');
     try {
-      await api.memberRegister({ ...form, depositAmount: form.depositAmount || 0, referralCode: form.referralCode || undefined });
+      await api.memberRegister({
+        ...values,
+        depositAmount: values.depositAmount || 0,
+        referralCode: values.referralCode || undefined,
+      });
       setSuccess(true);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Đăng ký thất bại.');
     }
-    setLoading(false);
-  };
+  });
 
   const tiers = [
     { name: 'Green', min: 0, discount: '0%' },
@@ -66,24 +80,57 @@ export default function RegisterPage() {
           </CardHeader>
           <CardContent>
             {error && <div className="bg-red-50 text-red-600 p-3 rounded-lg mb-4 text-sm">{error}</div>}
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div><Label>Họ tên *</Label><Input value={form.name} onChange={e => setForm({...form, name: e.target.value})} required /></div>
-              <div><Label>Email *</Label><Input type="email" value={form.email} onChange={e => setForm({...form, email: e.target.value})} required /></div>
-              <div><Label>Số điện thoại *</Label><Input value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} required /></div>
-              <div><Label>Mật khẩu *</Label><Input type="password" value={form.password} onChange={e => setForm({...form, password: e.target.value})} required minLength={6} /></div>
+            <form onSubmit={onSubmit} className="space-y-4" noValidate>
+              <div>
+                <Label>Họ tên *</Label>
+                <Input aria-invalid={!!errors.name} {...register('name')} />
+                {errors.name && <p className="text-xs text-red-500 mt-1">{errors.name.message}</p>}
+              </div>
+              <div>
+                <Label>Email *</Label>
+                <Input type="email" aria-invalid={!!errors.email} {...register('email')} />
+                {errors.email && <p className="text-xs text-red-500 mt-1">{errors.email.message}</p>}
+              </div>
+              <div>
+                <Label>Số điện thoại *</Label>
+                <Input aria-invalid={!!errors.phone} {...register('phone')} />
+                {errors.phone && <p className="text-xs text-red-500 mt-1">{errors.phone.message}</p>}
+              </div>
+              <div>
+                <Label>Mật khẩu *</Label>
+                <Input type="password" aria-invalid={!!errors.password} {...register('password')} />
+                {errors.password && <p className="text-xs text-red-500 mt-1">{errors.password.message}</p>}
+              </div>
               <div>
                 <Label>Số tiền nạp ban đầu (VND)</Label>
-                <Input type="number" value={form.depositAmount} onChange={e => setForm({...form, depositAmount: parseInt(e.target.value) || 0})} min={0} step={100000} />
+                <Input
+                  type="number"
+                  min={0}
+                  step={100000}
+                  aria-invalid={!!errors.depositAmount}
+                  {...register('depositAmount', { valueAsNumber: true })}
+                />
+                {errors.depositAmount && <p className="text-xs text-red-500 mt-1">{errors.depositAmount.message}</p>}
                 <div className="flex gap-1 mt-1 flex-wrap">
                   {tiers.map(t => (
-                    <span key={t.name} className={`text-xs px-2 py-0.5 rounded ${form.depositAmount >= t.min ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-400'}`}>
+                    <span key={t.name} className={`text-xs px-2 py-0.5 rounded ${depositAmount >= t.min ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-400'}`}>
                       {t.name}: {formatVND(t.min)}+ = {t.discount} giảm
                     </span>
                   ))}
                 </div>
               </div>
-              <div><Label>Mã giới thiệu (tuỳ chọn)</Label><Input value={form.referralCode} onChange={e => setForm({...form, referralCode: e.target.value.toUpperCase()})} placeholder="CCB_XXXXXX" /></div>
-              <Button type="submit" disabled={loading} className="w-full">{loading ? 'Đang xử lý…' : 'Đăng ký'}</Button>
+              <div>
+                <Label>Mã giới thiệu (tuỳ chọn)</Label>
+                <Input
+                  placeholder="CCB_XXXXXX"
+                  aria-invalid={!!errors.referralCode}
+                  {...register('referralCode', {
+                    setValueAs: (v: string) => v.toUpperCase(),
+                  })}
+                />
+                {errors.referralCode && <p className="text-xs text-red-500 mt-1">{errors.referralCode.message}</p>}
+              </div>
+              <Button type="submit" disabled={isSubmitting} className="w-full">{isSubmitting ? 'Đang xử lý…' : 'Đăng ký'}</Button>
             </form>
             <p className="text-sm text-center text-gray-500 mt-4">
               Đã có tài khoản? <Link href="/login" className="text-blue-600 hover:underline">Đăng nhập</Link>
