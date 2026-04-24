@@ -150,7 +150,7 @@ export default function AdminManagementFeesPage() {
                             <td className="py-2 px-2">{r.toUser.name} <span className="text-slate-500 text-xs">({r.toUser.rank})</span></td>
                             <td className="py-2 px-2 text-right font-mono font-semibold">{formatVND(Number(r.amount ?? 0) || 0)}</td>
                             <td className="py-2 px-2">
-                              <Badge className={r.status === 'PAID' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}>{r.status}</Badge>
+                              <Badge className={r.status === 'PAID' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}>{r.status === 'PAID' ? 'Đã trả' : r.status === 'PENDING' ? 'Chờ trả' : r.status}</Badge>
                             </td>
                             <td className="py-2 px-2 text-xs text-gray-600">—</td>
                             <td className="py-2 px-2 font-mono text-xs text-gray-600">—</td>
@@ -193,7 +193,7 @@ export default function AdminManagementFeesPage() {
           <div className="bg-white dark:bg-slate-800 rounded-xl p-5 w-[440px] max-w-[90vw] space-y-3" onClick={(e) => e.stopPropagation()}>
             <h3 className="text-lg font-bold">Log đào tạo kèm theo</h3>
             <p className="text-xs text-gray-500">
-              Mentor/Tháng: <b>{openTrainingLogsFor}</b>
+              Giảng viên/Tháng: <b>{openTrainingLogsFor}</b>
             </p>
             <div className="rounded-md border border-gray-100 bg-gray-50 p-3 text-sm text-gray-700 space-y-1">
               <p>Phí quản lý chỉ được chi trả nếu mentor có đủ <b>20 giờ log đào tạo</b> trong tháng.</p>

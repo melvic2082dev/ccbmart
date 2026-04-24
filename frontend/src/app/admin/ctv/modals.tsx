@@ -792,7 +792,7 @@ export function CtvDetailsModal({
                           <TableCell>
                             <Badge className={
                               t.status === 'VERIFIED' ? 'bg-emerald-100 text-emerald-700 text-xs' : 'bg-amber-100 text-amber-700 text-xs'
-                            }>{t.status}</Badge>
+                            }>{t.status === 'VERIFIED' ? 'Đã duyệt' : t.status === 'PENDING' ? 'Chờ duyệt' : t.status === 'REJECTED' ? 'Từ chối' : t.status}</Badge>
                           </TableCell>
                         </TableRow>
                       ))}
@@ -859,7 +859,7 @@ export function CtvDetailsModal({
                                   d.status === 'CONFIRMED' ? 'bg-emerald-100 text-emerald-700 text-xs' :
                                   d.status === 'PENDING'   ? 'bg-amber-100 text-amber-700 text-xs' :
                                   'bg-red-100 text-red-700 text-xs'
-                                }>{d.status}</Badge>
+                                }>{d.status === 'CONFIRMED' ? 'Đã duyệt' : d.status === 'PENDING' ? 'Chờ duyệt' : d.status === 'REJECTED' ? 'Từ chối' : d.status}</Badge>
                               </TableCell>
                             </TableRow>
                           ))}

@@ -294,7 +294,7 @@ export function AgencyDetailModal({
                             t.status === 'CONFIRMED' ? 'bg-emerald-100 text-emerald-700 text-xs' :
                             t.status === 'PENDING'   ? 'bg-amber-100 text-amber-700 text-xs' :
                             'bg-gray-100 text-gray-600 text-xs'
-                          }>{t.status}</Badge>
+                          }>{t.status === 'CONFIRMED' ? 'Đã duyệt' : t.status === 'PENDING' ? 'Chờ duyệt' : t.status === 'CANCELLED' ? 'Đã hủy' : t.status}</Badge>
                         </TableCell>
                       </TableRow>
                     ))}

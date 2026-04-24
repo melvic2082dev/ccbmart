@@ -8,6 +8,12 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { CreditCard, CheckCircle, XCircle } from 'lucide-react';
 
+const STATUS_LABELS: Record<string, string> = {
+  PENDING: 'Chờ duyệt',
+  CONFIRMED: 'Đã duyệt',
+  REJECTED: 'Từ chối',
+};
+
 export default function AdminMemberDeposits() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -49,7 +55,7 @@ export default function AdminMemberDeposits() {
       <div className="flex gap-2 mb-4">
         {['PENDING', 'CONFIRMED', 'REJECTED', ''].map(s => (
           <Button key={s} variant={filter === s ? 'default' : 'outline'} size="sm" onClick={() => setFilter(s)}>
-            {s || 'Tất cả'}
+            {s ? (STATUS_LABELS[s] || s) : 'Tất cả'}
           </Button>
         ))}
       </div>
@@ -62,7 +68,7 @@ export default function AdminMemberDeposits() {
       )}
       {loading ? <div className="h-48 bg-gray-200 animate-pulse rounded-xl" /> : !error && (data?.deposits?.length ?? 0) === 0 ? (
         <div className="p-8 text-center text-gray-500 border border-dashed rounded-xl">
-          Không có giao dịch nạp tiền nào ở trạng thái <strong>{filter || 'Tất cả'}</strong>.
+          Không có giao dịch nạp tiền nào ở trạng thái <strong>{filter ? (STATUS_LABELS[filter] || filter) : 'Tất cả'}</strong>.
         </div>
       ) : !error ? (
         <Card>
@@ -89,7 +95,7 @@ export default function AdminMemberDeposits() {
                     <TableCell className="text-right font-semibold">{formatVND(d.amount)}</TableCell>
                     <TableCell>{d.method === 'bank_transfer' ? 'CK' : 'TM'}</TableCell>
                     <TableCell>
-                      <Badge className={d.status === 'CONFIRMED' ? 'bg-green-100 text-green-700' : d.status === 'PENDING' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'} variant="outline">{d.status}</Badge>
+                      <Badge className={d.status === 'CONFIRMED' ? 'bg-green-100 text-green-700' : d.status === 'PENDING' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'} variant="outline">{STATUS_LABELS[d.status] || d.status}</Badge>
                     </TableCell>
                     <TableCell className="text-xs">{new Date(d.createdAt).toLocaleString('vi-VN')}</TableCell>
                     <TableCell>

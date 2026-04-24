@@ -259,7 +259,7 @@ export default function AdminBreakawayLogsPage() {
                               </button>
                             </td>
                             <td className="py-2 px-2">
-                              <Badge className={r.status === 'PAID' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}>{r.status}</Badge>
+                              <Badge className={r.status === 'PAID' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}>{r.status === 'PAID' ? 'Đã trả' : r.status === 'PENDING' ? 'Chờ trả' : r.status}</Badge>
                             </td>
                             <td className="py-2 px-2">
                               {r.status === 'PENDING' && (

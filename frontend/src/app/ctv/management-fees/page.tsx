@@ -127,7 +127,7 @@ export default function CtvManagementFeesPage() {
                           <td className="py-2 px-2 text-right font-mono font-semibold">{formatVND(r.amount)}</td>
                           <td className="py-2 px-2">
                             <Badge className={r.status === 'PAID' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}>
-                              {r.status}
+                              {r.status === 'PAID' ? 'Đã trả' : r.status === 'PENDING' ? 'Chờ trả' : r.status}
                             </Badge>
                           </td>
                         </tr>

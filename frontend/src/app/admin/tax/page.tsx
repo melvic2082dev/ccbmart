@@ -190,7 +190,7 @@ export default function AdminTaxPage() {
                       </TableCell>
                       <TableCell>
                         <Badge className={r.status === 'PAID' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}>
-                          {r.status}
+                          {r.status === 'PAID' ? 'Đã nộp' : r.status === 'PENDING' ? 'Chờ nộp' : r.status}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-xs text-gray-600">

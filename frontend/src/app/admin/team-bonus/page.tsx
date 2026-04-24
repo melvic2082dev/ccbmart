@@ -58,7 +58,7 @@ export default function AdminTeamBonus() {
             {monthOptions.map(m => <option key={m} value={m}>{m}</option>)}
           </select>
           <Button onClick={handleCalculate} disabled={calculating}>
-            <RefreshCw size={16} className={`mr-1 ${calculating ? 'animate-spin' : ''}`} /> Tinh thuong
+            <RefreshCw size={16} className={`mr-1 ${calculating ? 'animate-spin' : ''}`} /> Tính thưởng
           </Button>
         </div>
       </div>
@@ -99,14 +99,14 @@ export default function AdminTeamBonus() {
                     <TableCell className="text-right font-mono">{formatVND(b.pointAmount)}</TableCell>
                     <TableCell>
                       <Badge className={b.status === 'PAID' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}>
-                        {b.status === 'PAID' ? 'Da tra' : 'Cho xu ly'}
+                        {b.status === 'PAID' ? 'Đã trả' : 'Chờ xử lý'}
                       </Badge>
                     </TableCell>
                   </TableRow>
                 ))}
                 {bonuses.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={9} className="text-center text-gray-500 py-8">Chua co du lieu. Bam "Tinh thuong" de bat dau.</TableCell>
+                    <TableCell colSpan={9} className="text-center text-gray-500 py-8">Chưa có dữ liệu. Bấm &ldquo;Tính thưởng&rdquo; để bắt đầu.</TableCell>
                   </TableRow>
                 )}
               </TableBody>

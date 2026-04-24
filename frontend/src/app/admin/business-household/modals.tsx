@@ -223,7 +223,7 @@ export function HkdDetailModal({
                           <TableCell>
                             <Badge className={r.status === 'PAID'
                               ? 'bg-emerald-100 text-emerald-700 text-xs'
-                              : 'bg-amber-100 text-amber-700 text-xs'}>{r.status}</Badge>
+                              : 'bg-amber-100 text-amber-700 text-xs'}>{r.status === 'PAID' ? 'Đã trả' : r.status === 'PENDING' ? 'Chờ trả' : r.status}</Badge>
                           </TableCell>
                         </TableRow>
                       ))}
@@ -240,8 +240,8 @@ export function HkdDetailModal({
                     <TableHeader>
                       <TableRow>
                         <TableHead>Mã HĐ</TableHead>
-                        <TableHead>Trainer</TableHead>
-                        <TableHead>Trainee</TableHead>
+                        <TableHead>Giảng viên</TableHead>
+                        <TableHead>Học viên</TableHead>
                         <TableHead>Ngày ký</TableHead>
                         <TableHead>Hết hạn</TableHead>
                         <TableHead>Trạng thái</TableHead>

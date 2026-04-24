@@ -33,6 +33,12 @@ const STATUS_STYLES: Record<string, string> = {
   FAILED: 'bg-red-100 text-red-700',
 };
 
+const STATUS_LABELS: Record<string, string> = {
+  PENDING: 'Chờ xử lý',
+  SUCCESS: 'Thành công',
+  FAILED: 'Thất bại',
+};
+
 type ConfirmState =
   | { kind: 'idle' }
   | { kind: 'retry-all'; count: number }
@@ -109,7 +115,7 @@ export default function AdminTransfersPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <Card>
           <CardContent className="p-4">
-            <p className="text-sm text-slate-500">Tổng chuyển khoản SUCCESS</p>
+            <p className="text-sm text-slate-500">Tổng chuyển khoản thành công</p>
             <p className="text-2xl font-bold text-emerald-700">{formatVND(totalSuccess)}</p>
           </CardContent>
         </Card>
@@ -136,12 +142,12 @@ export default function AdminTransfersPage() {
               filter === s ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
             }`}
           >
-            {s === '' ? 'Tất cả' : s}
+            {s === '' ? 'Tất cả' : STATUS_LABELS[s] || s}
           </button>
         ))}
         {failedCount > 0 && (
           <Button variant="destructive" size="sm" onClick={handleRetryAll} className="ml-auto">
-            <RefreshCw className="w-4 h-4 mr-1" /> Retry tất cả FAILED ({failedCount})
+            <RefreshCw className="w-4 h-4 mr-1" /> Chạy lại tất cả giao dịch thất bại ({failedCount})
           </Button>
         )}
       </div>
@@ -161,7 +167,7 @@ export default function AdminTransfersPage() {
                   <TableHead>Bên chuyển</TableHead>
                   <TableHead>Bên nhận</TableHead>
                   <TableHead className="text-right">Số tiền</TableHead>
-                  <TableHead>Ref Invoice</TableHead>
+                  <TableHead>Tham chiếu hóa đơn</TableHead>
                   <TableHead>Trạng thái</TableHead>
                   <TableHead>Lỗi</TableHead>
                   <TableHead>Thao tác</TableHead>
@@ -186,7 +192,7 @@ export default function AdminTransfersPage() {
                       </TableCell>
                       <TableCell className="font-mono text-xs">{t.reference ? `#${t.reference}` : '—'}</TableCell>
                       <TableCell>
-                        <Badge className={STATUS_STYLES[t.status]}>{t.status}</Badge>
+                        <Badge className={STATUS_STYLES[t.status]}>{STATUS_LABELS[t.status] || t.status}</Badge>
                       </TableCell>
                       <TableCell className="text-xs text-red-600 max-w-[200px] truncate">
                         {t.errorMessage || '—'}
@@ -194,7 +200,7 @@ export default function AdminTransfersPage() {
                       <TableCell>
                         {t.status === 'FAILED' && (
                           <Button variant="outline" size="sm" onClick={() => handleRetry(t.id)}>
-                            <RefreshCw className="w-3 h-3 mr-1" /> Retry
+                            <RefreshCw className="w-3 h-3 mr-1" /> Chạy lại
                           </Button>
                         )}
                       </TableCell>
@@ -223,7 +229,7 @@ export default function AdminTransfersPage() {
             <DialogTitle>Chạy lại giao dịch thất bại?</DialogTitle>
             <DialogDescription>
               {confirmState.kind === 'retry-all' && (
-                <>Sẽ retry <b>{confirmState.count}</b> giao dịch đang ở trạng thái FAILED. Tiếp tục?</>
+                <>Sẽ chạy lại <b>{confirmState.count}</b> giao dịch đang ở trạng thái thất bại. Tiếp tục?</>
               )}
             </DialogDescription>
           </DialogHeader>
@@ -236,7 +242,7 @@ export default function AdminTransfersPage() {
               Hủy
             </Button>
             <Button onClick={confirmRetryAll} disabled={submitting}>
-              {submitting ? 'Đang chạy…' : 'Xác nhận retry'}
+              {submitting ? 'Đang chạy…' : 'Xác nhận chạy lại'}
             </Button>
           </DialogFooter>
         </DialogContent>
