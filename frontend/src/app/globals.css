@@ -6,6 +6,8 @@
 
 @theme inline {
   --font-sans: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-heading: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-primary-50: #eff6ff;
@@ -263,12 +265,21 @@
   * {
     @apply border-border;
   }
+  html {
+    font-family: var(--font-sans);
+  }
   body {
     font-family: var(--font-sans);
     background: var(--background);
     color: var(--foreground);
     overflow-x: hidden;
     transition: background-color 0.3s, color 0.3s;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading);
+  }
+  code, kbd, samp, pre {
+    font-family: var(--font-mono);
   }
 }
 
