@@ -31,6 +31,13 @@ const STATUS_STYLES: Record<string, string> = {
   CANCELLED: 'bg-red-100 text-red-700',
 };
 
+const STATUS_LABEL: Record<string, string> = {
+  DRAFT: 'Nháp',
+  SENT: 'Đã gửi',
+  PAID: 'Đã thanh toán',
+  CANCELLED: 'Đã hủy',
+};
+
 export default function AdminInvoicesPage() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
@@ -134,7 +141,7 @@ export default function AdminInvoicesPage() {
               filter === s ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
             }`}
           >
-            {s === '' ? 'Tất cả' : s}
+            {s === '' ? 'Tất cả' : STATUS_LABEL[s] ?? s}
           </button>
         ))}
         <div className="ml-auto flex gap-2">
@@ -219,7 +226,7 @@ export default function AdminInvoicesPage() {
                       {formatVND(inv.amount)}
                     </TableCell>
                     <TableCell>
-                      <Badge className={STATUS_STYLES[inv.status]}>{inv.status}</Badge>
+                      <Badge className={STATUS_STYLES[inv.status]}>{STATUS_LABEL[inv.status] ?? inv.status}</Badge>
                     </TableCell>
                     <TableCell className="text-xs">{inv.contract?.contractNo || '—'}</TableCell>
                   </TableRow>

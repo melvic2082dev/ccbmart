@@ -124,12 +124,12 @@ export default function AdminConfig() {
   const pct = (v: number) => `${(v * 100).toFixed(0)}%`;
 
   const tabs: { key: Tab; label: string; icon: React.ReactNode }[] = [
-    { key: 'commission', label: 'CTV Commission', icon: <Users size={16} /> },
-    { key: 'kpi', label: 'KPI Rules', icon: <BarChart3 size={16} /> },
-    { key: 'agency', label: 'Agency Commission', icon: <Building2 size={16} /> },
-    { key: 'cogs', label: 'COGS Phases', icon: <Package size={16} /> },
+    { key: 'commission', label: 'Hoa hồng CTV', icon: <Users size={16} /> },
+    { key: 'kpi', label: 'Quy tắc KPI', icon: <BarChart3 size={16} /> },
+    { key: 'agency', label: 'Hoa hồng Đại lý', icon: <Building2 size={16} /> },
+    { key: 'cogs', label: 'Giai đoạn COGS', icon: <Package size={16} /> },
     { key: 'promotion', label: 'Thăng tiến', icon: <Scale size={16} /> },
-    { key: 'softSalary', label: 'Soft Salary', icon: <Calculator size={16} /> },
+    { key: 'softSalary', label: 'Ngưỡng lương mềm', icon: <Calculator size={16} /> },
   ];
 
   return (

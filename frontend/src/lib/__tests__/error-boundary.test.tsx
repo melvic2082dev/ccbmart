@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ErrorBoundary } from '@/components/ui/error-boundary';
 
-function Bomb({ msg }: { msg: string }) {
+function Bomb({ msg }: { msg: string }): never {
   throw new Error(msg);
 }
 

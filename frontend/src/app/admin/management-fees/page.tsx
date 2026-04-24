@@ -17,9 +17,9 @@ interface AdminMgmtFeeRecord {
 }
 
 interface AdminMgmtFeeResponse {
-  records: AdminMgmtFeeRecord[];
-  total: number;
-  byLevel: { f1: number; f2: number; f3: number };
+  records?: AdminMgmtFeeRecord[];
+  total?: number | string;
+  byLevel?: { f1?: number | string; f2?: number | string; f3?: number | string };
 }
 
 function currentMonth() {
@@ -112,18 +112,18 @@ export default function AdminManagementFeesPage() {
       ) : data ? (
         <>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <Card><CardContent className="p-4"><p className="text-sm text-slate-500">Tổng Cấp 1 (10%)</p><p className="text-xl font-bold text-emerald-700">{formatVND(data.byLevel.f1)}</p></CardContent></Card>
-            <Card><CardContent className="p-4"><p className="text-sm text-slate-500">Tổng Cấp 2 (5%)</p><p className="text-xl font-bold text-blue-700">{formatVND(data.byLevel.f2)}</p></CardContent></Card>
-            <Card><CardContent className="p-4"><p className="text-sm text-slate-500">Tổng Cấp 3 (3%)</p><p className="text-xl font-bold text-purple-700">{formatVND(data.byLevel.f3)}</p></CardContent></Card>
-            <Card><CardContent className="p-4"><p className="text-sm text-slate-500">Tổng cộng</p><p className="text-xl font-bold">{formatVND(data.total)}</p></CardContent></Card>
+            <Card><CardContent className="p-4"><p className="text-sm text-slate-500">Tổng Cấp 1 (10%)</p><p className="text-xl font-bold text-emerald-700">{formatVND(Number(data.byLevel?.f1 ?? 0) || 0)}</p></CardContent></Card>
+            <Card><CardContent className="p-4"><p className="text-sm text-slate-500">Tổng Cấp 2 (5%)</p><p className="text-xl font-bold text-blue-700">{formatVND(Number(data.byLevel?.f2 ?? 0) || 0)}</p></CardContent></Card>
+            <Card><CardContent className="p-4"><p className="text-sm text-slate-500">Tổng Cấp 3 (3%)</p><p className="text-xl font-bold text-purple-700">{formatVND(Number(data.byLevel?.f3 ?? 0) || 0)}</p></CardContent></Card>
+            <Card><CardContent className="p-4"><p className="text-sm text-slate-500">Tổng cộng</p><p className="text-xl font-bold">{formatVND(Number(data.total ?? 0) || 0)}</p></CardContent></Card>
           </div>
 
           <Card>
             <CardHeader>
-              <CardTitle>Danh sách phí quản lý ({data.records.length})</CardTitle>
+              <CardTitle>Danh sách phí quản lý ({data.records?.length ?? 0})</CardTitle>
             </CardHeader>
             <CardContent>
-              {data.records.length === 0 ? (
+              {!data.records || data.records.length === 0 ? (
                 <p className="text-sm text-slate-500">Chưa có dữ liệu. Nhấn &quot;Tính lại tháng&quot; để trigger.</p>
               ) : (
                 <div className="overflow-x-auto">
@@ -142,13 +142,13 @@ export default function AdminManagementFeesPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {data.records.map((r) => (
+                      {data.records?.map((r) => (
                           <tr key={r.id} className="border-b last:border-0 hover:bg-gray-50/60">
                             <td className="py-2 px-2 font-mono text-xs">{r.month}</td>
                             <td className="py-2 px-2"><Badge className={`${LEVEL_COLOR[r.level]} text-xs`}>{LEVEL_LABEL[r.level]}</Badge></td>
                             <td className="py-2 px-2">{r.fromUser.name} <span className="text-slate-500 text-xs">({r.fromUser.rank || 'CTV'})</span></td>
                             <td className="py-2 px-2">{r.toUser.name} <span className="text-slate-500 text-xs">({r.toUser.rank})</span></td>
-                            <td className="py-2 px-2 text-right font-mono font-semibold">{formatVND(r.amount)}</td>
+                            <td className="py-2 px-2 text-right font-mono font-semibold">{formatVND(Number(r.amount ?? 0) || 0)}</td>
                             <td className="py-2 px-2">
                               <Badge className={r.status === 'PAID' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}>{r.status}</Badge>
                             </td>

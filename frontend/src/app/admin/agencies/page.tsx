@@ -54,7 +54,24 @@ export default function AdminAgencies() {
   const loadAgencies = () => {
     setLoading(true);
     api.adminAgencies()
-      .then((d) => setAgencies(Array.isArray(d) ? (d as AgencyRow[]) : []))
+      .then((d) => {
+        const list = Array.isArray(d) ? (d as AgencyRow[]) : [];
+        // Backend serializes Prisma Decimal fields as strings. Coerce once here
+        // so the rest of the page can safely arithmetic + format.
+        const numeric: Array<keyof AgencyRow> = [
+          'depositAmount', 'totalRevenue', 'monthlyRevenue', 'prevMonthlyRev',
+          'last30dRevenue', 'last30dTxnCount', 'currentInventory', 'receivedValue',
+          'soldValue', 'creditRemaining', 'warningCount', 'lowStockCount', 'transactions',
+        ];
+        const normalized = list.map((a) => {
+          const out = { ...a } as AgencyRow;
+          for (const k of numeric) {
+            (out as unknown as Record<string, unknown>)[k] = Number(a[k] ?? 0) || 0;
+          }
+          return out;
+        });
+        setAgencies(normalized);
+      })
       .catch((err) => console.error('Failed to fetch agencies:', err))
       .finally(() => setLoading(false));
   };

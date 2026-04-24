@@ -10,13 +10,13 @@ import { AlertCircle, AlertTriangle, CheckCircle, ArrowLeft } from 'lucide-react
 interface SalaryFundManager {
   name: string
   rank: string
-  fixedSalary: number
+  salary: number | string
 }
 
 interface SalaryFund {
-  totalFixedSalary: number
-  salaryFundCap: number
-  usagePercent: number
+  totalFixedSalary: number | string
+  salaryFundCap: number | string
+  usagePercent: number | string
   managers: SalaryFundManager[]
 }
 
@@ -75,16 +75,20 @@ export default function SalaryReportPage() {
 
   const sortedManagers = useMemo(() => {
     if (!data?.salaryFund?.managers) return []
-    return [...data.salaryFund.managers].sort((a, b) => {
-      const ra = RANK_ORDER[a.rank] ?? 99
-      const rb = RANK_ORDER[b.rank] ?? 99
-      if (ra !== rb) return ra - rb
-      return b.fixedSalary - a.fixedSalary
-    })
+    return [...data.salaryFund.managers]
+      .map((m) => ({ ...m, salary: Number(m.salary ?? 0) || 0 }))
+      .sort((a, b) => {
+        const ra = RANK_ORDER[a.rank] ?? 99
+        const rb = RANK_ORDER[b.rank] ?? 99
+        if (ra !== rb) return ra - rb
+        return b.salary - a.salary
+      })
   }, [data])
 
   const sf = data?.salaryFund
-  const overallPct = sf?.usagePercent ?? 0
+  const salaryFundCap = Number(sf?.salaryFundCap ?? 0) || 0
+  const totalFixedSalary = Number(sf?.totalFixedSalary ?? 0) || 0
+  const overallPct = Number(sf?.usagePercent ?? 0) || 0
 
   return (
     <>
@@ -118,14 +122,14 @@ export default function SalaryReportPage() {
               <Card className="border-emerald-100 shadow-sm">
                 <CardContent className="p-4">
                   <p className="text-xs text-gray-500 uppercase tracking-wide">Ngưỡng quỹ lương</p>
-                  <p className="text-lg font-bold text-gray-900 mt-1">{formatVND(sf.salaryFundCap)}</p>
+                  <p className="text-lg font-bold text-gray-900 mt-1">{formatVND(salaryFundCap)}</p>
                   <p className="text-xs text-gray-500 mt-0.5">5% doanh thu kênh CTV</p>
                 </CardContent>
               </Card>
               <Card className="border-emerald-100 shadow-sm">
                 <CardContent className="p-4">
                   <p className="text-xs text-gray-500 uppercase tracking-wide">Thực tế đã chi</p>
-                  <p className="text-lg font-bold text-gray-900 mt-1">{formatVND(sf.totalFixedSalary)}</p>
+                  <p className="text-lg font-bold text-gray-900 mt-1">{formatVND(totalFixedSalary)}</p>
                   <p className="text-xs text-gray-500 mt-0.5">{sortedManagers.length} người</p>
                 </CardContent>
               </Card>
@@ -171,7 +175,7 @@ export default function SalaryReportPage() {
                         </tr>
                       ) : (
                         sortedManagers.map((m, idx) => {
-                          const pct = sf.salaryFundCap > 0 ? (m.fixedSalary / sf.salaryFundCap) * 100 : 0
+                          const pct = salaryFundCap > 0 ? (m.salary / salaryFundCap) * 100 : 0
                           const status = managerStatus(overallPct)
                           return (
                             <tr
@@ -188,7 +192,7 @@ export default function SalaryReportPage() {
                                 </Badge>
                               </td>
                               <td className="py-2.5 px-3 text-right font-semibold text-gray-900">
-                                {formatVND(m.fixedSalary)}
+                                {formatVND(m.salary)}
                               </td>
                               <td className="py-2.5 px-3 text-right text-gray-700">{pct.toFixed(1)}%</td>
                               <td className="py-2.5 px-3 text-center">
@@ -207,7 +211,7 @@ export default function SalaryReportPage() {
                             Tổng cộng ({sortedManagers.length} người)
                           </td>
                           <td className="py-2.5 px-3 text-right text-emerald-800">
-                            {formatVND(sf.totalFixedSalary)}
+                            {formatVND(totalFixedSalary)}
                           </td>
                           <td className="py-2.5 px-3 text-right text-emerald-700">
                             {overallPct.toFixed(1)}%
