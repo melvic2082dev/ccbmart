@@ -7,10 +7,18 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Banknote, RefreshCw, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 interface Transfer {
   id: number;
-  amount: number;
+  amount: number | string;
   transferDate: string;
   status: string;
   errorMessage: string | null;
@@ -25,10 +33,17 @@ const STATUS_STYLES: Record<string, string> = {
   FAILED: 'bg-red-100 text-red-700',
 };
 
+type ConfirmState =
+  | { kind: 'idle' }
+  | { kind: 'retry-all'; count: number }
+  | { kind: 'error'; message: string };
+
 export default function AdminTransfersPage() {
   const [transfers, setTransfers] = useState<Transfer[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>('');
+  const [confirmState, setConfirmState] = useState<ConfirmState>({ kind: 'idle' });
+  const [submitting, setSubmitting] = useState(false);
 
   const load = () => {
     setLoading(true);
@@ -41,28 +56,40 @@ export default function AdminTransfersPage() {
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(load, [filter]);
 
+  const showError = (message: string) => setConfirmState({ kind: 'error', message });
+
   const handleRetry = async (id: number) => {
     try {
       await api.adminTransferRetry(id);
       load();
     } catch (e) {
-      alert((e as Error).message);
+      showError((e as Error).message);
     }
   };
 
-  const handleRetryAll = async () => {
-    const failed = transfers.filter(t => t.status === 'FAILED');
-    if (failed.length === 0) return;
-    if (!confirm(`Chạy lại ${failed.length} giao dịch FAILED?`)) return;
+  const handleRetryAll = () => {
+    const count = transfers.filter((t) => t.status === 'FAILED').length;
+    if (count === 0) return;
+    setConfirmState({ kind: 'retry-all', count });
+  };
+
+  const confirmRetryAll = async () => {
+    setSubmitting(true);
     try {
-      await Promise.all(failed.map(t => api.adminTransferRetry(t.id)));
+      const failed = transfers.filter((t) => t.status === 'FAILED');
+      await Promise.all(failed.map((t) => api.adminTransferRetry(t.id)));
+      setConfirmState({ kind: 'idle' });
       load();
     } catch (e) {
-      alert((e as Error).message);
+      showError((e as Error).message);
+    } finally {
+      setSubmitting(false);
     }
   };
 
-  const totalSuccess = transfers.filter((t) => t.status === 'SUCCESS').reduce((s, t) => s + t.amount, 0);
+  const totalSuccess = transfers
+    .filter((t) => t.status === 'SUCCESS')
+    .reduce((s, t) => s + Number(t.amount || 0), 0);
   const failedCount = transfers.filter((t) => t.status === 'FAILED').length;
 
   return (
@@ -141,36 +168,39 @@ export default function AdminTransfersPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {transfers.map((t) => (
-                  <TableRow key={t.id}>
-                    <TableCell className="text-sm">{new Date(t.transferDate).toLocaleDateString('vi-VN')}</TableCell>
-                    <TableCell>
-                      <div className="text-sm font-medium">{t.fromUser.name}</div>
-                      <Badge variant="outline" className="text-xs">{t.fromUser.rank}</Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="text-sm font-medium">{t.toUser.name}</div>
-                      <Badge variant="outline" className="text-xs">{t.toUser.rank}</Badge>
-                    </TableCell>
-                    <TableCell className="text-right font-mono font-semibold">
-                      {t.amount > 0 ? formatVND(t.amount) : '—'}
-                    </TableCell>
-                    <TableCell className="font-mono text-xs">{t.reference ? `#${t.reference}` : '—'}</TableCell>
-                    <TableCell>
-                      <Badge className={STATUS_STYLES[t.status]}>{t.status}</Badge>
-                    </TableCell>
-                    <TableCell className="text-xs text-red-600 max-w-[200px] truncate">
-                      {t.errorMessage || '—'}
-                    </TableCell>
-                    <TableCell>
-                      {t.status === 'FAILED' && (
-                        <Button variant="outline" size="sm" onClick={() => handleRetry(t.id)}>
-                          <RefreshCw className="w-3 h-3 mr-1" /> Retry
-                        </Button>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {transfers.map((t) => {
+                  const amt = Number(t.amount || 0);
+                  return (
+                    <TableRow key={t.id}>
+                      <TableCell className="text-sm">{new Date(t.transferDate).toLocaleDateString('vi-VN')}</TableCell>
+                      <TableCell>
+                        <div className="text-sm font-medium">{t.fromUser.name}</div>
+                        <Badge variant="outline" className="text-xs">{t.fromUser.rank}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-sm font-medium">{t.toUser.name}</div>
+                        <Badge variant="outline" className="text-xs">{t.toUser.rank}</Badge>
+                      </TableCell>
+                      <TableCell className="text-right font-mono font-semibold">
+                        {amt > 0 ? formatVND(amt) : '—'}
+                      </TableCell>
+                      <TableCell className="font-mono text-xs">{t.reference ? `#${t.reference}` : '—'}</TableCell>
+                      <TableCell>
+                        <Badge className={STATUS_STYLES[t.status]}>{t.status}</Badge>
+                      </TableCell>
+                      <TableCell className="text-xs text-red-600 max-w-[200px] truncate">
+                        {t.errorMessage || '—'}
+                      </TableCell>
+                      <TableCell>
+                        {t.status === 'FAILED' && (
+                          <Button variant="outline" size="sm" onClick={() => handleRetry(t.id)}>
+                            <RefreshCw className="w-3 h-3 mr-1" /> Retry
+                          </Button>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
                 {transfers.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={8} className="text-center py-8 text-slate-500">
@@ -183,6 +213,51 @@ export default function AdminTransfersPage() {
           </CardContent>
         </Card>
       )}
+
+      <Dialog
+        open={confirmState.kind === 'retry-all'}
+        onOpenChange={(open) => !open && setConfirmState({ kind: 'idle' })}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Chạy lại giao dịch thất bại?</DialogTitle>
+            <DialogDescription>
+              {confirmState.kind === 'retry-all' && (
+                <>Sẽ retry <b>{confirmState.count}</b> giao dịch đang ở trạng thái FAILED. Tiếp tục?</>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setConfirmState({ kind: 'idle' })}
+              disabled={submitting}
+            >
+              Hủy
+            </Button>
+            <Button onClick={confirmRetryAll} disabled={submitting}>
+              {submitting ? 'Đang chạy…' : 'Xác nhận retry'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={confirmState.kind === 'error'}
+        onOpenChange={(open) => !open && setConfirmState({ kind: 'idle' })}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Có lỗi xảy ra</DialogTitle>
+            <DialogDescription>
+              {confirmState.kind === 'error' && confirmState.message}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button onClick={() => setConfirmState({ kind: 'idle' })}>Đã hiểu</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

@@ -12,7 +12,7 @@ import { Settings, Users, Building2, Package, BarChart3, Pencil, Trash2, Plus, R
 type Tab = 'commission' | 'kpi' | 'agency' | 'cogs' | 'promotion' | 'softSalary';
 
 const RANK_LABELS: Record<string, string> = {
-  CTV: 'Cong tac vien', PP: 'Pho phong KD', TP: 'Truong phong KD', GDV: 'Giam doc Vung', GDKD: 'Giam doc Kinh doanh'
+  CTV: 'Cộng tác viên', PP: 'Phó phòng KD', TP: 'Trưởng phòng KD', GDV: 'Giám đốc Vùng', GDKD: 'Giám đốc Kinh doanh'
 };
 
 export default function AdminConfig() {
@@ -75,18 +75,18 @@ export default function AdminConfig() {
       });
       setEditingComm(null);
       await fetchAll();
-      showToast('Da luu hoa hong ' + commForm.tier);
-    } catch (e: any) { showToast('Loi: ' + e.message); }
+      showToast('Đã lưu hoa hồng ' + commForm.tier);
+    } catch (e: any) { showToast('Lỗi: ' + e.message); }
     setSaving(false);
   };
   const deleteComm = async (tier: string) => {
-    if (!confirm(`Xoa cap bac ${tier}?`)) return;
-    try { await api.adminDeleteCommission(tier); await fetchAll(); showToast('Da xoa ' + tier); } catch (e: any) { showToast('Loi: ' + e.message); }
+    if (!confirm(`Xóa cấp bậc ${tier}?`)) return;
+    try { await api.adminDeleteCommission(tier); await fetchAll(); showToast('Đã xóa ' + tier); } catch (e: any) { showToast('Lỗi: ' + e.message); }
   };
   const addComm = async () => {
     if (!newComm.tier) return;
     setSaving(true);
-    try { await api.adminCreateCommission(newComm); setAddingComm(false); setNewComm({ tier: '', selfSalePct: 0, directPct: 0, indirect2Pct: 0, indirect3Pct: 0, fixedSalary: 0 }); await fetchAll(); showToast('Da them cap bac ' + newComm.tier); } catch (e: any) { showToast('Loi: ' + e.message); }
+    try { await api.adminCreateCommission(newComm); setAddingComm(false); setNewComm({ tier: '', selfSalePct: 0, directPct: 0, indirect2Pct: 0, indirect3Pct: 0, fixedSalary: 0 }); await fetchAll(); showToast('Đã thêm cấp bậc ' + newComm.tier); } catch (e: any) { showToast('Lỗi: ' + e.message); }
     setSaving(false);
   };
 
@@ -94,7 +94,7 @@ export default function AdminConfig() {
   const startEditKpi = (k: any) => { setEditingKpi(k.rank); setKpiForm({ ...k }); };
   const saveKpi = async () => {
     setSaving(true);
-    try { await api.adminUpdateKpi(kpiForm.rank, { minSelfCombo: kpiForm.minSelfCombo, minPortfolio: kpiForm.minPortfolio, fallbackRank: kpiForm.fallbackRank }); setEditingKpi(null); await fetchAll(); showToast('Da luu KPI ' + kpiForm.rank); } catch (e: any) { showToast('Loi: ' + e.message); }
+    try { await api.adminUpdateKpi(kpiForm.rank, { minSelfCombo: kpiForm.minSelfCombo, minPortfolio: kpiForm.minPortfolio, fallbackRank: kpiForm.fallbackRank }); setEditingKpi(null); await fetchAll(); showToast('Đã lưu KPI ' + kpiForm.rank); } catch (e: any) { showToast('Lỗi: ' + e.message); }
     setSaving(false);
   };
 
@@ -102,7 +102,7 @@ export default function AdminConfig() {
   const startEditAgency = (a: any) => { setEditingAgency(a.group); setAgencyForm({ ...a }); };
   const saveAgency = async () => {
     setSaving(true);
-    try { await api.adminUpdateAgency(agencyForm.group, { commissionPct: agencyForm.commissionPct, bonusPct: agencyForm.bonusPct }); setEditingAgency(null); await fetchAll(); showToast('Da luu nhom ' + agencyForm.group); } catch (e: any) { showToast('Loi: ' + e.message); }
+    try { await api.adminUpdateAgency(agencyForm.group, { commissionPct: agencyForm.commissionPct, bonusPct: agencyForm.bonusPct }); setEditingAgency(null); await fetchAll(); showToast('Đã lưu nhóm ' + agencyForm.group); } catch (e: any) { showToast('Lỗi: ' + e.message); }
     setSaving(false);
   };
 
@@ -110,14 +110,14 @@ export default function AdminConfig() {
   const startEditCogs = (c: any) => { setEditingCogs(c.phase); setCogsForm({ ...c }); };
   const saveCogs = async () => {
     setSaving(true);
-    try { await api.adminUpdateCogs(cogsForm.phase, { name: cogsForm.name, cogsPct: cogsForm.cogsPct, description: cogsForm.description }); setEditingCogs(null); await fetchAll(); showToast('Da luu COGS ' + cogsForm.phase); } catch (e: any) { showToast('Loi: ' + e.message); }
+    try { await api.adminUpdateCogs(cogsForm.phase, { name: cogsForm.name, cogsPct: cogsForm.cogsPct, description: cogsForm.description }); setEditingCogs(null); await fetchAll(); showToast('Đã lưu COGS ' + cogsForm.phase); } catch (e: any) { showToast('Lỗi: ' + e.message); }
     setSaving(false);
   };
 
   const resetAll = async () => {
-    if (!confirm('Dat lai tat ca cau hinh ve mac dinh? Hanh dong nay khong the hoan tac.')) return;
+    if (!confirm('Đặt lại tất cả cấu hình về mặc định? Hành động này không thể hoàn tác.')) return;
     setSaving(true);
-    try { await api.adminResetConfig(); await fetchAll(); showToast('Da reset ve mac dinh'); } catch (e: any) { showToast('Loi: ' + e.message); }
+    try { await api.adminResetConfig(); await fetchAll(); showToast('Đã reset về mặc định'); } catch (e: any) { showToast('Lỗi: ' + e.message); }
     setSaving(false);
   };
 
@@ -128,7 +128,7 @@ export default function AdminConfig() {
     { key: 'kpi', label: 'KPI Rules', icon: <BarChart3 size={16} /> },
     { key: 'agency', label: 'Agency Commission', icon: <Building2 size={16} /> },
     { key: 'cogs', label: 'COGS Phases', icon: <Package size={16} /> },
-    { key: 'promotion', label: 'Thang tien', icon: <Scale size={16} /> },
+    { key: 'promotion', label: 'Thăng tiến', icon: <Scale size={16} /> },
     { key: 'softSalary', label: 'Soft Salary', icon: <Calculator size={16} /> },
   ];
 
@@ -141,7 +141,7 @@ export default function AdminConfig() {
       )}
 
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold flex items-center gap-2"><Settings size={24} /> Cau hinh he thong</h2>
+        <h2 className="text-2xl font-bold flex items-center gap-2"><Settings size={24} /> Cấu hình hệ thống</h2>
         <Badge className="bg-indigo-100 text-indigo-700">Admin</Badge>
       </div>
 
@@ -169,21 +169,21 @@ export default function AdminConfig() {
           {tab === 'commission' && (
             <Card className="rounded-2xl border border-gray-100">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2"><Users size={20} /> Hoa hong CTV theo cap bac</CardTitle>
-                <p className="text-sm text-gray-500">Cascading: Tu ban + Truc tiep + Gian tiep cap 2 + Gian tiep cap 3</p>
+                <CardTitle className="flex items-center gap-2"><Users size={20} /> Hoa hồng CTV theo cấp bậc</CardTitle>
+                <p className="text-sm text-gray-500">Cascading: Tự bán + Trực tiếp + Gián tiếp cấp 2 + Gián tiếp cấp 3</p>
               </CardHeader>
               <CardContent className="overflow-x-auto p-0">
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Cap bac</TableHead>
-                      <TableHead>Ten</TableHead>
-                      <TableHead className="text-right">HH Tu ban</TableHead>
-                      <TableHead className="text-right">Truc tiep</TableHead>
-                      <TableHead className="text-right">GT cap 2</TableHead>
-                      <TableHead className="text-right">GT cap 3</TableHead>
-                      <TableHead className="text-right">Luong cung</TableHead>
-                      <TableHead className="text-center">Actions</TableHead>
+                      <TableHead>Cấp bậc</TableHead>
+                      <TableHead>Tên</TableHead>
+                      <TableHead className="text-right">HH Tự bán</TableHead>
+                      <TableHead className="text-right">Trực tiếp</TableHead>
+                      <TableHead className="text-right">GT cấp 2</TableHead>
+                      <TableHead className="text-right">GT cấp 3</TableHead>
+                      <TableHead className="text-right">Lương cứng</TableHead>
+                      <TableHead className="text-center">Thao tác</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -225,7 +225,7 @@ export default function AdminConfig() {
                     {addingComm && (
                       <TableRow>
                         <TableCell><Input value={newComm.tier} onChange={e => setNewComm({ ...newComm, tier: e.target.value.toUpperCase() })} placeholder="VD: DT" className="w-20" /></TableCell>
-                        <TableCell className="text-sm text-gray-400">Cap bac moi</TableCell>
+                        <TableCell className="text-sm text-gray-400">Cấp bậc mới</TableCell>
                         <TableCell className="text-right"><Input type="number" min={0} max={1} step={0.01} value={newComm.selfSalePct} onChange={e => setNewComm({ ...newComm, selfSalePct: parseFloat(e.target.value) || 0 })} className="w-20 text-right" /></TableCell>
                         <TableCell className="text-right"><Input type="number" min={0} max={1} step={0.01} value={newComm.directPct} onChange={e => setNewComm({ ...newComm, directPct: parseFloat(e.target.value) || 0 })} className="w-20 text-right" /></TableCell>
                         <TableCell className="text-right"><Input type="number" min={0} max={1} step={0.01} value={newComm.indirect2Pct} onChange={e => setNewComm({ ...newComm, indirect2Pct: parseFloat(e.target.value) || 0 })} className="w-20 text-right" /></TableCell>
@@ -243,7 +243,7 @@ export default function AdminConfig() {
                 </Table>
                 {!addingComm && (
                   <div className="p-4 border-t">
-                    <Button variant="outline" size="sm" onClick={() => setAddingComm(true)} className="flex items-center gap-1"><Plus size={14} /> Them cap bac moi</Button>
+                    <Button variant="outline" size="sm" onClick={() => setAddingComm(true)} className="flex items-center gap-1"><Plus size={14} /> Thêm cấp bậc mới</Button>
                   </div>
                 )}
               </CardContent>
@@ -254,18 +254,18 @@ export default function AdminConfig() {
           {tab === 'kpi' && (
             <Card className="rounded-2xl border border-gray-100">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2"><BarChart3 size={20} /> Dieu kien duy tri chuc danh (KPI)</CardTitle>
-                <p className="text-sm text-gray-500">Combo = 2,000,000 VND | Danh gia moi thang</p>
+                <CardTitle className="flex items-center gap-2"><BarChart3 size={20} /> Điều kiện duy trì chức danh (KPI)</CardTitle>
+                <p className="text-sm text-gray-500">Combo = 2,000,000 VND · Đánh giá mỗi tháng</p>
               </CardHeader>
               <CardContent className="overflow-x-auto p-0">
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Cap</TableHead>
-                      <TableHead className="text-right">Tu ban (combo/thang)</TableHead>
-                      <TableHead className="text-right">Portfolio toi thieu</TableHead>
-                      <TableHead>Neu khong dat</TableHead>
-                      <TableHead className="text-center">Actions</TableHead>
+                      <TableHead>Cấp</TableHead>
+                      <TableHead className="text-right">Tự bán (combo/tháng)</TableHead>
+                      <TableHead className="text-right">Portfolio tối thiểu</TableHead>
+                      <TableHead>Nếu không đạt</TableHead>
+                      <TableHead className="text-center">Thao tác</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -276,11 +276,11 @@ export default function AdminConfig() {
                         <TableCell className="text-right"><Input type="number" min={0} value={kpiForm.minPortfolio} onChange={e => setKpiForm({ ...kpiForm, minPortfolio: parseInt(e.target.value) || 0 })} className="w-24 text-right inline-block" /></TableCell>
                         <TableCell>
                           <select value={kpiForm.fallbackRank} onChange={e => setKpiForm({ ...kpiForm, fallbackRank: e.target.value })} className="border rounded-lg px-2 py-1 text-sm">
-                            <option value="CTV">Giam xuong CTV</option>
-                            <option value="PP">Giam xuong PP</option>
-                            <option value="TP">Giam xuong TP</option>
-                            <option value="GDV">Giam xuong GDV</option>
-                            <option value="LOCK">Khoa tai khoan</option>
+                            <option value="CTV">Giảm xuống CTV</option>
+                            <option value="PP">Giảm xuống PP</option>
+                            <option value="TP">Giảm xuống TP</option>
+                            <option value="GDV">Giảm xuống GDV</option>
+                            <option value="LOCK">Khóa tài khoản</option>
                           </select>
                         </TableCell>
                         <TableCell className="text-center">
@@ -293,9 +293,9 @@ export default function AdminConfig() {
                     ) : (
                       <TableRow key={k.rank}>
                         <TableCell><Badge variant="outline">{k.rank}</Badge></TableCell>
-                        <TableCell className="text-right font-mono">{k.minSelfCombo > 0 ? `>= ${k.minSelfCombo}` : 'Khong bat buoc'}</TableCell>
-                        <TableCell className="text-right font-mono">{k.minPortfolio > 0 ? `>= ${k.minPortfolio}` : '-'}</TableCell>
-                        <TableCell className={k.fallbackRank === 'LOCK' ? 'text-red-600' : 'text-orange-600'}>{k.fallbackRank === 'LOCK' ? 'Khoa tai khoan' : `Giam xuong ${k.fallbackRank}`}</TableCell>
+                        <TableCell className="text-right font-mono">{k.minSelfCombo > 0 ? `≥ ${k.minSelfCombo}` : 'Không bắt buộc'}</TableCell>
+                        <TableCell className="text-right font-mono">{k.minPortfolio > 0 ? `≥ ${k.minPortfolio}` : '-'}</TableCell>
+                        <TableCell className={k.fallbackRank === 'LOCK' ? 'text-red-600' : 'text-orange-600'}>{k.fallbackRank === 'LOCK' ? 'Khóa tài khoản' : `Giảm xuống ${k.fallbackRank}`}</TableCell>
                         <TableCell className="text-center">
                           <Button size="sm" variant="ghost" onClick={() => startEditKpi(k)}><Pencil size={14} /></Button>
                         </TableCell>
@@ -311,26 +311,26 @@ export default function AdminConfig() {
           {tab === 'agency' && (
             <Card className="rounded-2xl border border-gray-100">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2"><Building2 size={20} /> Hoa hong Dai ly theo nhom</CardTitle>
-                <p className="text-sm text-gray-500">Toi da 30% (hoa hong + thuong)</p>
+                <CardTitle className="flex items-center gap-2"><Building2 size={20} /> Hoa hồng Đại lý theo nhóm</CardTitle>
+                <p className="text-sm text-gray-500">Tối đa 30% (hoa hồng + thưởng)</p>
               </CardHeader>
               <CardContent className="overflow-x-auto p-0">
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Nhom</TableHead>
-                      <TableHead>Mo ta</TableHead>
-                      <TableHead className="text-right">Hoa hong</TableHead>
-                      <TableHead className="text-right">Thuong</TableHead>
-                      <TableHead className="text-right">Tong</TableHead>
-                      <TableHead className="text-center">Actions</TableHead>
+                      <TableHead>Nhóm</TableHead>
+                      <TableHead>Mô tả</TableHead>
+                      <TableHead className="text-right">Hoa hồng</TableHead>
+                      <TableHead className="text-right">Thưởng</TableHead>
+                      <TableHead className="text-right">Tổng</TableHead>
+                      <TableHead className="text-center">Thao tác</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {agencies.map(a => editingAgency === a.group ? (
                       <TableRow key={a.group}>
                         <TableCell><Badge>{a.group}</Badge></TableCell>
-                        <TableCell className="text-sm text-gray-500">{a.group === 'A' ? 'Thiet yeu (Nong san)' : a.group === 'B' ? 'Core (FMCG, gia vi)' : 'Loi nhuan cao (TPCN, combo)'}</TableCell>
+                        <TableCell className="text-sm text-gray-500">{a.group === 'A' ? 'Thiết yếu (Nông sản)' : a.group === 'B' ? 'Core (FMCG, gia vị)' : 'Lợi nhuận cao (TPCN, combo)'}</TableCell>
                         <TableCell className="text-right"><Input type="number" min={0} max={0.30} step={0.01} value={agencyForm.commissionPct} onChange={e => setAgencyForm({ ...agencyForm, commissionPct: parseFloat(e.target.value) || 0 })} className="w-20 text-right inline-block" /></TableCell>
                         <TableCell className="text-right"><Input type="number" min={0} max={0.10} step={0.01} value={agencyForm.bonusPct} onChange={e => setAgencyForm({ ...agencyForm, bonusPct: parseFloat(e.target.value) || 0 })} className="w-20 text-right inline-block" /></TableCell>
                         <TableCell className="text-right font-semibold">{pct((agencyForm.commissionPct || 0) + (agencyForm.bonusPct || 0))}</TableCell>
@@ -344,7 +344,7 @@ export default function AdminConfig() {
                     ) : (
                       <TableRow key={a.group}>
                         <TableCell><Badge>{a.group}</Badge></TableCell>
-                        <TableCell className="text-sm">{a.group === 'A' ? 'Thiet yeu (Nong san)' : a.group === 'B' ? 'Core (FMCG, gia vi)' : 'Loi nhuan cao (TPCN, combo)'}</TableCell>
+                        <TableCell className="text-sm">{a.group === 'A' ? 'Thiết yếu (Nông sản)' : a.group === 'B' ? 'Core (FMCG, gia vị)' : 'Lợi nhuận cao (TPCN, combo)'}</TableCell>
                         <TableCell className="text-right font-mono">{pct(a.commissionPct)}</TableCell>
                         <TableCell className="text-right font-mono">{pct(a.bonusPct)}</TableCell>
                         <TableCell className="text-right font-semibold">{pct(a.commissionPct + a.bonusPct)}</TableCell>
@@ -363,17 +363,17 @@ export default function AdminConfig() {
           {tab === 'cogs' && (
             <Card className="rounded-2xl border border-gray-100">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2"><Package size={20} /> COGS theo giai doan</CardTitle>
+                <CardTitle className="flex items-center gap-2"><Package size={20} /> COGS theo giai đoạn</CardTitle>
               </CardHeader>
               <CardContent className="overflow-x-auto p-0">
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Giai doan</TableHead>
-                      <TableHead>Ten</TableHead>
+                      <TableHead>Giai đoạn</TableHead>
+                      <TableHead>Tên</TableHead>
                       <TableHead className="text-right">COGS</TableHead>
-                      <TableHead>Mo ta</TableHead>
-                      <TableHead className="text-center">Actions</TableHead>
+                      <TableHead>Mô tả</TableHead>
+                      <TableHead className="text-center">Thao tác</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -411,43 +411,43 @@ export default function AdminConfig() {
           {tab === 'promotion' && (
             <Card className="rounded-2xl border border-gray-100">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2"><Scale size={20} /> Dieu kien thang tien T+1</CardTitle>
-                <p className="text-sm text-gray-500">Dat dieu kien thang T, hieu luc ngay 01 thang T+1</p>
+                <CardTitle className="flex items-center gap-2"><Scale size={20} /> Điều kiện thăng tiến T+1</CardTitle>
+                <p className="text-sm text-gray-500">Đạt điều kiện tháng T, hiệu lực ngày 01 tháng T+1</p>
               </CardHeader>
               <CardContent className="p-0">
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Tu</TableHead>
-                      <TableHead>Len</TableHead>
-                      <TableHead>Dieu kien</TableHead>
-                      <TableHead>Ghi chu</TableHead>
+                      <TableHead>Từ</TableHead>
+                      <TableHead>Lên</TableHead>
+                      <TableHead>Điều kiện</TableHead>
+                      <TableHead>Ghi chú</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     <TableRow>
                       <TableCell><Badge variant="outline">CTV</Badge></TableCell>
                       <TableCell><Badge className="bg-emerald-100 text-emerald-700">PP</Badge></TableCell>
-                      <TableCell>5 thanh vien truc tiep dat &ge;10 combo/nguoi</TableCell>
-                      <TableCell className="text-sm text-gray-500">Bao tro va dan dat doi nhom</TableCell>
+                      <TableCell>5 thành viên trực tiếp đạt &ge;10 combo/người</TableCell>
+                      <TableCell className="text-sm text-gray-500">Bảo trợ và dẫn dắt đội nhóm</TableCell>
                     </TableRow>
                     <TableRow>
                       <TableCell><Badge variant="outline">PP</Badge></TableCell>
                       <TableCell><Badge className="bg-emerald-100 text-emerald-700">TP</Badge></TableCell>
-                      <TableCell>3 PP do minh dan dat + doanh so nhom &ge;500 trieu</TableCell>
-                      <TableCell className="text-sm text-gray-500">Xay dung doi ngu quan ly</TableCell>
+                      <TableCell>3 PP do mình dẫn dắt + doanh số nhóm &ge;500 triệu</TableCell>
+                      <TableCell className="text-sm text-gray-500">Xây dựng đội ngũ quản lý</TableCell>
                     </TableRow>
                     <TableRow>
                       <TableCell><Badge variant="outline">TP</Badge></TableCell>
                       <TableCell><Badge className="bg-emerald-100 text-emerald-700">GDV</Badge></TableCell>
-                      <TableCell>5 TP + doanh so nhom &ge;2 ty</TableCell>
-                      <TableCell className="text-sm text-gray-500">Quan ly vung</TableCell>
+                      <TableCell>5 TP + doanh số nhóm &ge;2 tỷ</TableCell>
+                      <TableCell className="text-sm text-gray-500">Quản lý vùng</TableCell>
                     </TableRow>
                     <TableRow>
                       <TableCell><Badge variant="outline">GDV</Badge></TableCell>
                       <TableCell><Badge className="bg-emerald-100 text-emerald-700">GDKD</Badge></TableCell>
-                      <TableCell>3 GDV + doanh so nhom &ge;5 ty</TableCell>
-                      <TableCell className="text-sm text-gray-500">Can HDQT duyet</TableCell>
+                      <TableCell>3 GDV + doanh số nhóm &ge;5 tỷ</TableCell>
+                      <TableCell className="text-sm text-gray-500">Cần HĐQT duyệt</TableCell>
                     </TableRow>
                   </TableBody>
                 </Table>
@@ -459,43 +459,43 @@ export default function AdminConfig() {
           {tab === 'softSalary' && (
             <Card className="rounded-2xl border border-gray-100">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2"><Calculator size={20} /> Nguong Soft Salary</CardTitle>
-                <p className="text-sm text-gray-500">Quy luong = 5% doanh thu kenh CTV</p>
+                <CardTitle className="flex items-center gap-2"><Calculator size={20} /> Ngưỡng Soft Salary</CardTitle>
+                <p className="text-sm text-gray-500">Quỹ lương = 5% doanh thu kênh CTV</p>
               </CardHeader>
               <CardContent className="p-0">
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Muc su dung quy</TableHead>
-                      <TableHead>Trang thai</TableHead>
-                      <TableHead>Dieu chinh</TableHead>
-                      <TableHead>Mo ta</TableHead>
+                      <TableHead>Mức sử dụng quỹ</TableHead>
+                      <TableHead>Trạng thái</TableHead>
+                      <TableHead>Điều chỉnh</TableHead>
+                      <TableHead>Mô tả</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     <TableRow>
                       <TableCell className="font-mono">&lt; 100%</TableCell>
-                      <TableCell><Badge className="bg-green-100 text-green-700">Binh thuong</Badge></TableCell>
-                      <TableCell>He so 1.0 - tra du luong cung</TableCell>
-                      <TableCell className="text-sm text-gray-500">Khong can dieu chinh</TableCell>
+                      <TableCell><Badge className="bg-green-100 text-green-700">Bình thường</Badge></TableCell>
+                      <TableCell>Hệ số 1.0 · trả đủ lương cứng</TableCell>
+                      <TableCell className="text-sm text-gray-500">Không cần điều chỉnh</TableCell>
                     </TableRow>
                     <TableRow>
                       <TableCell className="font-mono">100% - 120%</TableCell>
-                      <TableCell><Badge className="bg-yellow-100 text-yellow-700">Canh bao</Badge></TableCell>
-                      <TableCell>Nguoi moi nhat: 50% cung + 50% bien doi</TableCell>
-                      <TableCell className="text-sm text-gray-500">Luong bien doi = DT ca nhan x 2% x he so</TableCell>
+                      <TableCell><Badge className="bg-yellow-100 text-yellow-700">Cảnh báo</Badge></TableCell>
+                      <TableCell>Người mới nhất: 50% cứng + 50% biến đổi</TableCell>
+                      <TableCell className="text-sm text-gray-500">Lương biến đổi = DT cá nhân × 2% × hệ số</TableCell>
                     </TableRow>
                     <TableRow>
                       <TableCell className="font-mono">120% - 150%</TableCell>
                       <TableCell><Badge className="bg-orange-100 text-orange-700">Cao</Badge></TableCell>
-                      <TableCell>Nguoi moi nhat: 30% cung + 70% bien doi</TableCell>
-                      <TableCell className="text-sm text-gray-500">Luong bien doi = DT ca nhan x 2% x he so</TableCell>
+                      <TableCell>Người mới nhất: 30% cứng + 70% biến đổi</TableCell>
+                      <TableCell className="text-sm text-gray-500">Lương biến đổi = DT cá nhân × 2% × hệ số</TableCell>
                     </TableRow>
                     <TableRow>
                       <TableCell className="font-mono">&gt; 150%</TableCell>
-                      <TableCell><Badge className="bg-red-100 text-red-700">Dong bang</Badge></TableCell>
-                      <TableCell>Tam dung bo nhiem quan ly moi</TableCell>
-                      <TableCell className="text-sm text-gray-500">Nguoi moi nhat: 30% cung + 70% bien doi</TableCell>
+                      <TableCell><Badge className="bg-red-100 text-red-700">Đóng băng</Badge></TableCell>
+                      <TableCell>Tạm dừng bổ nhiệm quản lý mới</TableCell>
+                      <TableCell className="text-sm text-gray-500">Người mới nhất: 30% cứng + 70% biến đổi</TableCell>
                     </TableRow>
                   </TableBody>
                 </Table>
@@ -506,7 +506,7 @@ export default function AdminConfig() {
           {/* Footer actions */}
           <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-200">
             <Button variant="outline" onClick={resetAll} disabled={saving} className="flex items-center gap-1">
-              <RotateCcw size={14} /> Dat lai mac dinh
+              <RotateCcw size={14} /> Đặt lại mặc định
             </Button>
           </div>
         </>
