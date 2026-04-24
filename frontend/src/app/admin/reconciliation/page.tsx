@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Skeleton } from '@/components/ui/skeleton';
 import { ClipboardCheck, Banknote, CreditCard, CheckCircle, XCircle, Eye } from 'lucide-react';
 
 export default function AdminReconciliation() {
@@ -97,7 +98,7 @@ export default function AdminReconciliation() {
       )}
 
       {loading ? (
-        <div className="space-y-3">{[1, 2, 3].map(i => <div key={i} className="h-16 bg-slate-200 animate-pulse rounded-xl" />)}</div>
+        <div className="space-y-3">{[1, 2, 3].map(i => <Skeleton key={i} className="h-16" />)}</div>
       ) : tab === 'pending' ? (
         /* Pending transactions table */
         transactions.length === 0 ? (
