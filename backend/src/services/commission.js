@@ -327,28 +327,29 @@ async function calculateSalaryFundStatus(month) {
     const endDate = new Date(startDate);
     endDate.setMonth(endDate.getMonth() + 1);
 
-    const ctvRevenueResult = await prisma.transaction.aggregate({
-      where: {
-        channel: 'ctv',
-        status: 'CONFIRMED',
-        createdAt: { gte: startDate, lt: endDate },
-      },
-      _sum: { totalAmount: true },
-    });
+    // Run 3 independent queries in parallel instead of sequential (saves ~2 RTTs per call)
+    const [ctvRevenueResult, managers, allRates] = await Promise.all([
+      prisma.transaction.aggregate({
+        where: {
+          channel: 'ctv',
+          status: 'CONFIRMED',
+          createdAt: { gte: startDate, lt: endDate },
+        },
+        _sum: { totalAmount: true },
+      }),
+      prisma.user.findMany({
+        where: {
+          role: 'ctv',
+          isActive: true,
+          rank: { in: ['PP', 'TP', 'GDV', 'GDKD'] },
+        },
+        select: { id: true, name: true, rank: true },
+      }),
+      getCommissionRates(),
+    ]);
 
     const ctvRevenue = Number(ctvRevenueResult._sum.totalAmount) || 0;
     const salaryFundCap = ctvRevenue * 0.05;
-
-    const managers = await prisma.user.findMany({
-      where: {
-        role: 'ctv',
-        isActive: true,
-        rank: { in: ['PP', 'TP', 'GDV', 'GDKD'] },
-      },
-      select: { id: true, name: true, rank: true },
-    });
-
-    const allRates = await getCommissionRates();
 
     let totalFixedSalary = 0;
     for (const m of managers) {
@@ -391,10 +392,92 @@ function invalidateCommissionCache(ctvId = null) {
   logger.info(`[Cache] Commission cache invalidated${ctvId ? ` for CTV ${ctvId}` : ' (all)'}`);
 }
 
+/**
+ * Batch variant of calculateSalaryFundStatus — shares managers+rates fetch across months.
+ * Used by the admin dashboard chart which needs N consecutive months. Pre-computes all
+ * month results in one pass (single managers+rates fetch, parallel revenue aggregates),
+ * then pipes them through getCachedOrCompute so they populate the per-month cache keys
+ * that calculateSalaryFundStatus reads.
+ */
+async function calculateSalaryFundStatusBatch(months) {
+  if (!months || months.length === 0) return [];
+
+  const precomputed = new Map();
+
+  const buildAll = async () => {
+    // Fetch managers + rates ONCE; revenue aggregate per month in parallel.
+    const [managers, allRates, ...revenueResults] = await Promise.all([
+      prisma.user.findMany({
+        where: {
+          role: 'ctv',
+          isActive: true,
+          rank: { in: ['PP', 'TP', 'GDV', 'GDKD'] },
+        },
+        select: { id: true, name: true, rank: true },
+      }),
+      getCommissionRates(),
+      ...months.map((month) => {
+        const startDate = new Date(`${month}-01`);
+        const endDate = new Date(startDate);
+        endDate.setMonth(endDate.getMonth() + 1);
+        return prisma.transaction.aggregate({
+          where: {
+            channel: 'ctv',
+            status: 'CONFIRMED',
+            createdAt: { gte: startDate, lt: endDate },
+          },
+          _sum: { totalAmount: true },
+        });
+      }),
+    ]);
+
+    let totalFixedSalary = 0;
+    for (const m of managers) totalFixedSalary += allRates[m.rank]?.fixedSalary || 0;
+    const managersMapped = managers.map((m) => ({
+      id: m.id,
+      name: m.name,
+      rank: m.rank,
+      salary: allRates[m.rank]?.fixedSalary || 0,
+    }));
+
+    for (let i = 0; i < months.length; i++) {
+      const ctvRevenue = Number(revenueResults[i]._sum.totalAmount) || 0;
+      const salaryFundCap = ctvRevenue * 0.05;
+      const usagePercent = salaryFundCap > 0 ? (totalFixedSalary / salaryFundCap) * 100 : 0;
+      precomputed.set(months[i], {
+        month: months[i],
+        ctvRevenue,
+        salaryFundCap,
+        totalFixedSalary,
+        usagePercent: Math.round(usagePercent * 100) / 100,
+        warning: usagePercent >= 100 ? 'CRITICAL' : usagePercent >= 80 ? 'WARNING' : 'OK',
+        managers: managersMapped,
+      });
+    }
+  };
+
+  // Ensure batch compute runs at most once regardless of how many months miss cache.
+  let batchPromise = null;
+  const ensureBatch = () => {
+    if (!batchPromise) batchPromise = buildAll();
+    return batchPromise;
+  };
+
+  return Promise.all(
+    months.map((month) =>
+      getCachedOrCompute(`salary-fund:${month}`, 300, async () => {
+        await ensureBatch();
+        return precomputed.get(month);
+      })
+    )
+  );
+}
+
 module.exports = {
   calculateCtvCommission,
   calculateAllCtvCommissions,
   calculateSalaryFundStatus,
+  calculateSalaryFundStatusBatch,
   invalidateCommissionCache,
   getCommissionRates,
   getAgencyCommissionRates,

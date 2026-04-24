@@ -1,6 +1,6 @@
 const express = require('express');
 const { getCachedOrCompute } = require('../../services/cache');
-const { calculateSalaryFundStatus } = require('../../services/commission');
+const { calculateSalaryFundStatus, calculateSalaryFundStatusBatch } = require('../../services/commission');
 const { sendSalaryWarning } = require('../../services/notification');
 const { asyncHandler, AppError } = require('../../middleware/errorHandler');
 
@@ -69,12 +69,13 @@ router.get('/dashboard', asyncHandler(async (req, res) => {
 
     const monthStrList = [...monthRevMap.keys()];
 
-    // Salary fund calculations in parallel (replaces 6 sequential awaits)
-    const [salaryFund, ...chartSalaryFunds] = await Promise.all([
-      calculateSalaryFundStatus(monthStr),
-      ...monthStrList.map(m => calculateSalaryFundStatus(m)),
-    ]);
-    const sfByMonth = new Map(monthStrList.map((m, i) => [m, chartSalaryFunds[i]]));
+    // Batch: one managers+rates fetch, parallel revenue aggregates for the union
+    // of (currentMonth ∪ chart months). Still populates per-month cache keys so
+    // downstream calculateSalaryFundStatus(m) calls hit the cache.
+    const allMonths = monthStrList.includes(monthStr) ? monthStrList : [...monthStrList, monthStr];
+    const batchResults = await calculateSalaryFundStatusBatch(allMonths);
+    const sfByMonth = new Map(allMonths.map((m, i) => [m, batchResults[i]]));
+    const salaryFund = sfByMonth.get(monthStr);
 
     const [totalCtvs, totalAgencies, totalCustomers] = await Promise.all([
       prisma.user.count({ where: { role: 'ctv', isActive: true } }),
@@ -187,8 +188,8 @@ router.get('/reports/financial', asyncHandler(async (req, res) => {
       txnsByMonth.get(mStr)?.push(t);
     }
 
-    // Salary fund calculations in parallel (replaces N sequential awaits)
-    const salaryFunds = await Promise.all(monthList.map(m => calculateSalaryFundStatus(m.monthStr)));
+    // Batch salary fund: one managers+rates fetch across all months
+    const salaryFunds = await calculateSalaryFundStatusBatch(monthList.map(m => m.monthStr));
 
     return monthList.map(({ monthStr }, idx) => {
       const txns = txnsByMonth.get(monthStr) || [];

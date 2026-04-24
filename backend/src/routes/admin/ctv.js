@@ -210,29 +210,31 @@ router.post('/ctv/:id/rank', validate(schemas.changeRank), asyncHandler(async (r
 }));
 
 router.get('/agencies', asyncHandler(async (req, res) => {
-  const agencies = await prisma.agency.findMany({
-    include: {
-      user: { select: { name: true, email: true, phone: true } },
-      inventoryWarnings: { include: { product: true } },
-      _count: { select: { transactions: true } },
-    },
+  const result = await getCachedOrCompute('admin:agencies-list', 60, async () => {
+    const [agencies, allRevenues] = await Promise.all([
+      prisma.agency.findMany({
+        include: {
+          user: { select: { name: true, email: true, phone: true } },
+          inventoryWarnings: { include: { product: true } },
+          _count: { select: { transactions: true } },
+        },
+      }),
+      prisma.transaction.groupBy({
+        by: ['agencyId'],
+        where: { status: 'CONFIRMED', agencyId: { not: null } },
+        _sum: { totalAmount: true },
+      }),
+    ]);
+
+    const revenueMap = new Map(allRevenues.map(r => [r.agencyId, r._sum.totalAmount || 0]));
+
+    return agencies.map(a => ({
+      ...a,
+      transactions: a._count.transactions,
+      totalRevenue: revenueMap.get(a.id) || 0,
+      _count: undefined,
+    }));
   });
-
-  const agencyIds = agencies.map(a => a.id);
-  const revenues = await prisma.transaction.groupBy({
-    by: ['agencyId'],
-    where: { agencyId: { in: agencyIds }, status: 'CONFIRMED' },
-    _sum: { totalAmount: true },
-  });
-
-  const revenueMap = new Map(revenues.map(r => [r.agencyId, r._sum.totalAmount || 0]));
-
-  const result = agencies.map(a => ({
-    ...a,
-    transactions: a._count.transactions,
-    totalRevenue: revenueMap.get(a.id) || 0,
-    _count: undefined,
-  }));
 
   res.json(result);
 }));
