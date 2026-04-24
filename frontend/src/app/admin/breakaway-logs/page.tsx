@@ -34,9 +34,9 @@ interface BreakFeeRecord {
 }
 
 interface BreakFeeResponse {
-  records: BreakFeeRecord[];
-  total: number;
-  byLevel: { level1: number; level2: number; level3: number };
+  records?: BreakFeeRecord[];
+  total?: number;
+  byLevel?: { level1?: number; level2?: number; level3?: number };
 }
 
 function currentMonth() {
@@ -145,10 +145,10 @@ export default function AdminBreakawayLogsPage() {
         <>
           {fees && (
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-              <Card><CardContent className="p-4"><p className="text-sm text-slate-500">L1 — Người dẫn dắt cấp 1 cũ (3%)</p><p className="text-xl font-bold text-orange-700">{formatVND(fees.byLevel.level1)}</p></CardContent></Card>
-              <Card><CardContent className="p-4"><p className="text-sm text-slate-500">L2 — Người dẫn dắt cấp 2 cũ (2%)</p><p className="text-xl font-bold text-amber-700">{formatVND(fees.byLevel.level2)}</p></CardContent></Card>
-              <Card><CardContent className="p-4"><p className="text-sm text-slate-500">L3 — Quỹ phát triển TT · GĐKD (1%)</p><p className="text-xl font-bold text-indigo-700">{formatVND(fees.byLevel.level3)}</p></CardContent></Card>
-              <Card><CardContent className="p-4"><p className="text-sm text-slate-500">Tổng tháng</p><p className="text-xl font-bold">{formatVND(fees.total)}</p></CardContent></Card>
+              <Card><CardContent className="p-4"><p className="text-sm text-slate-500">L1 — Người dẫn dắt cấp 1 cũ (3%)</p><p className="text-xl font-bold text-orange-700">{formatVND(fees.byLevel?.level1 ?? 0)}</p></CardContent></Card>
+              <Card><CardContent className="p-4"><p className="text-sm text-slate-500">L2 — Người dẫn dắt cấp 2 cũ (2%)</p><p className="text-xl font-bold text-amber-700">{formatVND(fees.byLevel?.level2 ?? 0)}</p></CardContent></Card>
+              <Card><CardContent className="p-4"><p className="text-sm text-slate-500">L3 — Quỹ phát triển TT · GĐKD (1%)</p><p className="text-xl font-bold text-indigo-700">{formatVND(fees.byLevel?.level3 ?? 0)}</p></CardContent></Card>
+              <Card><CardContent className="p-4"><p className="text-sm text-slate-500">Tổng tháng</p><p className="text-xl font-bold">{formatVND(fees.total ?? 0)}</p></CardContent></Card>
             </div>
           )}
 
@@ -214,10 +214,10 @@ export default function AdminBreakawayLogsPage() {
             </CardContent>
           </Card>
 
-          {fees && fees.records.length > 0 && (
+          {fees && (fees.records?.length ?? 0) > 0 && (
             <Card>
               <CardHeader>
-                <CardTitle>Phí quản lý sau vượt cấp · tháng {month} ({fees.records.length} dòng)</CardTitle>
+                <CardTitle>Phí quản lý sau vượt cấp · tháng {month} ({fees.records?.length ?? 0} dòng)</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="overflow-x-auto">
@@ -233,7 +233,7 @@ export default function AdminBreakawayLogsPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {fees.records.map((r) => {
+                      {fees.records?.map((r) => {
                         const label = r.level === 3
                           ? 'L3 — Quỹ PTTT'
                           : r.level === 2
