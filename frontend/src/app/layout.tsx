@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import { Providers } from "@/lib/providers";
 
 export const metadata: Metadata = {
   title: "X-WISE - CCB Mart",
@@ -25,7 +26,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="theme-color" content="#3b82f6" />
       </head>
       <body className="antialiased">
-        {children}
+        <Providers>{children}</Providers>
         <script dangerouslySetInnerHTML={{ __html: `
           if ('serviceWorker' in navigator) {
             if ('${process.env.NODE_ENV}' === 'production') {

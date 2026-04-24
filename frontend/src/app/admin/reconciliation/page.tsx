@@ -1,72 +1,43 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { api, formatVND } from '@/lib/api';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useState } from 'react';
+import { formatVND } from '@/lib/api';
+import { useReconciliationActions, useReconciliationData } from '@/lib/hooks/useApi';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { ClipboardCheck, Clock, Banknote, CreditCard, CheckCircle, XCircle, Eye } from 'lucide-react';
+import { ClipboardCheck, Banknote, CreditCard, CheckCircle, XCircle, Eye } from 'lucide-react';
 
 export default function AdminReconciliation() {
   const [tab, setTab] = useState<'pending' | 'cash'>('pending');
-  const [transactions, setTransactions] = useState<any[]>([]);
-  const [cashDeposits, setCashDeposits] = useState<any[]>([]);
-  const [stats, setStats] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('');
-  const [actionLoading, setActionLoading] = useState<number | null>(null);
   const [rejectId, setRejectId] = useState<number | null>(null);
   const [rejectReason, setRejectReason] = useState('');
   const [viewProof, setViewProof] = useState<string | null>(null);
 
-  const fetchData = async () => {
-    setLoading(true);
-    try {
-      const [pendingRes, statsRes, cashRes] = await Promise.all([
-        api.adminReconciliationPending(1, filter || undefined),
-        api.adminReconciliationStats(),
-        api.adminCashDepositsPending(),
-      ]);
-      setTransactions(pendingRes.transactions || []);
-      setStats(statsRes);
-      setCashDeposits(cashRes || []);
-    } catch { /* ignore */ }
-    setLoading(false);
-  };
+  const { pending, stats, cash } = useReconciliationData(filter);
+  const { confirm, reject, confirmDeposit } = useReconciliationActions();
 
-  useEffect(() => { fetchData(); }, [filter]);
+  const transactions: any[] = pending.data?.transactions ?? [];
+  const cashDeposits: any[] = cash.data ?? [];
+  const statsData = stats.data;
+  const loading = pending.isLoading || stats.isLoading || cash.isLoading;
+  const actionLoadingId =
+    confirm.isPending ? (confirm.variables as number) :
+    reject.isPending ? (reject.variables as { id: number } | undefined)?.id :
+    confirmDeposit.isPending ? (confirmDeposit.variables as number) :
+    null;
 
-  const handleConfirm = async (id: number) => {
-    setActionLoading(id);
-    try {
-      await api.adminReconciliationConfirm(id);
-      await fetchData();
-    } catch { /* ignore */ }
-    setActionLoading(null);
-  };
-
-  const handleReject = async () => {
+  const handleConfirm = (id: number) => confirm.mutate(id);
+  const handleReject = () => {
     if (!rejectId || !rejectReason) return;
-    setActionLoading(rejectId);
-    try {
-      await api.adminReconciliationReject(rejectId, rejectReason);
-      setRejectId(null);
-      setRejectReason('');
-      await fetchData();
-    } catch { /* ignore */ }
-    setActionLoading(null);
+    reject.mutate({ id: rejectId, reason: rejectReason }, {
+      onSuccess: () => { setRejectId(null); setRejectReason(''); },
+    });
   };
-
-  const handleConfirmDeposit = async (id: number) => {
-    setActionLoading(id);
-    try {
-      await api.adminCashDepositConfirm(id);
-      await fetchData();
-    } catch { /* ignore */ }
-    setActionLoading(null);
-  };
+  const handleConfirmDeposit = (id: number) => confirmDeposit.mutate(id);
 
   return (
     <>
@@ -75,30 +46,30 @@ export default function AdminReconciliation() {
       </h2>
 
       {/* Stats */}
-      {stats && (
+      {statsData && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
           <Card>
             <CardContent className="pt-6 text-center">
               <p className="text-sm text-slate-500">Giao dịch chờ duyệt</p>
-              <p className="text-2xl font-bold text-yellow-600">{stats.pendingCount}</p>
+              <p className="text-2xl font-bold text-yellow-600">{statsData.pendingCount}</p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="pt-6 text-center">
               <p className="text-sm text-slate-500">Tổng tiền chờ</p>
-              <p className="text-2xl font-bold text-emerald-600">{formatVND(stats.pendingAmount)}</p>
+              <p className="text-2xl font-bold text-emerald-600">{formatVND(statsData.pendingAmount)}</p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="pt-6 text-center">
               <p className="text-sm text-slate-500">Thời gian chờ TB</p>
-              <p className="text-2xl font-bold">{stats.avgConfirmTimeHours}h</p>
+              <p className="text-2xl font-bold">{statsData.avgConfirmTimeHours}h</p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="pt-6 text-center">
               <p className="text-sm text-slate-500">Phiếu nộp tiền chờ</p>
-              <p className="text-2xl font-bold text-blue-600">{stats.pendingDeposits}</p>
+              <p className="text-2xl font-bold text-blue-600">{statsData.pendingDeposits}</p>
             </CardContent>
           </Card>
         </div>
@@ -175,7 +146,7 @@ export default function AdminReconciliation() {
                       </TableCell>
                       <TableCell>
                         <div className="flex gap-1">
-                          <Button size="sm" onClick={() => handleConfirm(tx.id)} disabled={actionLoading === tx.id}>
+                          <Button size="sm" onClick={() => handleConfirm(tx.id)} disabled={actionLoadingId === tx.id}>
                             <CheckCircle size={14} className="mr-1" /> Duyệt
                           </Button>
                           <Button size="sm" variant="destructive" title="Từ chối" onClick={() => { setRejectId(tx.id); setRejectReason(''); }}>
@@ -208,7 +179,7 @@ export default function AdminReconciliation() {
                   </div>
                   <div className="flex items-center gap-3">
                     <p className="text-xl font-bold text-emerald-600">{formatVND(dep.amount)}</p>
-                    <Button size="sm" onClick={() => handleConfirmDeposit(dep.id)} disabled={actionLoading === dep.id}>
+                    <Button size="sm" onClick={() => handleConfirmDeposit(dep.id)} disabled={actionLoadingId === dep.id}>
                       <CheckCircle size={14} className="mr-1" /> Xác nhận
                     </Button>
                   </div>
