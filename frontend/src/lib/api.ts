@@ -83,6 +83,15 @@ export const api = {
   agencyInventory: () => fetchAPI('/agency/inventory'),
   agencyTransactions: (page = 1) => fetchAPI(`/agency/transactions?page=${page}`),
 
+  // Admin: user management (super_admin only)
+  adminUsers: () => fetchAPI('/admin/users'),
+  adminCreateUser: (data: { email: string; name: string; phone?: string; role: string; password: string }) =>
+    fetchAPI('/admin/users', { method: 'POST', body: JSON.stringify(data) }),
+  adminUpdateUserRole: (id: number, role: string) =>
+    fetchAPI(`/admin/users/${id}/role`, { method: 'PATCH', body: JSON.stringify({ role }) }),
+  adminToggleUserActive: (id: number) =>
+    fetchAPI(`/admin/users/${id}/toggle-active`, { method: 'PATCH' }),
+
   // Admin
   adminDashboard: () => fetchAPI('/admin/dashboard'),
   adminCtvs: () => fetchAPI('/admin/ctvs'),

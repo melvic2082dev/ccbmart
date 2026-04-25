@@ -82,13 +82,24 @@ describe('authenticate middleware', () => {
 
 describe('authorize middleware', () => {
   test('calls next() when user role is allowed', () => {
-    const req = { user: { role: 'admin' } };
+    const req = { user: { role: 'super_admin' } };
     const res = mockRes();
     const next = jest.fn();
 
+    // 'admin' alias expands to all admin sub-roles (super_admin, ops_admin, ...)
     authorize('admin', 'manager')(req, res, next);
 
     expect(next).toHaveBeenCalled();
+  });
+
+  test('expands "admin" alias to admin sub-roles', () => {
+    for (const role of ['ops_admin', 'finance_admin', 'training_admin']) {
+      const req = { user: { role } };
+      const res = mockRes();
+      const next = jest.fn();
+      authorize('admin')(req, res, next);
+      expect(next).toHaveBeenCalled();
+    }
   });
 
   test('returns 403 when user role is not in allowed list', () => {

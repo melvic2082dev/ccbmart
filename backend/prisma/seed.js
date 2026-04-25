@@ -61,17 +61,36 @@ async function main() {
   const ctvHash = await bcrypt.hash('ctv123', 10);
   const agencyHash = await bcrypt.hash('agency123', 10);
 
-  // 1. Admin user
+  // 1. Admin users (V13.4+: super_admin + 5 sub-role demo accounts)
   const admin = await prisma.user.create({
     data: {
       email: 'admin@ccbmart.vn',
       passwordHash,
-      role: 'admin',
-      name: 'Admin CCB Mart',
+      role: 'super_admin',
+      name: 'Super Admin CCB Mart',
       phone: '0901000000',
     },
   });
-  console.log('Admin created');
+  const adminSubRoles = [
+    { email: 'ops@ccbmart.vn',      role: 'ops_admin',      name: 'Quản lý vận hành' },
+    { email: 'partner@ccbmart.vn',  role: 'partner_admin',  name: 'Quản lý đối tác' },
+    { email: 'member@ccbmart.vn',   role: 'member_admin',   name: 'Quản lý thành viên' },
+    { email: 'training@ccbmart.vn', role: 'training_admin', name: 'Quản lý đào tạo' },
+    { email: 'finance@ccbmart.vn',  role: 'finance_admin',  name: 'Quản lý tài chính' },
+  ];
+  for (let i = 0; i < adminSubRoles.length; i++) {
+    const r = adminSubRoles[i];
+    await prisma.user.create({
+      data: {
+        email: r.email,
+        passwordHash,
+        role: r.role,
+        name: r.name,
+        phone: `09010000${String(i + 1).padStart(2, '0')}`,
+      },
+    });
+  }
+  console.log(`Admin created: 1 super_admin + ${adminSubRoles.length} sub-role demo users`);
 
   // 2. CTV Hierarchy: GDKD -> GDV -> TP -> PP -> CTV
   const gdkd = await prisma.user.create({
@@ -977,7 +996,12 @@ async function main() {
 
   console.log('\nSeed complete! (V13 full)');
   console.log('Login credentials:');
-  console.log('   admin@ccbmart.vn / admin123');
+  console.log('   admin@ccbmart.vn / admin123 (super_admin)');
+  console.log('   ops@ccbmart.vn / admin123 (ops_admin)');
+  console.log('   partner@ccbmart.vn / admin123 (partner_admin)');
+  console.log('   member@ccbmart.vn / admin123 (member_admin)');
+  console.log('   training@ccbmart.vn / admin123 (training_admin)');
+  console.log('   finance@ccbmart.vn / admin123 (finance_admin)');
   console.log('   ctv1@ccbmart.vn / ctv123 (GDKD)');
   console.log('   ctv2@ccbmart.vn / ctv123 (GDV)');
   console.log('   agency1@ccbmart.vn / agency123');
