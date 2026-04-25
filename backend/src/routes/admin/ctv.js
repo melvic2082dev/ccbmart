@@ -351,20 +351,4 @@ router.post('/notifications/bulk', asyncHandler(async (req, res) => {
   res.json({ created, failed, total: userIds.length });
 }));
 
-// ===== Transfer retry (#9) =====
-
-// POST /transfers/:id/retry
-router.post('/transfers/:id/retry', asyncHandler(async (req, res) => {
-  const transferId = parseInt(req.params.id);
-  const transfer = await prisma.autoTransferLog.findUnique({ where: { id: transferId } });
-  if (!transfer) throw new AppError('Transfer not found', 404, 'TRANSFER_NOT_FOUND');
-  if (transfer.status !== 'FAILED') throw new AppError('Only FAILED transfers can be retried', 400, 'NOT_FAILED');
-  const updated = await prisma.autoTransferLog.update({
-    where: { id: transferId },
-    data: { status: 'PENDING', errorMessage: null, adminNote: `Retried by admin ${req.user.id} at ${new Date().toISOString()}` },
-    select: { id: true, status: true, amount: true },
-  });
-  res.json(updated);
-}));
-
 module.exports = router;

@@ -1,6 +1,6 @@
 const express = require('express');
 const { authenticate, authorize } = require('../middleware/auth');
-const { processMonthlyTransfer, generateInvoicePDF } = require('../services/autoTransfer');
+const { processMonthlyPayout } = require('../services/partnerPayoutEngine');
 const { validate, schemas } = require('../middleware/validate');
 const { getCachedOrCompute } = require('../services/cache');
 
@@ -9,7 +9,7 @@ const prisma = require('../lib/prisma');
 
 router.use(authenticate);
 
-// GET /api/admin/invoices — list all invoices with filter
+// GET /api/admin/invoices — list invoices (CCB Mart → partner)
 router.get('/admin/invoices', authorize('admin'), validate(schemas.invoicesQuery, 'query'), async (req, res) => {
   try {
     const { status, page = 1, limit = 50 } = req.query;
@@ -22,7 +22,6 @@ router.get('/admin/invoices', authorize('admin'), validate(schemas.invoicesQuery
         prisma.invoice.findMany({
           where,
           include: {
-            fromUser: { select: { id: true, name: true, rank: true } },
             toUser: { select: { id: true, name: true, rank: true } },
             contract: { select: { id: true, contractNo: true } },
           },
@@ -41,43 +40,42 @@ router.get('/admin/invoices', authorize('admin'), validate(schemas.invoicesQuery
   }
 });
 
-// POST /api/admin/invoices/process-monthly — trigger monthly auto-transfer
+// POST /api/admin/invoices/process-monthly — V13.4 Partner Payout Engine
 router.post('/admin/invoices/process-monthly', authorize('admin'), validate(schemas.invoiceProcessMonthly), async (req, res) => {
   try {
     const { month, year } = req.body;
     const now = new Date();
     const m = month || (now.getMonth() + 1);
     const y = year || now.getFullYear();
-    const result = await processMonthlyTransfer(m, y);
+    const monthStr = `${y}-${String(m).padStart(2, '0')}`;
+    const result = await processMonthlyPayout(monthStr);
     res.json(result);
   } catch (err) {
     console.error("[route]", err); res.status(500).json({ error: "Internal server error" });
   }
 });
 
-// GET /api/admin/transfers — list auto-transfer logs
-router.get('/admin/transfers', authorize('admin'), validate(schemas.invoicesQuery, 'query'), async (req, res) => {
+// GET /api/admin/payment-logs — list per-partner monthly payout summaries
+router.get('/admin/payment-logs', authorize('admin'), async (req, res) => {
   try {
-    const { status, page = 1, limit = 50 } = req.query;
+    const { month, status, page = 1, limit = 50 } = req.query;
     const skip = (parseInt(page, 10) - 1) * parseInt(limit, 10);
-    const where = status ? { status } : {};
-    const cacheKey = `admin:transfers:${status || 'all'}:${page}:${limit}`;
+    const where = {};
+    if (month) where.month = month;
+    if (status) where.status = status;
+    const cacheKey = `admin:payment-logs:${month || 'all'}:${status || 'all'}:${page}:${limit}`;
 
     const result = await getCachedOrCompute(cacheKey, 60, async () => {
-      const [transfers, total] = await Promise.all([
-        prisma.autoTransferLog.findMany({
+      const [logs, total] = await Promise.all([
+        prisma.payoutLog.findMany({
           where,
-          include: {
-            fromUser: { select: { id: true, name: true, rank: true } },
-            toUser: { select: { id: true, name: true, rank: true } },
-          },
-          orderBy: { transferDate: 'desc' },
+          orderBy: { processedAt: 'desc' },
           skip,
           take: parseInt(limit, 10),
         }),
-        prisma.autoTransferLog.count({ where }),
+        prisma.payoutLog.count({ where }),
       ]);
-      return { transfers, total, page: parseInt(page, 10) };
+      return { logs, total, page: parseInt(page, 10) };
     });
 
     res.json(result);
@@ -86,16 +84,13 @@ router.get('/admin/transfers', authorize('admin'), validate(schemas.invoicesQuer
   }
 });
 
-// GET /api/ctv/invoices/my — CTV sees own invoices
+// GET /api/ctv/invoices/my — partner sees own invoices (always toUserId)
 router.get('/ctv/invoices/my', authorize('ctv'), async (req, res) => {
   try {
     const userId = req.user.id;
     const invoices = await prisma.invoice.findMany({
-      where: {
-        OR: [{ fromUserId: userId }, { toUserId: userId }],
-      },
+      where: { toUserId: userId },
       include: {
-        fromUser: { select: { id: true, name: true, rank: true } },
         toUser: { select: { id: true, name: true, rank: true } },
         contract: { select: { id: true, contractNo: true } },
       },
@@ -108,12 +103,19 @@ router.get('/ctv/invoices/my', authorize('ctv'), async (req, res) => {
   }
 });
 
-// GET /api/admin/invoices/:id/pdf — generate/return PDF url
+// GET /api/admin/invoices/:id/pdf — placeholder (PDF generation not yet implemented)
 router.get('/admin/invoices/:id/pdf', authorize('admin'), async (req, res) => {
   try {
     const invoiceId = parseInt(req.params.id, 10);
-    const result = await generateInvoicePDF(invoiceId);
-    res.json(result);
+    const invoice = await prisma.invoice.findUnique({ where: { id: invoiceId }, select: { id: true, invoiceNumber: true } });
+    if (!invoice) return res.status(404).json({ error: 'Invoice not found' });
+    res.json({
+      invoiceId: invoice.id,
+      invoiceNumber: invoice.invoiceNumber,
+      pdfUrl: null,
+      generated: false,
+      message: 'PDF generation not implemented',
+    });
   } catch (err) {
     res.status(400).json({ error: err.message });
   }

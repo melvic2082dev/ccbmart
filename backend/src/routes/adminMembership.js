@@ -129,13 +129,26 @@ router.get('/referral-report', async (req, res) => {
   }
 });
 
-// GET /wallets - List all member wallets
+// GET /wallets - List all member wallets, with search + filter
 router.get('/wallets', async (req, res) => {
   try {
-    const { page = 1, limit = 20, tierId } = req.query;
+    const { page = 1, limit = 20, tierId, search, status } = req.query;
     const skip = (parseInt(page) - 1) * parseInt(limit);
     const where = {};
     if (tierId) where.tierId = parseInt(tierId);
+
+    const userWhere = {};
+    if (search && String(search).trim()) {
+      const q = String(search).trim();
+      userWhere.OR = [
+        { name: { contains: q, mode: 'insensitive' } },
+        { email: { contains: q, mode: 'insensitive' } },
+        { phone: { contains: q } },
+      ];
+    }
+    if (status === 'active') userWhere.isActive = true;
+    else if (status === 'locked') userWhere.isActive = false;
+    if (Object.keys(userWhere).length > 0) where.user = userWhere;
 
     const [wallets, total] = await Promise.all([
       prisma.memberWallet.findMany({

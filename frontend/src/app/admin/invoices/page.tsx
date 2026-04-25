@@ -19,10 +19,22 @@ interface Invoice {
   status: string;
   issuedAt: string;
   pdfUrl: string | null;
-  fromUser: { id: number; name: string; rank: string };
+  fromParty: string;
+  payoutType: string | null;
+  month: string | null;
+  description: string | null;
   toUser: { id: number; name: string; rank: string };
   contract: { id: number; contractNo: string } | null;
 }
+
+const PAYOUT_TYPE_LABEL: Record<string, string> = {
+  SALES_COMMISSION: 'Hoa hồng bán lẻ',
+  MAINTENANCE_FEE: 'Thù lao DV duy trì',
+  MANAGEMENT_FEE_LEVEL1: 'Phí quản lý cấp 1',
+  MANAGEMENT_FEE_LEVEL2: 'Phí quản lý cấp 2',
+  MANAGEMENT_FEE_LEVEL3: 'Phí quản lý cấp 3',
+  OVERRIDE_FEE: 'Phí sau vượt cấp',
+};
 
 const STATUS_STYLES: Record<string, string> = {
   DRAFT: 'bg-gray-100 text-gray-700',
@@ -74,8 +86,8 @@ export default function AdminInvoicesPage() {
     const q = search.trim().toLowerCase();
     return invoices.filter(inv => {
       if (q && !inv.invoiceNumber.toLowerCase().includes(q)
-           && !inv.fromUser.name.toLowerCase().includes(q)
-           && !inv.toUser.name.toLowerCase().includes(q)) return false;
+           && !inv.toUser.name.toLowerCase().includes(q)
+           && !(inv.payoutType || '').toLowerCase().includes(q)) return false;
       if (monthFilter !== 'ALL' && inv.issuedAt.slice(0, 7) !== monthFilter) return false;
       return true;
     });
@@ -87,13 +99,13 @@ export default function AdminInvoicesPage() {
   // Client-side export to CSV (MVP — backend can replace with xlsx)
   const exportCsv = () => {
     const rows = [
-      ['Số hóa đơn', 'Ngày', 'Bên trả', 'Bên nhận', 'Mốc phí', 'Số tiền', 'Trạng thái', 'Hợp đồng'],
+      ['Số hóa đơn', 'Ngày', 'Bên trả', 'Bên nhận', 'Loại payout', 'Số tiền', 'Trạng thái', 'Hợp đồng'],
       ...filtered.map(inv => [
         inv.invoiceNumber,
         new Date(inv.issuedAt).toISOString().slice(0, 10),
-        inv.fromUser.name,
+        inv.fromParty || 'CCB Mart',
         inv.toUser.name,
-        inv.feeTier,
+        PAYOUT_TYPE_LABEL[inv.payoutType ?? ''] ?? inv.feeTier,
         String(inv.amount),
         inv.status,
         inv.contract?.contractNo || '',
@@ -116,8 +128,8 @@ export default function AdminInvoicesPage() {
     setMessage('');
     try {
       const now = new Date();
-      const r = await api.adminProcessMonthlyTransfer(now.getMonth() + 1, now.getFullYear());
-      setMessage(`Đã tạo ${r.invoicesCreated} hóa đơn, ${r.transfersCreated} chuyển khoản, tổng ${formatVND(r.totalAmount)}`);
+      const r = await api.adminProcessMonthlyPayout(now.getMonth() + 1, now.getFullYear());
+      setMessage(`Đã xử lý payout cho ${r.partnersProcessed} đối tác · K = ${r.kFactor} · tổng chi ${formatVND(Number(r.totalDisbursed) || 0)}`);
       fetchData();
     } catch (err) {
       setMessage(`Lỗi: ${(err as Error).message}`);
@@ -153,7 +165,7 @@ export default function AdminInvoicesPage() {
             disabled={processing}
             className="px-4 py-1.5 rounded-lg bg-emerald-600 text-white text-sm font-medium flex items-center gap-2 disabled:opacity-50"
           >
-            <Play size={16} /> {processing ? 'Đang chạy…' : 'Chạy auto-transfer tháng này'}
+            <Play size={16} /> {processing ? 'Đang chạy…' : 'Tính payout tháng này'}
           </button>
         </div>
       </div>
@@ -165,7 +177,7 @@ export default function AdminInvoicesPage() {
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Tìm theo số HĐ, bên trả, bên nhận…"
+            placeholder="Tìm theo số HĐ, bên nhận, loại payout…"
             className="pl-8"
           />
         </div>
@@ -198,7 +210,7 @@ export default function AdminInvoicesPage() {
                   <TableHead>Ngày</TableHead>
                   <TableHead>Bên trả</TableHead>
                   <TableHead>Bên nhận</TableHead>
-                  <TableHead title="Mốc phí DV đào tạo (M0–M5)">Mốc phí</TableHead>
+                  <TableHead title="Loại khoản thanh toán">Loại payout</TableHead>
                   <TableHead className="text-right">Số tiền</TableHead>
                   <TableHead>Trạng thái</TableHead>
                   <TableHead>Hợp đồng</TableHead>
@@ -210,16 +222,16 @@ export default function AdminInvoicesPage() {
                     <TableCell className="font-mono text-xs">{inv.invoiceNumber}</TableCell>
                     <TableCell className="text-sm">{new Date(inv.issuedAt).toLocaleDateString('vi-VN')}</TableCell>
                     <TableCell>
-                      <div className="text-sm font-medium">{inv.fromUser.name}</div>
-                      <Badge variant="outline" className="text-xs">{inv.fromUser.rank}</Badge>
+                      <div className="text-sm font-medium">{inv.fromParty || 'CCB Mart'}</div>
+                      <Badge variant="outline" className="text-xs">Công ty</Badge>
                     </TableCell>
                     <TableCell>
                       <div className="text-sm font-medium">{inv.toUser.name}</div>
                       <Badge variant="outline" className="text-xs">{inv.toUser.rank}</Badge>
                     </TableCell>
                     <TableCell>
-                      <Badge className="bg-purple-100 text-purple-700" title={`Mốc phí ${inv.feeTier}`}>
-                        {inv.feeTier}
+                      <Badge className="bg-purple-100 text-purple-700" title={inv.payoutType ?? inv.feeTier}>
+                        {PAYOUT_TYPE_LABEL[inv.payoutType ?? ''] ?? inv.feeTier}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right font-mono font-semibold text-emerald-700">

@@ -83,6 +83,15 @@ export const api = {
   agencyInventory: () => fetchAPI('/agency/inventory'),
   agencyTransactions: (page = 1) => fetchAPI(`/agency/transactions?page=${page}`),
 
+  // Admin: user management (super_admin only)
+  adminUsers: () => fetchAPI('/admin/users'),
+  adminCreateUser: (data: { email: string; name: string; phone?: string; role: string; password: string }) =>
+    fetchAPI('/admin/users', { method: 'POST', body: JSON.stringify(data) }),
+  adminUpdateUserRole: (id: number, role: string) =>
+    fetchAPI(`/admin/users/${id}/role`, { method: 'PATCH', body: JSON.stringify({ role }) }),
+  adminToggleUserActive: (id: number) =>
+    fetchAPI(`/admin/users/${id}/toggle-active`, { method: 'PATCH' }),
+
   // Admin
   adminDashboard: () => fetchAPI('/admin/dashboard'),
   adminCtvs: () => fetchAPI('/admin/ctvs'),
@@ -155,8 +164,6 @@ export const api = {
   adminResetConfig: () => fetchAPI('/admin/config/reset-default', { method: 'POST' }),
   adminReports: (months = 6) => fetchAPI(`/admin/reports/financial?months=${months}`),
   adminKpiLogs: () => fetchAPI('/admin/kpi-logs'),
-  adminTransferRetry: (id: number) =>
-    fetchAPI(`/admin/transfers/${id}/retry`, { method: 'POST' }),
   adminDashboardTargets: () => fetchAPI('/admin/dashboard-targets'),
   adminTaxExportXmlUrl: (month: string) => `${API_BASE}/admin/tax/export-xml?month=${month}`,
   ctvUploadKycFile: (formData: FormData) => fetchMultipart('/uploads/kyc', formData),
@@ -239,7 +246,14 @@ export const api = {
     fetchAPI(`/admin/membership/deposits/${id}/reject`, { method: 'POST', body: JSON.stringify({ reason }) }),
   adminReferralReport: (month?: string) =>
     fetchAPI(`/admin/membership/referral-report${month ? `?month=${month}` : ''}`),
-  adminMemberWallets: (page = 1) => fetchAPI(`/admin/membership/wallets?page=${page}`),
+  adminMemberWallets: (params: { page?: number; tierId?: number; search?: string; status?: 'active' | 'locked' } = {}) => {
+    const qs = new URLSearchParams();
+    qs.set('page', String(params.page ?? 1));
+    if (params.tierId) qs.set('tierId', String(params.tierId));
+    if (params.search) qs.set('search', params.search);
+    if (params.status) qs.set('status', params.status);
+    return fetchAPI(`/admin/membership/wallets?${qs.toString()}`);
+  },
 
   // Push notifications
   subscribePush: (subscription: any) =>
@@ -283,13 +297,19 @@ export const api = {
   adminKycVerify: (userId: number, approved: boolean, reason?: string) =>
     fetchAPI(`/admin/kyc/verify/${userId}`, { method: 'POST', body: JSON.stringify({ approved, reason }) }),
 
-  // V12.2: Invoices & Auto-Transfer
+  // V13.4: Invoices (CCB Mart → partner) + Partner Payout Engine
   adminInvoices: (page = 1, status?: string) =>
     fetchAPI(`/admin/invoices?page=${page}${status ? `&status=${status}` : ''}`),
-  adminProcessMonthlyTransfer: (month: number, year: number) =>
+  adminProcessMonthlyPayout: (month: number, year: number) =>
     fetchAPI('/admin/invoices/process-monthly', { method: 'POST', body: JSON.stringify({ month, year }) }),
-  adminTransfers: (page = 1, status?: string) =>
-    fetchAPI(`/admin/transfers?page=${page}${status ? `&status=${status}` : ''}`),
+  adminPaymentLogs: (params: { month?: string; status?: string; page?: number } = {}) => {
+    const qs = new URLSearchParams();
+    if (params.month) qs.set('month', params.month);
+    if (params.status) qs.set('status', params.status);
+    if (params.page) qs.set('page', String(params.page));
+    const s = qs.toString();
+    return fetchAPI(`/admin/payment-logs${s ? `?${s}` : ''}`);
+  },
   adminInvoicePdf: (id: number) => fetchAPI(`/admin/invoices/${id}/pdf`),
   adminTerminateContract: (id: number, reason: string) =>
     fetchAPI(`/admin/contracts/${id}/terminate`, { method: 'POST', body: JSON.stringify({ reason }) }),

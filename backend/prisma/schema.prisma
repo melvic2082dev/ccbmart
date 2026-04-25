@@ -65,10 +65,8 @@ model User {
   traineeContracts   B2BContract[]       @relation("Trainee")
   trainerLogs        TrainingLog[]       @relation("TrainerLogs")
   traineeLogs        TrainingLog[]       @relation("TraineeLogs")
-  invoicesFrom       Invoice[]           @relation("InvoicesFrom")
   invoicesTo         Invoice[]           @relation("InvoicesTo")
-  transfersFrom      AutoTransferLog[]   @relation("TransfersFrom")
-  transfersTo        AutoTransferLog[]   @relation("TransfersTo")
+  payoutLogs         PayoutLog[]         @relation("PayoutLogPartner")
   taxRecords         TaxRecord[]
   mgmtFeesFrom       ManagementFee[]     @relation("MgmtFeeFrom")
   mgmtFeesTo         ManagementFee[]     @relation("MgmtFeeTo")
@@ -530,8 +528,8 @@ model ProfessionalTitle {
 }
 
 // ============================================================
-// V13 restored models (FeeConfig, BusinessHousehold, B2BContract,
-// TrainingLog, Invoice, AutoTransferLog, TaxRecord, ManagementFee,
+// V13.4 models (FeeConfig, BusinessHousehold, B2BContract, TrainingLog,
+// Invoice (CCB Mart → partner), PayoutLog, TaxRecord, ManagementFee,
 // BreakawayLog, BreakawayFee, AuditLog, AdminManualAction)
 // ============================================================
 
@@ -632,10 +630,12 @@ model TrainingLog {
   @@map("training_logs")
 }
 
+// V13.4: CCB Mart luôn là bên chi trả (fromParty hardcoded). Đối tác là bên nhận (toUserId).
+// Không còn invoice trainee→trainer; mọi hoá đơn đều CCB Mart → partner.
 model Invoice {
   id            Int      @id @default(autoincrement())
   contractId    Int?     @map("contract_id")
-  fromUserId    Int      @map("from_user_id")
+  fromParty     String   @default("CCB Mart") @map("from_party")
   toUserId      Int      @map("to_user_id")
   amount        Decimal  @db.Decimal(15, 0)
   feeTier       String   @map("fee_tier")
@@ -643,6 +643,9 @@ model Invoice {
   issuedAt      DateTime @default(now()) @map("issued_at")
   pdfUrl        String?  @map("pdf_url")
   status        String   @default("DRAFT")
+  payoutType    String?  @map("payout_type")
+  month         String?
+  description   String?  @db.Text
 
   externalId     String?   @map("external_id")
   retryCount     Int       @default(0) @map("retry_count")
@@ -652,39 +655,37 @@ model Invoice {
   issuedAtManual DateTime? @map("issued_at_manual")
 
   contract B2BContract? @relation(fields: [contractId], references: [id])
-  fromUser User         @relation("InvoicesFrom", fields: [fromUserId], references: [id])
   toUser   User         @relation("InvoicesTo", fields: [toUserId], references: [id])
 
-  @@index([fromUserId])
   @@index([toUserId])
   @@index([status])
+  @@index([payoutType])
+  @@index([month])
   @@map("invoices")
 }
 
-model AutoTransferLog {
-  id           Int      @id @default(autoincrement())
-  fromUserId   Int      @map("from_user_id")
-  toUserId     Int      @map("to_user_id")
-  amount       Decimal  @db.Decimal(15, 0)
-  transferDate DateTime @default(now()) @map("transfer_date")
-  reference    Int?
-  status       String   @default("PENDING")
-  errorMessage String?  @map("error_message") @db.Text
+// V13.4: Partner Payout summary — gộp các khoản CCB Mart trả cho 1 đối tác trong tháng
+model PayoutLog {
+  id                 Int      @id @default(autoincrement())
+  partnerId          Int      @map("partner_id")
+  partnerName        String   @map("partner_name")
+  partnerRank        String   @map("partner_rank")
+  month              String
+  totalAmount        Decimal  @map("total_amount") @db.Decimal(15, 0)
+  breakdown          Json
+  hasValidLog        Boolean  @default(false) @map("has_valid_log")
+  kFactor            Decimal  @default(1.0) @map("k_factor") @db.Decimal(3, 2)
+  status             String   @default("PROCESSED")
+  processedAt        DateTime @default(now()) @map("processed_at")
+  bankTransferId     String?  @map("bank_transfer_id")
+  bankTransferStatus String?  @map("bank_transfer_status")
 
-  retryCount     Int       @default(0) @map("retry_count")
-  maxRetry       Int       @default(3) @map("max_retry")
-  lastRetryAt    DateTime? @map("last_retry_at")
-  manualResolved Boolean   @default(false) @map("manual_resolved")
-  resolvedBy     Int?      @map("resolved_by")
-  resolvedAt     DateTime? @map("resolved_at")
-  adminNote      String?   @map("admin_note") @db.Text
+  partner User @relation("PayoutLogPartner", fields: [partnerId], references: [id])
 
-  fromUser User @relation("TransfersFrom", fields: [fromUserId], references: [id])
-  toUser   User @relation("TransfersTo", fields: [toUserId], references: [id])
-
-  @@index([fromUserId])
+  @@unique([partnerId, month])
+  @@index([month])
   @@index([status])
-  @@map("auto_transfer_logs")
+  @@map("payout_logs")
 }
 
 model TaxRecord {

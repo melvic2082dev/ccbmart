@@ -7,6 +7,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { api } from '@/lib/api';
 import { loginSchema, type LoginInput } from '@/lib/schemas/auth';
+import { getDashboardHref, getRoleGroup } from '@/lib/permissions';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -30,11 +31,11 @@ export default function LoginPage() {
       localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify(data.user));
       const role: string = data.user?.role;
-      if (role === 'ctv') router.push('/ctv/dashboard');
-      else if (role === 'agency') router.push('/agency/dashboard');
-      else if (role === 'admin') router.push('/admin/dashboard');
-      else if (role === 'member') router.push('/member/dashboard');
-      else setError('Vai trò không hợp lệ.');
+      if (!getRoleGroup(role)) {
+        setError('Vai trò không hợp lệ.');
+        return;
+      }
+      router.push(getDashboardHref(role));
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Đăng nhập thất bại.');
     }

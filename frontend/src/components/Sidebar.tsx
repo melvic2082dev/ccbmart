@@ -8,10 +8,11 @@ import {
   PlusCircle, Banknote, ClipboardCheck, Wallet, Award, CreditCard,
   ChevronLeft, ChevronRight, Sun, Moon, Menu, X, FileSpreadsheet,
   GraduationCap, BookOpen, ShieldCheck, Calculator, FileBarChart, Receipt,
-  Coins, Network
+  Coins, Network, UserCog
 } from 'lucide-react';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { api } from '@/lib/api';
+import { canAccessMenu, ROLE_LABELS, getRoleGroup, isAdminRole } from '@/lib/permissions';
 
 type NavItem = {
   label: string;
@@ -60,9 +61,9 @@ const adminGroups: NavGroup[] = [
   {
     title: 'Tài chính & thuế',
     items: [
-      { label: 'Hóa đơn',      href: '/admin/invoices',  icon: <Receipt size={20} /> },
-      { label: 'Auto Transfer', href: '/admin/transfers', icon: <Banknote size={20} /> },
-      { label: 'Thuế TNCN',    href: '/admin/tax',       icon: <Calculator size={20} /> },
+      { label: 'Hóa đơn',          href: '/admin/invoices',     icon: <Receipt size={20} /> },
+      { label: 'Nhật ký thanh toán', href: '/admin/payment-logs', icon: <Banknote size={20} /> },
+      { label: 'Thuế TNCN',        href: '/admin/tax',          icon: <Calculator size={20} /> },
     ],
   },
   {
@@ -75,7 +76,19 @@ const adminGroups: NavGroup[] = [
       { label: 'Thông báo', href: '/admin/notifications', icon: <Bell size={20} />, isNotificationLink: true },
     ],
   },
+  {
+    title: 'Quản trị hệ thống',
+    items: [
+      { label: 'Người dùng', href: '/admin/users', icon: <UserCog size={20} /> },
+    ],
+  },
 ];
+
+function filterAdminGroupsByRole(groups: NavGroup[], role: string): NavGroup[] {
+  return groups
+    .map(g => ({ ...g, items: g.items.filter(it => canAccessMenu(role, it.href)) }))
+    .filter(g => g.items.length > 0);
+}
 
 const navByRole: Record<string, NavItem[]> = {
   ctv: [
@@ -106,9 +119,8 @@ const navByRole: Record<string, NavItem[]> = {
   ],
 };
 
-const ROLE_LABELS: Record<string, string> = {
-  ctv: 'CTV', agency: 'Đại lý', admin: 'Admin', member: 'Thành viên',
-};
+// ROLE_LABELS imported from @/lib/permissions
+
 
 // Read from localStorage synchronously to prevent flash
 function readLS(key: string, fallback: string): string {
@@ -118,8 +130,10 @@ function readLS(key: string, fallback: string): string {
 
 export default function Sidebar({ role }: { role: string }) {
   const pathname = usePathname();
-  const isAdmin = role === 'admin';
-  const items = navByRole[role] || [];
+  const isAdmin = isAdminRole(role);
+  const sidebarRoleKey = isAdmin ? 'admin' : (getRoleGroup(role) || role);
+  const items = navByRole[sidebarRoleKey] || [];
+  const visibleAdminGroups = isAdmin ? filterAdminGroupsByRole(adminGroups, role) : adminGroups;
 
   // Initialize synchronously from localStorage - NO useEffect flash
   const [expanded, setExpanded] = useState(() => readLS('sidebar-expanded', 'false') === 'true');
@@ -254,7 +268,7 @@ export default function Sidebar({ role }: { role: string }) {
   const renderNav = (isMobile: boolean) => {
     const showLabel = isMobile || expanded;
     if (isAdmin) {
-      return adminGroups.flatMap((g, gIdx) => {
+      return visibleAdminGroups.flatMap((g, gIdx) => {
         const header = showLabel
           ? [groupTitle(g.title)]
           : gIdx > 0 ? [<div key={`d-${gIdx}`}>{groupDivider()}</div>] : [];

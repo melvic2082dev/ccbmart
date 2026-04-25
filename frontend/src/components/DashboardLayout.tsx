@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Sidebar from './Sidebar';
+import { getRoleGroup, getDashboardHref } from '@/lib/permissions';
 
 export default function DashboardLayout({ role, children }: { role: string; children: React.ReactNode }) {
   const router = useRouter();
@@ -26,7 +27,8 @@ export default function DashboardLayout({ role, children }: { role: string; chil
     if (!mounted || checkedRef.current) return;
     checkedRef.current = true;
     if (!user) { router.push('/login'); return; }
-    if (user.role !== role) { router.push(`/${user.role}/dashboard`); return; }
+    // Allow any admin sub-role into the 'admin' layout group; same for ctv/agency/member.
+    if (getRoleGroup(user.role) !== role) { router.push(getDashboardHref(user.role)); return; }
   }, [mounted, user, role, router]);
 
   useEffect(() => {
@@ -35,7 +37,7 @@ export default function DashboardLayout({ role, children }: { role: string; chil
     return () => window.removeEventListener('sidebar-toggle', handler);
   }, []);
 
-  if (!mounted || !user || user.role !== role) {
+  if (!mounted || !user || getRoleGroup(user.role) !== role) {
     return (
       <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
         <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
@@ -45,7 +47,7 @@ export default function DashboardLayout({ role, children }: { role: string; chil
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <Sidebar role={role} />
+      <Sidebar role={user.role} />
       <main
         className="min-h-screen p-4 sm:p-6 pt-16 lg:pt-6 lg:ml-[var(--sidebar-w)]"
         style={{ ['--sidebar-w' as string]: sidebarExpanded ? '14rem' : '4rem' }}

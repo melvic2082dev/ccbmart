@@ -13,7 +13,7 @@ router.get('/management-fees', asyncHandler(async (req, res) => {
   if (level) where.level = parseInt(level, 10);
   if (status) where.status = status;
   const skip = (parseInt(page) - 1) * parseInt(limit);
-  const [fees, total] = await Promise.all([
+  const [records, total] = await Promise.all([
     prisma.managementFee.findMany({
       where,
       include: {
@@ -26,7 +26,60 @@ router.get('/management-fees', asyncHandler(async (req, res) => {
     }),
     prisma.managementFee.count({ where }),
   ]);
-  res.json({ fees, total, page: parseInt(page), totalPages: Math.ceil(total / parseInt(limit)) });
+
+  // Aggregate by level
+  const byLevel = { f1: 0, f2: 0, f3: 0 };
+  for (const r of records) {
+    const amt = Number(r.amount || 0);
+    if (r.level === 1) byLevel.f1 += amt;
+    else if (r.level === 2) byLevel.f2 += amt;
+    else if (r.level === 3) byLevel.f3 += amt;
+  }
+  const totalAmount = byLevel.f1 + byLevel.f2 + byLevel.f3;
+
+  // V13.4: aggregate per partner (toUser) — one row per partner showing F1/F2/F3 totals.
+  // hasValidLog is implicit: managementFee records only exist when the upline had ≥20h training.
+  const byPartnerMap = new Map();
+  for (const r of records) {
+    const key = r.toUser.id;
+    if (!byPartnerMap.has(key)) {
+      byPartnerMap.set(key, {
+        partnerId: r.toUser.id,
+        partnerName: r.toUser.name,
+        partnerRank: r.toUser.rank,
+        month: r.month,
+        f1: 0,
+        f2: 0,
+        f3: 0,
+        total: 0,
+        hasValidLog: true,
+        anyPending: false,
+        anyPaid: false,
+      });
+    }
+    const row = byPartnerMap.get(key);
+    const amt = Number(r.amount || 0);
+    if (r.level === 1) row.f1 += amt;
+    else if (r.level === 2) row.f2 += amt;
+    else if (r.level === 3) row.f3 += amt;
+    row.total += amt;
+    if (r.status === 'PENDING') row.anyPending = true;
+    if (r.status === 'PAID') row.anyPaid = true;
+  }
+  const byPartner = Array.from(byPartnerMap.values()).map(p => ({
+    ...p,
+    status: p.anyPending && p.anyPaid ? 'PARTIAL' : (p.anyPaid ? 'PAID' : 'PENDING'),
+  }));
+
+  res.json({
+    records,
+    byLevel,
+    byPartner,
+    total: totalAmount,
+    count: total,
+    page: parseInt(page),
+    totalPages: Math.ceil(total / parseInt(limit)),
+  });
 }));
 
 router.post('/management-fees/process-monthly', asyncHandler(async (req, res) => {

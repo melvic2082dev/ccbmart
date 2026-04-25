@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
 const config = require('../config');
 const prisma = require('../lib/prisma');
+const { ADMIN_ROLES } = require('../lib/permissions');
 
 async function authenticate(req, res, next) {
   const authHeader = req.headers.authorization;
@@ -24,12 +25,19 @@ async function authenticate(req, res, next) {
   }
 }
 
+// Backwards-compat alias: passing 'admin' expands to all admin sub-roles
+// so that existing `authorize('admin')` calls accept any admin sub-role.
+function expandRoles(roles) {
+  return roles.flatMap(r => r === 'admin' ? ADMIN_ROLES : [r]);
+}
+
 function authorize(...roles) {
+  const allowed = expandRoles(roles);
   return (req, res, next) => {
     if (req.user.isActive === false) {
       return res.status(403).json({ error: 'Account is inactive' });
     }
-    if (!roles.includes(req.user.role)) {
+    if (!allowed.includes(req.user.role)) {
       return res.status(403).json({ error: 'Forbidden' });
     }
     next();

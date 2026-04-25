@@ -11,6 +11,11 @@ function randomPhone() {
   return `09${Math.floor(10000000 + Math.random() * 90000000)}`;
 }
 
+// V13.4 maintenance fee per partner rank — kept in sync with partnerPayoutEngine.MAINTENANCE_FEE_BY_RANK
+function getMaintenanceForRank(rank) {
+  return ({ PP: 5_000_000, TP: 10_000_000, GDV: 18_000_000, GDKD: 30_000_000 })[rank] || 0;
+}
+
 const FIRST_NAMES = ['Nguyễn', 'Trần', 'Lê', 'Phạm', 'Hoàng', 'Huỳnh', 'Phan', 'Vũ', 'Võ', 'Đặng', 'Bùi', 'Đỗ', 'Hồ', 'Ngô', 'Dương'];
 const LAST_NAMES = ['Anh', 'Bình', 'Cường', 'Dũng', 'Hà', 'Hải', 'Hương', 'Khoa', 'Lan', 'Linh', 'Mai', 'Minh', 'Nam', 'Phong', 'Quân', 'Sơn', 'Thảo', 'Trang', 'Tuấn', 'Vy'];
 const MIDDLE_NAMES = ['Văn', 'Thị', 'Đức', 'Minh', 'Thanh', 'Hoàng', 'Ngọc', 'Kim', 'Quốc', 'Xuân'];
@@ -56,17 +61,36 @@ async function main() {
   const ctvHash = await bcrypt.hash('ctv123', 10);
   const agencyHash = await bcrypt.hash('agency123', 10);
 
-  // 1. Admin user
+  // 1. Admin users (V13.4+: super_admin + 5 sub-role demo accounts)
   const admin = await prisma.user.create({
     data: {
       email: 'admin@ccbmart.vn',
       passwordHash,
-      role: 'admin',
-      name: 'Admin CCB Mart',
+      role: 'super_admin',
+      name: 'Super Admin CCB Mart',
       phone: '0901000000',
     },
   });
-  console.log('Admin created');
+  const adminSubRoles = [
+    { email: 'ops@ccbmart.vn',      role: 'ops_admin',      name: 'Quản lý vận hành' },
+    { email: 'partner@ccbmart.vn',  role: 'partner_admin',  name: 'Quản lý đối tác' },
+    { email: 'member@ccbmart.vn',   role: 'member_admin',   name: 'Quản lý thành viên' },
+    { email: 'training@ccbmart.vn', role: 'training_admin', name: 'Quản lý đào tạo' },
+    { email: 'finance@ccbmart.vn',  role: 'finance_admin',  name: 'Quản lý tài chính' },
+  ];
+  for (let i = 0; i < adminSubRoles.length; i++) {
+    const r = adminSubRoles[i];
+    await prisma.user.create({
+      data: {
+        email: r.email,
+        passwordHash,
+        role: r.role,
+        name: r.name,
+        phone: `09010000${String(i + 1).padStart(2, '0')}`,
+      },
+    });
+  }
+  console.log(`Admin created: 1 super_admin + ${adminSubRoles.length} sub-role demo users`);
 
   // 2. CTV Hierarchy: GDKD -> GDV -> TP -> PP -> CTV
   const gdkd = await prisma.user.create({
@@ -711,9 +735,10 @@ async function main() {
   console.log('2 ProfessionalTitle records created');
 
   // ============================================================
-  // V13 RESTORED MODELS: FeeConfig, BusinessHousehold, B2BContract,
-  // TrainingLog, Invoice, AutoTransferLog, TaxRecord, ManagementFee,
-  // BreakawayLog, BreakawayFee, AuditLog, ReferralLog, AdminManualAction
+  // V13.4 MODELS: FeeConfig, BusinessHousehold, B2BContract,
+  // TrainingLog, Invoice (CCB Mart → partner), PayoutLog, TaxRecord,
+  // ManagementFee, BreakawayLog, BreakawayFee, AuditLog, ReferralLog,
+  // AdminManualAction
   // ============================================================
 
   // 16. FeeConfig (training fee tiers M0-M5)
@@ -809,21 +834,27 @@ async function main() {
   }
   console.log('10 TrainingLog records created');
 
-  // 20. Invoice (8 invoices tied to contracts)
-  const invTiers = ['M1', 'M2', 'M3', 'M2', 'M4', 'M1', 'M3', 'M2'];
-  const amounts = [500000, 1000000, 2000000, 1000000, 3500000, 500000, 2000000, 1000000];
+  // 20. Invoice (8 invoices: CCB Mart → partner per V13.4)
+  const invTiers = ['MAINTENANCE_FEE', 'MANAGEMENT_FEE_LEVEL1', 'MANAGEMENT_FEE_LEVEL2', 'SALES_COMMISSION', 'OVERRIDE_FEE', 'MAINTENANCE_FEE', 'MANAGEMENT_FEE_LEVEL1', 'MANAGEMENT_FEE_LEVEL3'];
+  const amounts = [10000000, 5000000, 2500000, 1500000, 800000, 18000000, 4000000, 30000000];
+  const invMonth = currentMonth;
+  const invMonthPrefix = `CCB-${invMonth.replace('-', '')}`;
   for (let i = 0; i < 8; i++) {
     const c = contracts[i % contracts.length];
     const issued = new Date(now);
     issued.setDate(issued.getDate() - (20 - i * 2));
+    const tier = invTiers[i];
     await prisma.invoice.create({
       data: {
         contractId: c.id,
-        fromUserId: c.traineeId,
+        fromParty: 'CCB Mart',
         toUserId: c.trainerId,
         amount: amounts[i],
-        feeTier: invTiers[i],
-        invoiceNumber: `INV-2025-${String(i + 1).padStart(5, '0')}`,
+        feeTier: tier,
+        payoutType: tier,
+        month: invMonth,
+        description: `${tier.replace(/_/g, ' ')} — tháng ${invMonth}`,
+        invoiceNumber: `${invMonthPrefix}-${String(i + 1).padStart(4, '0')}`,
         issuedAt: issued,
         status: i < 5 ? 'PAID' : (i < 7 ? 'SENT' : 'DRAFT'),
       },
@@ -831,24 +862,30 @@ async function main() {
   }
   console.log('8 Invoice records created');
 
-  // 21. AutoTransferLog (6 transfers)
-  for (let i = 0; i < 6; i++) {
-    const c = contracts[i % contracts.length];
-    const d = new Date(now); d.setDate(d.getDate() - (15 - i * 2));
-    await prisma.autoTransferLog.create({
+  // 21. PayoutLog (6 partner-month payout summaries)
+  const payoutPartners = [tp1, tp2, gdv1, gdv2, gdkd, pps[0]];
+  for (let i = 0; i < payoutPartners.length; i++) {
+    const p = payoutPartners[i];
+    const breakdown = [
+      { type: 'SALES_COMMISSION', amount: 1500000 + i * 200000 },
+      { type: 'MAINTENANCE_FEE', amount: getMaintenanceForRank(p.rank) },
+    ];
+    const total = breakdown.reduce((s, b) => s + b.amount, 0);
+    await prisma.payoutLog.create({
       data: {
-        fromUserId: c.traineeId,
-        toUserId: c.trainerId,
-        amount: amounts[i],
-        transferDate: d,
-        reference: i + 1,
-        status: i < 4 ? 'SUCCESS' : (i === 4 ? 'FAILED' : 'PENDING'),
-        errorMessage: i === 4 ? 'Bank timeout — retry scheduled' : null,
-        retryCount: i === 4 ? 2 : 0,
+        partnerId: p.id,
+        partnerName: p.name,
+        partnerRank: p.rank,
+        month: invMonth,
+        totalAmount: total,
+        breakdown,
+        hasValidLog: i < 4,
+        kFactor: 1.0,
+        status: 'PROCESSED',
       },
     });
   }
-  console.log('6 AutoTransferLog records created');
+  console.log(`${payoutPartners.length} PayoutLog records created`);
 
   // 22. TaxRecord (TNCN 10% monthly for GDKD/GDV/TP)
   const taxUsers = [gdkd, gdv1, gdv2, tp1, tp2];
@@ -951,7 +988,7 @@ async function main() {
   await prisma.adminManualAction.createMany({
     data: [
       { adminId: admin.id, actionType: 'VERIFY_TRAINING', targetType: 'TrainingLog', targetId: 1, oldStatus: 'PENDING', newStatus: 'VERIFIED', reason: 'OTP timeout — xác minh thủ công' },
-      { adminId: admin.id, actionType: 'MARK_TRANSFER_SUCCESS', targetType: 'AutoTransferLog', targetId: 5, oldStatus: 'FAILED', newStatus: 'MANUAL_RESOLVED', reason: 'Ngân hàng xác nhận đã chuyển' },
+      { adminId: admin.id, actionType: 'MARK_PAYOUT_PROCESSED', targetType: 'PayoutLog', targetId: 5, oldStatus: 'PENDING', newStatus: 'PROCESSED', reason: 'Ngân hàng xác nhận đã chuyển' },
       { adminId: admin.id, actionType: 'ISSUE_INVOICE', targetType: 'Invoice', targetId: 8, oldStatus: 'DRAFT', newStatus: 'SENT', reason: 'Phát hành thủ công sau khi sửa thông tin' },
     ],
   });
@@ -959,7 +996,12 @@ async function main() {
 
   console.log('\nSeed complete! (V13 full)');
   console.log('Login credentials:');
-  console.log('   admin@ccbmart.vn / admin123');
+  console.log('   admin@ccbmart.vn / admin123 (super_admin)');
+  console.log('   ops@ccbmart.vn / admin123 (ops_admin)');
+  console.log('   partner@ccbmart.vn / admin123 (partner_admin)');
+  console.log('   member@ccbmart.vn / admin123 (member_admin)');
+  console.log('   training@ccbmart.vn / admin123 (training_admin)');
+  console.log('   finance@ccbmart.vn / admin123 (finance_admin)');
   console.log('   ctv1@ccbmart.vn / ctv123 (GDKD)');
   console.log('   ctv2@ccbmart.vn / ctv123 (GDV)');
   console.log('   agency1@ccbmart.vn / agency123');
