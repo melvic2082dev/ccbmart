@@ -4,22 +4,36 @@ import { useEffect, useState } from 'react';
 import { api, formatVND } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Coins, Play, Info, FileText } from 'lucide-react';
+import { Coins, Play, Info, Check, X } from 'lucide-react';
 
 interface AdminMgmtFeeRecord {
   id: number;
   level: number;
-  amount: number;
+  amount: number | string;
   month: string;
   status: string;
   fromUser: { id: number; name: string; rank: string | null };
   toUser: { id: number; name: string; rank: string | null };
 }
 
+interface PartnerAggregate {
+  partnerId: number;
+  partnerName: string;
+  partnerRank: string;
+  month: string;
+  f1: number | string;
+  f2: number | string;
+  f3: number | string;
+  total: number | string;
+  hasValidLog: boolean;
+  status: 'PENDING' | 'PAID' | 'PARTIAL';
+}
+
 interface AdminMgmtFeeResponse {
   records?: AdminMgmtFeeRecord[];
-  total?: number | string;
   byLevel?: { f1?: number | string; f2?: number | string; f3?: number | string };
+  byPartner?: PartnerAggregate[];
+  total?: number | string;
 }
 
 function currentMonth() {
@@ -27,24 +41,24 @@ function currentMonth() {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 }
 
-const LEVEL_LABEL: Record<number, string> = {
-  1: 'Cấp 1 (10%)',
-  2: 'Cấp 2 (5%)',
-  3: 'Cấp 3 (3%)',
-};
-const LEVEL_COLOR: Record<number, string> = {
-  1: 'bg-emerald-100 text-emerald-700',
-  2: 'bg-blue-100 text-blue-700',
-  3: 'bg-purple-100 text-purple-700',
+const STATUS_LABEL: Record<string, string> = {
+  PENDING: 'Chờ trả',
+  PAID: 'Đã trả',
+  PARTIAL: 'Trả một phần',
 };
 
+const STATUS_COLOR: Record<string, string> = {
+  PENDING: 'bg-yellow-100 text-yellow-700',
+  PAID: 'bg-green-100 text-green-700',
+  PARTIAL: 'bg-blue-100 text-blue-700',
+};
 
 export default function AdminManagementFeesPage() {
   const [month, setMonth] = useState(currentMonth());
   const [data, setData] = useState<AdminMgmtFeeResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
-  const [openTrainingLogsFor, setOpenTrainingLogsFor] = useState<string | null>(null);
+  const [resultBanner, setResultBanner] = useState<string | null>(null);
 
   const load = () => {
     setLoading(true);
@@ -58,11 +72,13 @@ export default function AdminManagementFeesPage() {
   useEffect(load, [month]);
 
   const handleProcess = async () => {
-    if (!confirm(`Tính lại phí quản lý cho tháng ${month}?`)) return;
+    if (!confirm(`Tính lại payout V13.4 cho tháng ${month}? Sẽ tạo hóa đơn + payout log cho tất cả đối tác.`)) return;
     setProcessing(true);
+    setResultBanner(null);
     try {
-      const res = await api.adminProcessManagementFees(month);
-      alert(`Đã tạo ${res.created} record phí quản lý`);
+      const [year, m] = month.split('-').map(Number);
+      const res = await api.adminProcessMonthlyPayout(m, year);
+      setResultBanner(`Đã xử lý ${res.partnersProcessed} đối tác · K = ${res.kFactor} · tổng chi ${formatVND(Number(res.totalDisbursed) || 0)}`);
       load();
     } catch (e) {
       alert((e as Error).message);
@@ -71,14 +87,7 @@ export default function AdminManagementFeesPage() {
     }
   };
 
-  const handleMarkPaid = async (id: number) => {
-    try {
-      await api.adminMarkManagementFeePaid(id);
-      load();
-    } catch (e) {
-      alert((e as Error).message);
-    }
-  };
+  const partners = data?.byPartner ?? [];
 
   return (
     <>
@@ -88,10 +97,10 @@ export default function AdminManagementFeesPage() {
 
       <div className="mb-6 rounded-md border border-blue-200 bg-blue-50/60 px-3 py-2 text-sm text-blue-900 flex items-start gap-2">
         <Info className="w-4 h-4 mt-0.5 flex-shrink-0" />
-        <span>Phí quản lý do CCB Mart chi trả trực tiếp từ doanh thu bán hàng. Không có chuyển tiền giữa đối tác.</span>
+        <span>Phí quản lý cấp 1 (10%), cấp 2 (5%), cấp 3 (3%) theo doanh số cấp dưới. Yêu cầu đối tác đạt ≥ 20h log đào tạo/tháng.</span>
       </div>
 
-      <div className="mb-4 flex gap-3 items-center">
+      <div className="mb-4 flex gap-3 items-center flex-wrap">
         <input
           type="month"
           value={month}
@@ -105,6 +114,7 @@ export default function AdminManagementFeesPage() {
         >
           <Play size={16} /> {processing ? 'Đang tính...' : 'Tính lại tháng'}
         </button>
+        {resultBanner && <span className="text-sm text-green-700">{resultBanner}</span>}
       </div>
 
       {loading ? (
@@ -120,10 +130,10 @@ export default function AdminManagementFeesPage() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Danh sách phí quản lý ({data.records?.length ?? 0})</CardTitle>
+              <CardTitle>Tổng hợp theo đối tác ({partners.length})</CardTitle>
             </CardHeader>
             <CardContent>
-              {!data.records || data.records.length === 0 ? (
+              {partners.length === 0 ? (
                 <p className="text-sm text-slate-500">Chưa có dữ liệu. Nhấn &quot;Tính lại tháng&quot; để trigger.</p>
               ) : (
                 <div className="overflow-x-auto">
@@ -131,49 +141,35 @@ export default function AdminManagementFeesPage() {
                     <thead className="text-left border-b bg-gray-50">
                       <tr>
                         <th className="py-2 px-2">Tháng</th>
-                        <th className="py-2 px-2">Cấp</th>
-                        <th className="py-2 px-2">Người được dẫn dắt</th>
-                        <th className="py-2 px-2">Người dẫn dắt</th>
-                        <th className="py-2 px-2 text-right">Phí</th>
+                        <th className="py-2 px-2">Đối tác</th>
+                        <th className="py-2 px-2">Xếp hạng</th>
+                        <th className="py-2 px-2 text-right">Cấp 1 (10%)</th>
+                        <th className="py-2 px-2 text-right">Cấp 2 (5%)</th>
+                        <th className="py-2 px-2 text-right">Cấp 3 (3%)</th>
+                        <th className="py-2 px-2 text-center">Log 20h</th>
+                        <th className="py-2 px-2 text-right">Tổng</th>
                         <th className="py-2 px-2">Trạng thái</th>
-                        <th className="py-2 px-2">Ngày chi trả</th>
-                        <th className="py-2 px-2">Số chứng từ</th>
-                        <th className="py-2 px-2" />
                       </tr>
                     </thead>
                     <tbody>
-                      {data.records?.map((r) => (
-                          <tr key={r.id} className="border-b last:border-0 hover:bg-gray-50/60">
-                            <td className="py-2 px-2 font-mono text-xs">{r.month}</td>
-                            <td className="py-2 px-2"><Badge className={`${LEVEL_COLOR[r.level]} text-xs`}>{LEVEL_LABEL[r.level]}</Badge></td>
-                            <td className="py-2 px-2">{r.fromUser.name} <span className="text-slate-500 text-xs">({r.fromUser.rank || 'CTV'})</span></td>
-                            <td className="py-2 px-2">{r.toUser.name} <span className="text-slate-500 text-xs">({r.toUser.rank})</span></td>
-                            <td className="py-2 px-2 text-right font-mono font-semibold">{formatVND(Number(r.amount ?? 0) || 0)}</td>
-                            <td className="py-2 px-2">
-                              <Badge className={r.status === 'PAID' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}>{r.status === 'PAID' ? 'Đã trả' : r.status === 'PENDING' ? 'Chờ trả' : r.status}</Badge>
-                            </td>
-                            <td className="py-2 px-2 text-xs text-gray-600">—</td>
-                            <td className="py-2 px-2 font-mono text-xs text-gray-600">—</td>
-                            <td className="py-2 px-2">
-                              <div className="flex items-center gap-1">
-                                {r.status === 'PENDING' && (
-                                  <button
-                                    onClick={() => handleMarkPaid(r.id)}
-                                    className="px-2 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-xs"
-                                  >
-                                    Đã trả
-                                  </button>
-                                )}
-                                <button
-                                  onClick={() => setOpenTrainingLogsFor(`${r.month}::${r.toUser.name}`)}
-                                  title={`Xem log đào tạo ${r.toUser.name} · ${r.month}`}
-                                  className="p-1 text-gray-500 hover:text-blue-600"
-                                >
-                                  <FileText className="w-4 h-4" />
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
+                      {partners.map((p) => (
+                        <tr key={p.partnerId} className="border-b last:border-0 hover:bg-gray-50/60">
+                          <td className="py-2 px-2 font-mono text-xs">{p.month}</td>
+                          <td className="py-2 px-2 font-medium">{p.partnerName}</td>
+                          <td className="py-2 px-2"><Badge className="bg-slate-100 text-slate-700 text-xs">{p.partnerRank}</Badge></td>
+                          <td className="py-2 px-2 text-right font-mono">{Number(p.f1) > 0 ? formatVND(Number(p.f1)) : '—'}</td>
+                          <td className="py-2 px-2 text-right font-mono">{Number(p.f2) > 0 ? formatVND(Number(p.f2)) : '—'}</td>
+                          <td className="py-2 px-2 text-right font-mono">{Number(p.f3) > 0 ? formatVND(Number(p.f3)) : '—'}</td>
+                          <td className="py-2 px-2 text-center">
+                            {p.hasValidLog
+                              ? <Check className="w-4 h-4 text-green-600 inline" />
+                              : <X className="w-4 h-4 text-red-500 inline" />}
+                          </td>
+                          <td className="py-2 px-2 text-right font-mono font-semibold">{formatVND(Number(p.total) || 0)}</td>
+                          <td className="py-2 px-2">
+                            <Badge className={`${STATUS_COLOR[p.status]} text-xs`}>{STATUS_LABEL[p.status]}</Badge>
+                          </td>
+                        </tr>
                       ))}
                     </tbody>
                   </table>
@@ -183,31 +179,6 @@ export default function AdminManagementFeesPage() {
           </Card>
         </>
       ) : null}
-
-      {/* Training log mini-dialog for a fee row (mock) */}
-      {openTrainingLogsFor && (
-        <div
-          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
-          onClick={() => setOpenTrainingLogsFor(null)}
-        >
-          <div className="bg-white dark:bg-slate-800 rounded-xl p-5 w-[440px] max-w-[90vw] space-y-3" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-lg font-bold">Log đào tạo kèm theo</h3>
-            <p className="text-xs text-gray-500">
-              Giảng viên/Tháng: <b>{openTrainingLogsFor}</b>
-            </p>
-            <div className="rounded-md border border-gray-100 bg-gray-50 p-3 text-sm text-gray-700 space-y-1">
-              <p>Phí quản lý chỉ được chi trả nếu mentor có đủ <b>20 giờ log đào tạo</b> trong tháng.</p>
-              <p className="text-xs text-gray-500">Chi tiết log đầy đủ có ở màn hình <a className="underline text-blue-600" href="/admin/training-logs">Log đào tạo</a>.</p>
-            </div>
-            <button
-              onClick={() => setOpenTrainingLogsFor(null)}
-              className="w-full py-2 border rounded-lg hover:bg-gray-50 text-sm"
-            >
-              Đóng
-            </button>
-          </div>
-        </div>
-      )}
     </>
   );
 }

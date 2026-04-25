@@ -155,8 +155,6 @@ export const api = {
   adminResetConfig: () => fetchAPI('/admin/config/reset-default', { method: 'POST' }),
   adminReports: (months = 6) => fetchAPI(`/admin/reports/financial?months=${months}`),
   adminKpiLogs: () => fetchAPI('/admin/kpi-logs'),
-  adminTransferRetry: (id: number) =>
-    fetchAPI(`/admin/transfers/${id}/retry`, { method: 'POST' }),
   adminDashboardTargets: () => fetchAPI('/admin/dashboard-targets'),
   adminTaxExportXmlUrl: (month: string) => `${API_BASE}/admin/tax/export-xml?month=${month}`,
   ctvUploadKycFile: (formData: FormData) => fetchMultipart('/uploads/kyc', formData),
@@ -283,13 +281,19 @@ export const api = {
   adminKycVerify: (userId: number, approved: boolean, reason?: string) =>
     fetchAPI(`/admin/kyc/verify/${userId}`, { method: 'POST', body: JSON.stringify({ approved, reason }) }),
 
-  // V12.2: Invoices & Auto-Transfer
+  // V13.4: Invoices (CCB Mart → partner) + Partner Payout Engine
   adminInvoices: (page = 1, status?: string) =>
     fetchAPI(`/admin/invoices?page=${page}${status ? `&status=${status}` : ''}`),
-  adminProcessMonthlyTransfer: (month: number, year: number) =>
+  adminProcessMonthlyPayout: (month: number, year: number) =>
     fetchAPI('/admin/invoices/process-monthly', { method: 'POST', body: JSON.stringify({ month, year }) }),
-  adminTransfers: (page = 1, status?: string) =>
-    fetchAPI(`/admin/transfers?page=${page}${status ? `&status=${status}` : ''}`),
+  adminPaymentLogs: (params: { month?: string; status?: string; page?: number } = {}) => {
+    const qs = new URLSearchParams();
+    if (params.month) qs.set('month', params.month);
+    if (params.status) qs.set('status', params.status);
+    if (params.page) qs.set('page', String(params.page));
+    const s = qs.toString();
+    return fetchAPI(`/admin/payment-logs${s ? `?${s}` : ''}`);
+  },
   adminInvoicePdf: (id: number) => fetchAPI(`/admin/invoices/${id}/pdf`),
   adminTerminateContract: (id: number, reason: string) =>
     fetchAPI(`/admin/contracts/${id}/terminate`, { method: 'POST', body: JSON.stringify({ reason }) }),

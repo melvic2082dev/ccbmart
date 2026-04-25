@@ -1,9 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { api, formatVND, getUser } from '@/lib/api';
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type AnyUser = any;
+import { api, formatVND } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -17,7 +15,10 @@ interface Invoice {
   status: string;
   issuedAt: string;
   pdfUrl: string | null;
-  fromUser: { id: number; name: string; rank: string };
+  fromParty: string;
+  payoutType: string | null;
+  month: string | null;
+  description: string | null;
   toUser: { id: number; name: string; rank: string };
   contract: { id: number; contractNo: string } | null;
 }
@@ -29,11 +30,18 @@ const STATUS_STYLES: Record<string, string> = {
   CANCELLED: 'bg-red-100 text-red-700',
 };
 
+const PAYOUT_TYPE_LABEL: Record<string, string> = {
+  SALES_COMMISSION: 'Hoa hồng bán lẻ',
+  MAINTENANCE_FEE: 'Thù lao DV duy trì',
+  MANAGEMENT_FEE_LEVEL1: 'Phí quản lý cấp 1',
+  MANAGEMENT_FEE_LEVEL2: 'Phí quản lý cấp 2',
+  MANAGEMENT_FEE_LEVEL3: 'Phí quản lý cấp 3',
+  OVERRIDE_FEE: 'Phí sau vượt cấp',
+};
+
 export default function CtvInvoicesPage() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
-  const user = getUser() as AnyUser;
-  const myId: number | undefined = user?.id;
 
   useEffect(() => {
     api.ctvInvoices()
@@ -42,10 +50,7 @@ export default function CtvInvoicesPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  const received = invoices.filter((i) => i.toUser.id === myId);
-  const paid = invoices.filter((i) => i.fromUser.id === myId);
-  const totalReceived = received.reduce((s, i) => s + i.amount, 0);
-  const totalPaid = paid.reduce((s, i) => s + i.amount, 0);
+  const totalReceived = invoices.reduce((s, i) => s + Number(i.amount || 0), 0);
 
   return (
     <>
@@ -53,22 +58,13 @@ export default function CtvInvoicesPage() {
         <FileText size={24} /> Hóa đơn của tôi
       </h2>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-        <Card>
-          <CardContent className="p-4">
-            <p className="text-sm text-slate-500">Tổng phí DV nhận được</p>
-            <p className="text-2xl font-bold text-emerald-700">{formatVND(totalReceived)}</p>
-            <p className="text-xs text-slate-500 mt-1">{received.length} hóa đơn</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <p className="text-sm text-slate-500">Tổng phí DV đã trả</p>
-            <p className="text-2xl font-bold text-red-600">{formatVND(totalPaid)}</p>
-            <p className="text-xs text-slate-500 mt-1">{paid.length} hóa đơn</p>
-          </CardContent>
-        </Card>
-      </div>
+      <Card className="mb-6">
+        <CardContent className="p-4">
+          <p className="text-sm text-slate-500">Tổng đã nhận từ CCB Mart</p>
+          <p className="text-2xl font-bold text-emerald-700">{formatVND(totalReceived)}</p>
+          <p className="text-xs text-slate-500 mt-1">{invoices.length} hóa đơn</p>
+        </CardContent>
+      </Card>
 
       {loading ? (
         <div className="h-64 bg-slate-200 animate-pulse rounded-xl" />
@@ -83,43 +79,35 @@ export default function CtvInvoicesPage() {
                 <TableRow>
                   <TableHead>Số HĐ</TableHead>
                   <TableHead>Ngày</TableHead>
-                  <TableHead>Loại</TableHead>
-                  <TableHead>Đối tác</TableHead>
-                  <TableHead>Tier</TableHead>
+                  <TableHead>Bên trả</TableHead>
+                  <TableHead>Loại payout</TableHead>
                   <TableHead className="text-right">Số tiền</TableHead>
                   <TableHead>Trạng thái</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {invoices.map((inv) => {
-                  const isReceiver = inv.toUser.id === myId;
-                  const partner = isReceiver ? inv.fromUser : inv.toUser;
-                  return (
-                    <TableRow key={inv.id}>
-                      <TableCell className="font-mono text-xs">{inv.invoiceNumber}</TableCell>
-                      <TableCell className="text-sm">{new Date(inv.issuedAt).toLocaleDateString('vi-VN')}</TableCell>
-                      <TableCell>
-                        <Badge className={isReceiver ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}>
-                          {isReceiver ? 'Nhận' : 'Trả'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="text-sm font-medium">{partner.name}</div>
-                        <Badge variant="outline" className="text-xs">{partner.rank}</Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge className="bg-purple-100 text-purple-700">{inv.feeTier}</Badge>
-                      </TableCell>
-                      <TableCell className="text-right font-mono font-semibold">{formatVND(inv.amount)}</TableCell>
-                      <TableCell>
-                        <Badge className={STATUS_STYLES[inv.status]}>{inv.status}</Badge>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
+                {invoices.map((inv) => (
+                  <TableRow key={inv.id}>
+                    <TableCell className="font-mono text-xs">{inv.invoiceNumber}</TableCell>
+                    <TableCell className="text-sm">{new Date(inv.issuedAt).toLocaleDateString('vi-VN')}</TableCell>
+                    <TableCell>
+                      <div className="text-sm font-medium">{inv.fromParty || 'CCB Mart'}</div>
+                      <Badge variant="outline" className="text-xs">Công ty</Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge className="bg-purple-100 text-purple-700">
+                        {PAYOUT_TYPE_LABEL[inv.payoutType ?? ''] ?? inv.payoutType ?? inv.feeTier}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right font-mono font-semibold">{formatVND(Number(inv.amount) || 0)}</TableCell>
+                    <TableCell>
+                      <Badge className={STATUS_STYLES[inv.status]}>{inv.status}</Badge>
+                    </TableCell>
+                  </TableRow>
+                ))}
                 {invoices.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8 text-slate-500">
+                    <TableCell colSpan={6} className="text-center py-8 text-slate-500">
                       Chưa có hóa đơn
                     </TableCell>
                   </TableRow>

@@ -60,9 +60,9 @@ const adminGroups: NavGroup[] = [
   {
     title: 'Tài chính & thuế',
     items: [
-      { label: 'Hóa đơn',      href: '/admin/invoices',  icon: <Receipt size={20} /> },
-      { label: 'Auto Transfer', href: '/admin/transfers', icon: <Banknote size={20} /> },
-      { label: 'Thuế TNCN',    href: '/admin/tax',       icon: <Calculator size={20} /> },
+      { label: 'Hóa đơn',          href: '/admin/invoices',     icon: <Receipt size={20} /> },
+      { label: 'Nhật ký thanh toán', href: '/admin/payment-logs', icon: <Banknote size={20} /> },
+      { label: 'Thuế TNCN',        href: '/admin/tax',          icon: <Calculator size={20} /> },
     ],
   },
   {
