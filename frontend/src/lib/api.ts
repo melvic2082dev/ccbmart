@@ -237,7 +237,14 @@ export const api = {
     fetchAPI(`/admin/membership/deposits/${id}/reject`, { method: 'POST', body: JSON.stringify({ reason }) }),
   adminReferralReport: (month?: string) =>
     fetchAPI(`/admin/membership/referral-report${month ? `?month=${month}` : ''}`),
-  adminMemberWallets: (page = 1) => fetchAPI(`/admin/membership/wallets?page=${page}`),
+  adminMemberWallets: (params: { page?: number; tierId?: number; search?: string; status?: 'active' | 'locked' } = {}) => {
+    const qs = new URLSearchParams();
+    qs.set('page', String(params.page ?? 1));
+    if (params.tierId) qs.set('tierId', String(params.tierId));
+    if (params.search) qs.set('search', params.search);
+    if (params.status) qs.set('status', params.status);
+    return fetchAPI(`/admin/membership/wallets?${qs.toString()}`);
+  },
 
   // Push notifications
   subscribePush: (subscription: any) =>
