@@ -32,11 +32,11 @@ const STATUS_STYLES: Record<string, string> = {
 
 const PAYOUT_TYPE_LABEL: Record<string, string> = {
   SALES_COMMISSION: 'Hoa hồng bán lẻ',
-  MAINTENANCE_FEE: 'Thù lao DV duy trì',
+  MAINTENANCE_FEE: 'Lương cố định',
   MANAGEMENT_FEE_LEVEL1: 'Phí quản lý cấp 1',
   MANAGEMENT_FEE_LEVEL2: 'Phí quản lý cấp 2',
   MANAGEMENT_FEE_LEVEL3: 'Phí quản lý cấp 3',
-  OVERRIDE_FEE: 'Phí sau vượt cấp',
+  OVERRIDE_FEE: 'Phí thoát ly',
 };
 
 export default function CtvInvoicesPage() {

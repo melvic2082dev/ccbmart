@@ -104,7 +104,7 @@ export default function TrainingLogsPage() {
             Tổng giờ đào tạo tháng {currentMonthLabel()} · yêu cầu 20 giờ/giảng viên
           </CardTitle>
           <p className="text-sm text-slate-500">
-            Chỉ tính log đã duyệt. Giảng viên không đủ 20 giờ sẽ không được nhận Thù lao DV duy trì tháng sau.
+            Chỉ tính log đã duyệt. Giảng viên không đủ 20 giờ sẽ không được nhận Lương cố định + Phí quản lý tháng sau.
           </p>
         </CardHeader>
         <CardContent className="p-0">

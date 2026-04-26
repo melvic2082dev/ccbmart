@@ -134,12 +134,12 @@ async function calculateCtvCommission(ctvId, month) {
 
   // Aggregate revenue per CTV in DB — avoids loading raw transaction rows
   const revenueRows = await prisma.$queryRaw`
-    SELECT "ctvId", COALESCE(SUM("totalAmount"), 0)::float8 AS revenue
+    SELECT "ctv_id" AS "ctvId", COALESCE(SUM("total_amount"), 0)::float8 AS revenue
     FROM "transactions"
     WHERE channel = 'ctv' AND status = 'CONFIRMED'
-      AND "createdAt" >= ${startDate} AND "createdAt" < ${endDate}
-      AND "ctvId" IS NOT NULL
-    GROUP BY "ctvId"
+      AND "created_at" >= ${startDate} AND "created_at" < ${endDate}
+      AND "ctv_id" IS NOT NULL
+    GROUP BY "ctv_id"
   `;
 
   // Cursor-paginated CTV load — safe for large orgs
@@ -236,12 +236,12 @@ async function calculateAllCtvCommissions(month) {
 
   const [revenueRows, allRates] = await Promise.all([
     prisma.$queryRaw`
-      SELECT "ctvId", COALESCE(SUM("totalAmount"), 0)::float8 AS revenue
+      SELECT "ctv_id" AS "ctvId", COALESCE(SUM("total_amount"), 0)::float8 AS revenue
       FROM "transactions"
       WHERE channel = 'ctv' AND status = 'CONFIRMED'
-        AND "createdAt" >= ${startDate} AND "createdAt" < ${endDate}
-        AND "ctvId" IS NOT NULL
-      GROUP BY "ctvId"
+        AND "created_at" >= ${startDate} AND "created_at" < ${endDate}
+        AND "ctv_id" IS NOT NULL
+      GROUP BY "ctv_id"
     `,
     getCommissionRates(),
   ]);

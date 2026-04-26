@@ -309,12 +309,13 @@ async function main() {
   ]);
   console.log(`${products.length} products created`);
 
-  // 7. Customers (100)
-  const now = new Date();
+  // 7. Customers (120) — anchored at 2026-08-15 so monthly windows fall on
+  // 2026-05/06/07/08 (per requirement: "compute data starting from 5/2026").
+  const now = new Date('2026-08-15T00:00:00Z');
   const threeMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 3, 1);
   const customers = [];
 
-  for (let i = 0; i < 100; i++) {
+  for (let i = 0; i < 120; i++) {
     const isCtvCustomer = i < 60;
     const isAgencyCustomer = i >= 60 && i < 80;
 
@@ -330,16 +331,18 @@ async function main() {
     });
     customers.push(customer);
   }
-  console.log('100 customers created');
+  console.log('120 customers created');
 
-  // 8. Transactions (500, spread across 3 months)
-  let txnCount = 0;
+  // 8. Transactions (400, spread across 4 months: May/Jun/Jul/Aug 2026).
+  // Batched with Promise.all (25 per batch) so staging Postgres (~50ms RTT)
+  // finishes in seconds instead of minutes.
   const comboProduct = products[0];
+  const TXN_TOTAL = 400;
+  const TXN_BATCH = 25;
 
-  for (let i = 0; i < 500; i++) {
-    const channel = i < 300 ? 'ctv' : i < 400 ? 'agency' : 'showroom';
+  function buildTxnData(i) {
+    const channel = i < 240 ? 'ctv' : i < 320 ? 'agency' : 'showroom';
     const txnDate = randomDate(threeMonthsAgo, now);
-
     let ctvId = null;
     let agencyId = null;
     let customerId = null;
@@ -349,8 +352,7 @@ async function main() {
 
     if (channel === 'ctv') {
       ctvId = allCtvUsers[i % allCtvUsers.length].id;
-      customerId = customers[i % 60].id;
-
+      customerId = customers[i % 80].id;
       if (Math.random() < 0.7) {
         const qty = Math.floor(Math.random() * 3) + 1;
         totalAmount = comboProduct.price * qty;
@@ -369,8 +371,7 @@ async function main() {
       }
     } else if (channel === 'agency') {
       agencyId = agencies[i % agencies.length].id;
-      customerId = customers[60 + (i % 20)].id;
-
+      customerId = customers[80 + (i % 20)].id;
       const numProducts = Math.floor(Math.random() * 4) + 1;
       for (let j = 0; j < numProducts; j++) {
         const prod = products[Math.floor(Math.random() * products.length)];
@@ -381,8 +382,7 @@ async function main() {
         items.push({ productId: prod.id, quantity: qty, unitPrice: prod.price, totalPrice: lineTotal });
       }
     } else {
-      customerId = customers[80 + (i % 20)].id;
-
+      customerId = customers[100 + (i % 20)].id;
       if (Math.random() < 0.5) {
         const suatAn = products[6];
         const qty = Math.floor(Math.random() * 5) + 1;
@@ -401,9 +401,8 @@ async function main() {
         }
       }
     }
-
-    await prisma.transaction.create({
-      data: {
+    return {
+      txnInput: {
         kiotvietOrderId: `KV-${String(txnDate.getFullYear()).slice(2)}${String(txnDate.getMonth() + 1).padStart(2, '0')}-${String(i + 1).padStart(4, '0')}`,
         customerId,
         ctvId,
@@ -414,22 +413,29 @@ async function main() {
         createdAt: txnDate,
         items: { create: items },
       },
-    });
-
-    if (customerId) {
-      await prisma.customer.update({
-        where: { id: customerId },
-        data: { totalSpent: { increment: totalAmount } },
-      });
-    }
-
-    txnCount++;
+      customerId,
+      totalAmount,
+    };
   }
-  console.log(`${txnCount} transactions created`);
 
-  // 9. KPI Logs
+  for (let start = 0; start < TXN_TOTAL; start += TXN_BATCH) {
+    const batchPayload = [];
+    for (let k = 0; k < TXN_BATCH && start + k < TXN_TOTAL; k++) {
+      batchPayload.push(buildTxnData(start + k));
+    }
+    await Promise.all(batchPayload.map(b =>
+      prisma.transaction.create({ data: b.txnInput })
+        .then(() => b.customerId
+          ? prisma.customer.update({ where: { id: b.customerId }, data: { totalSpent: { increment: b.totalAmount } } })
+          : null
+        )
+    ));
+  }
+  console.log(`${TXN_TOTAL} transactions created`);
+
+  // 9. KPI Logs — 4 months (May–Aug 2026)
   const keyCtvsForKpi = [gdkd, gdv1, gdv2, tp1, tp2, tp3, ...pps.slice(0, 3)];
-  for (let monthOffset = 2; monthOffset >= 0; monthOffset--) {
+  for (let monthOffset = 3; monthOffset >= 0; monthOffset--) {
     const d = new Date(now.getFullYear(), now.getMonth() - monthOffset, 1);
     const monthStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 
@@ -469,7 +475,7 @@ async function main() {
   ];
 
   for (const w of warningData) {
-    const expiryDate = new Date();
+    const expiryDate = new Date(now);
     expiryDate.setDate(expiryDate.getDate() + w.daysUntilExpiry);
     await prisma.inventoryWarning.create({
       data: { productId: w.productId, agencyId: w.agencyId, quantity: w.quantity, expiryDate, warningType: w.warningType },
@@ -484,7 +490,7 @@ async function main() {
     const customer = customers[i % 60];
     const isBankTransfer = i < 6;
     const hoursAgo = i < 3 ? 2 : i < 6 ? 12 : i < 8 ? 30 : 50;
-    const txnDate = new Date(Date.now() - hoursAgo * 60 * 60 * 1000);
+    const txnDate = new Date(now.getTime() - hoursAgo * 60 * 60 * 1000);
 
     const txn = await prisma.transaction.create({
       data: {
@@ -692,7 +698,7 @@ async function main() {
   const loyaltySources = ['TEAM_BONUS', 'PERSONAL_PURCHASE', 'MILESTONE'];
   for (let i = 0; i < 20; i++) {
     const user = loyaltyUsers[i % loyaltyUsers.length];
-    const expiresAt = new Date();
+    const expiresAt = new Date(now);
     expiresAt.setFullYear(expiresAt.getFullYear() + 1);
 
     await prisma.loyaltyPoint.create({
@@ -709,7 +715,7 @@ async function main() {
   console.log('20 LoyaltyPoint records created');
 
   // 22. ProfessionalTitle (2 records)
-  const titleExpiry = new Date();
+  const titleExpiry = new Date(now);
   titleExpiry.setFullYear(titleExpiry.getFullYear() + 1);
 
   await prisma.professionalTitle.createMany({
@@ -758,7 +764,8 @@ async function main() {
   const hkdUsers = [gdkd, gdv1, gdv2, tp1, tp2];
   for (let i = 0; i < hkdUsers.length; i++) {
     const u = hkdUsers[i];
-    const signed = new Date(now); signed.setMonth(signed.getMonth() - 6);
+    // Khai trương từ 2026-05 — HKD ký từ ngày khai trương trở đi (kéo dãn từ 1 đến 5 tháng).
+    const signed = new Date(2026, 4, 1 + i * 3); // May 01, 04, 07, 10, 13
     const expired = new Date(signed); expired.setFullYear(expired.getFullYear() + 1);
     await prisma.businessHousehold.create({
       data: {
@@ -796,7 +803,8 @@ async function main() {
   const contracts = [];
   for (let i = 0; i < contractPairs.length; i++) {
     const p = contractPairs[i];
-    const signed = new Date(now); signed.setMonth(signed.getMonth() - 4);
+    // B2B contracts ký ngay đầu tháng 5/2026 (mỗi cặp lệch 5 ngày).
+    const signed = new Date(2026, 4, 1 + i * 5); // May 01, 06, 11, 16, 21
     const expired = new Date(signed); expired.setFullYear(expired.getFullYear() + 1);
     const c = await prisma.b2BContract.create({
       data: {
@@ -812,80 +820,59 @@ async function main() {
   }
   console.log('5 B2BContract records created');
 
-  // 19. TrainingLog (10 logs: various statuses)
-  for (let i = 0; i < 10; i++) {
+  // 19. TrainingLog — rich: 4 months (May–Aug 2026), each pair gets 8 verified
+  // sessions × 3h = 24h/month so every trainer satisfies ≥20h threshold.
+  // Plus 6 PENDING / 3 REJECTED scattered across the latest month for visual variety.
+  const trainingPayoutMonths = [];
+  for (let mo = 3; mo >= 0; mo--) {
+    trainingPayoutMonths.push(new Date(now.getFullYear(), now.getMonth() - mo, 1));
+  }
+  // Each pair gets 4 sessions × 6h = 24h/month (≥ 20h threshold). Batched for speed.
+  const verifiedLogPayloads = [];
+  for (const monthStart of trainingPayoutMonths) {
+    for (const p of contractPairs) {
+      for (let s = 0; s < 4; s++) {
+        const sessionDate = new Date(monthStart);
+        sessionDate.setDate(3 + s * 6);
+        verifiedLogPayloads.push({
+          trainerId: p.trainer.id,
+          traineeId: p.trainee.id,
+          sessionDate,
+          durationMinutes: 360, // 6 hours
+          content: `Đào tạo ${monthStart.getMonth() + 1}/${monthStart.getFullYear()} · buổi #${s + 1}`,
+          menteeConfirmed: true,
+          mentorConfirmed: true,
+          status: 'VERIFIED',
+          verifiedBy: admin.id,
+          verifiedAt: sessionDate,
+        });
+      }
+    }
+  }
+  // Mixed-status extras for UI variety
+  const latestMonthStart = trainingPayoutMonths[trainingPayoutMonths.length - 1];
+  for (let i = 0; i < 6; i++) {
     const p = contractPairs[i % contractPairs.length];
-    const sessionDate = new Date(now);
-    sessionDate.setDate(sessionDate.getDate() - (30 - i * 2));
-    await prisma.trainingLog.create({
-      data: {
-        trainerId: p.trainer.id,
-        traineeId: p.trainee.id,
-        sessionDate,
-        durationMinutes: 60 + (i % 3) * 30,
-        content: `Buổi đào tạo #${i + 1}: Kỹ năng tư vấn sản phẩm và xử lý phản đối khách hàng`,
-        menteeConfirmed: i % 3 !== 0,
-        mentorConfirmed: true,
-        status: i < 6 ? 'VERIFIED' : (i < 9 ? 'PENDING' : 'REJECTED'),
-        verifiedBy: i < 6 ? admin.id : null,
-        verifiedAt: i < 6 ? sessionDate : null,
-      },
+    const sessionDate = new Date(latestMonthStart);
+    sessionDate.setDate(26 + (i % 4));
+    verifiedLogPayloads.push({
+      trainerId: p.trainer.id,
+      traineeId: p.trainee.id,
+      sessionDate,
+      durationMinutes: 90,
+      content: `Buổi bổ sung ${i + 1}`,
+      menteeConfirmed: i % 2 === 0,
+      mentorConfirmed: true,
+      status: i < 4 ? 'PENDING' : 'REJECTED',
     });
   }
-  console.log('10 TrainingLog records created');
+  // Bulk insert (createMany) — single round-trip for ~86 rows
+  await prisma.trainingLog.createMany({ data: verifiedLogPayloads });
+  console.log(`${verifiedLogPayloads.length} TrainingLog records created (≥20h/trainer/month for 4 months)`);
 
-  // 20. Invoice (8 invoices: CCB Mart → partner per V13.4)
-  const invTiers = ['MAINTENANCE_FEE', 'MANAGEMENT_FEE_LEVEL1', 'MANAGEMENT_FEE_LEVEL2', 'SALES_COMMISSION', 'OVERRIDE_FEE', 'MAINTENANCE_FEE', 'MANAGEMENT_FEE_LEVEL1', 'MANAGEMENT_FEE_LEVEL3'];
-  const amounts = [10000000, 5000000, 2500000, 1500000, 800000, 18000000, 4000000, 30000000];
-  const invMonth = currentMonth;
-  const invMonthPrefix = `CCB-${invMonth.replace('-', '')}`;
-  for (let i = 0; i < 8; i++) {
-    const c = contracts[i % contracts.length];
-    const issued = new Date(now);
-    issued.setDate(issued.getDate() - (20 - i * 2));
-    const tier = invTiers[i];
-    await prisma.invoice.create({
-      data: {
-        contractId: c.id,
-        fromParty: 'CCB Mart',
-        toUserId: c.trainerId,
-        amount: amounts[i],
-        feeTier: tier,
-        payoutType: tier,
-        month: invMonth,
-        description: `${tier.replace(/_/g, ' ')} — tháng ${invMonth}`,
-        invoiceNumber: `${invMonthPrefix}-${String(i + 1).padStart(4, '0')}`,
-        issuedAt: issued,
-        status: i < 5 ? 'PAID' : (i < 7 ? 'SENT' : 'DRAFT'),
-      },
-    });
-  }
-  console.log('8 Invoice records created');
-
-  // 21. PayoutLog (6 partner-month payout summaries)
-  const payoutPartners = [tp1, tp2, gdv1, gdv2, gdkd, pps[0]];
-  for (let i = 0; i < payoutPartners.length; i++) {
-    const p = payoutPartners[i];
-    const breakdown = [
-      { type: 'SALES_COMMISSION', amount: 1500000 + i * 200000 },
-      { type: 'MAINTENANCE_FEE', amount: getMaintenanceForRank(p.rank) },
-    ];
-    const total = breakdown.reduce((s, b) => s + b.amount, 0);
-    await prisma.payoutLog.create({
-      data: {
-        partnerId: p.id,
-        partnerName: p.name,
-        partnerRank: p.rank,
-        month: invMonth,
-        totalAmount: total,
-        breakdown,
-        hasValidLog: i < 4,
-        kFactor: 1.0,
-        status: 'PROCESSED',
-      },
-    });
-  }
-  console.log(`${payoutPartners.length} PayoutLog records created`);
+  // 20–21. Invoice + PayoutLog: engine populates these (see "Run payout engine"
+  // section near the bottom). No hardcoded rows here so the data matches V13.4
+  // formulas (Lương cố định + Phí quản lý + Phí thoát ly + K-factor).
 
   // 22. TaxRecord (TNCN 10% monthly for GDKD/GDV/TP)
   const taxUsers = [gdkd, gdv1, gdv2, tp1, tp2];
@@ -904,54 +891,26 @@ async function main() {
   }
   console.log(`${taxUsers.length * 2} TaxRecord records created`);
 
-  // 23. ManagementFee (F1/F2/F3 fees flowing up the hierarchy)
-  const mgmtPairs = [
-    { from: pps[0], to: tp1,  level: 1, amt: 500000 },
-    { from: pps[0], to: gdv1, level: 2, amt: 300000 },
-    { from: pps[0], to: gdkd, level: 3, amt: 150000 },
-    { from: pps[1], to: tp1,  level: 1, amt: 450000 },
-    { from: pps[2], to: tp2,  level: 1, amt: 600000 },
-    { from: pps[2], to: gdv2, level: 2, amt: 350000 },
-    { from: ctvs[0], to: pps[0], level: 1, amt: 200000 },
-    { from: ctvs[0], to: tp1,  level: 2, amt: 120000 },
-  ];
-  for (const p of mgmtPairs) {
-    await prisma.managementFee.create({
-      data: {
-        fromUserId: p.from.id,
-        toUserId: p.to.id,
-        level: p.level,
-        amount: p.amt,
-        month: curMonthStr,
-        status: 'PENDING',
-      },
-    });
-  }
-  console.log(`${mgmtPairs.length} ManagementFee records created`);
+  // 23. ManagementFee: engine populates per month (see bottom).
 
-  // 24. BreakawayLog + BreakawayFee (2 breakaways with fees)
+  // 24. BreakawayLog (2 breakaways) — fees populated by engine.
   const expireAt = new Date(now); expireAt.setFullYear(expireAt.getFullYear() + 1);
-  const bLog1 = await prisma.breakawayLog.create({
-    data: { userId: pps[3].id, oldParentId: tp2.id, newParentId: gdv2.id, expireAt, status: 'ACTIVE' },
+  // Breakaway events occurred shortly after launch (May 15 + Jun 10).
+  await prisma.breakawayLog.create({
+    data: {
+      userId: pps[3].id, oldParentId: tp2.id, newParentId: gdv2.id,
+      breakawayAt: new Date(2026, 4, 15), expireAt: new Date(2027, 4, 15),
+      status: 'ACTIVE',
+    },
   });
-  const bLog2 = await prisma.breakawayLog.create({
-    data: { userId: pps[5].id, oldParentId: tp3.id, newParentId: gdv2.id, expireAt, status: 'ACTIVE' },
+  await prisma.breakawayLog.create({
+    data: {
+      userId: pps[5].id, oldParentId: tp3.id, newParentId: gdv2.id,
+      breakawayAt: new Date(2026, 5, 10), expireAt: new Date(2027, 5, 10),
+      status: 'ACTIVE',
+    },
   });
-  const bFees = [
-    { logId: bLog1.id, from: pps[3].id, to: tp2.id,  level: 1, amt: 300000 },
-    { logId: bLog1.id, from: pps[3].id, to: gdv2.id, level: 2, amt: 200000 },
-    { logId: bLog1.id, from: pps[3].id, to: gdkd.id, level: 3, amt: 100000 },
-    { logId: bLog2.id, from: pps[5].id, to: tp3.id,  level: 1, amt: 250000 },
-  ];
-  for (const f of bFees) {
-    await prisma.breakawayFee.create({
-      data: {
-        breakawayLogId: f.logId, fromUserId: f.from, toUserId: f.to, level: f.level, amount: f.amt,
-        month: curMonthStr, status: 'PENDING',
-      },
-    });
-  }
-  console.log('2 BreakawayLog + 4 BreakawayFee records created');
+  console.log('2 BreakawayLog records created (BreakawayFee = engine-derived)');
 
   // 25. AuditLog (15 diverse audit entries)
   const auditActions = [
@@ -984,17 +943,24 @@ async function main() {
   }
   console.log(`${auditActions.length} AuditLog records created`);
 
-  // 26. AdminManualAction (3 actions)
+  // 26. AdminManualAction (3 actions) — targetIds set after engine populates Invoice/PayoutLog
   await prisma.adminManualAction.createMany({
     data: [
       { adminId: admin.id, actionType: 'VERIFY_TRAINING', targetType: 'TrainingLog', targetId: 1, oldStatus: 'PENDING', newStatus: 'VERIFIED', reason: 'OTP timeout — xác minh thủ công' },
-      { adminId: admin.id, actionType: 'MARK_PAYOUT_PROCESSED', targetType: 'PayoutLog', targetId: 5, oldStatus: 'PENDING', newStatus: 'PROCESSED', reason: 'Ngân hàng xác nhận đã chuyển' },
-      { adminId: admin.id, actionType: 'ISSUE_INVOICE', targetType: 'Invoice', targetId: 8, oldStatus: 'DRAFT', newStatus: 'SENT', reason: 'Phát hành thủ công sau khi sửa thông tin' },
     ],
   });
-  console.log('3 AdminManualAction records created');
+  console.log('1 AdminManualAction record created');
 
-  console.log('\nSeed complete! (V13 full)');
+  // 27. Run V13.4 Partner Payout Engine for May/Jun/Jul/Aug 2026 — generates
+  //     ManagementFee + BreakawayFee + Invoice + PayoutLog from real data above.
+  const { processMonthlyPayout } = require('../src/services/partnerPayoutEngine');
+  const payoutMonths = ['2026-05', '2026-06', '2026-07', '2026-08'];
+  for (const m of payoutMonths) {
+    const result = await processMonthlyPayout(m);
+    console.log(`Engine ${m}: ${result.partnersProcessed} partners | K=${result.kFactor} | total=${result.totalDisbursed.toLocaleString('vi-VN')} VND`);
+  }
+
+  console.log('\nSeed complete! (V13.4 — khai trương từ tháng 5/2026)');
   console.log('Login credentials:');
   console.log('   admin@ccbmart.vn / admin123 (super_admin)');
   console.log('   ops@ccbmart.vn / admin123 (ops_admin)');

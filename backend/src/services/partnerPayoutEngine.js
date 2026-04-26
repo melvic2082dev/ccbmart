@@ -22,7 +22,7 @@ const {
 } = require('./managementFee');
 const { processMonthlyBreakawayFees } = require('./breakaway');
 
-// Thù lao DV duy trì hàng tháng — chỉ trả khi đối tác có ≥ 20h log đào tạo.
+// Lương cố định hàng tháng — chỉ trả khi đối tác có ≥ 20h log đào tạo.
 const MAINTENANCE_FEE_BY_RANK = {
   PP: 5_000_000,
   TP: 10_000_000,
@@ -34,11 +34,11 @@ const PARTNER_RANKS = ['PP', 'TP', 'GDV', 'GDKD'];
 
 const PAYOUT_DESCRIPTIONS = {
   SALES_COMMISSION: (month) => `Hoa hồng bán lẻ tháng ${month}`,
-  MAINTENANCE_FEE: (month) => `Thù lao DV duy trì tháng ${month}`,
+  MAINTENANCE_FEE: (month) => `Lương cố định tháng ${month}`,
   MANAGEMENT_FEE_LEVEL1: (month) => `Phí quản lý cấp 1 (10%) tháng ${month}`,
   MANAGEMENT_FEE_LEVEL2: (month) => `Phí quản lý cấp 2 (5%) tháng ${month}`,
   MANAGEMENT_FEE_LEVEL3: (month) => `Phí quản lý cấp 3 (3%) tháng ${month}`,
-  OVERRIDE_FEE: (month) => `Phí sau vượt cấp tháng ${month}`,
+  OVERRIDE_FEE: (month) => `Phí thoát ly tháng ${month}`,
 };
 
 function getMaintenanceFeeByRank(rank) {

@@ -8,6 +8,7 @@ const teamRouter = require('./team');
 const feesRouter = require('./fees');
 const syncRouter = require('./sync');
 const usersRouter = require('./users');
+const devRouter = require('./dev');
 
 const router = express.Router();
 
@@ -22,5 +23,6 @@ router.use('/', teamRouter);
 router.use('/', feesRouter);
 router.use('/', syncRouter);
 router.use('/', usersRouter);
+router.use('/', devRouter);
 
 module.exports = router;
