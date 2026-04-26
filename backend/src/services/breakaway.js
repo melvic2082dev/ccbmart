@@ -8,11 +8,13 @@
 //   3. Mentee được đăng ký làm HKD (nếu chưa).
 //   4. Tạo BreakawayLog với expireAt = +12 tháng.
 //
-// Phí sau thoát ly — GIAI ĐOẠN 1 (12 tháng):
-//   Level 1 (3%): F1 cũ — mentor trực tiếp nhận 3% toàn doanh số nhánh thoát
-//   Level 2 (2%): F2 cũ — mentor gián tiếp nhận 2% toàn doanh số nhánh thoát
-//   Level 3 (1%): GĐKD — CHỈ khi GĐKD không phải F1/F2 cũ. CCB Mart trả từ
-//                 quỹ công ty.
+// Phí thoát ly — GIAI ĐOẠN 1 (12 tháng):
+//   Tính theo MỐC CỐ ĐỊNH/combo (không tính theo % để tránh diễn giải đa cấp).
+//   Mốc xấp xỉ tỉ lệ 3%/2%/1% × giá combo (2.000.000 VND):
+//     Level 1 (≈3%): F1 cũ nhận 60.000 VND × số combo nhánh thoát ly
+//     Level 2 (≈2%): F2 cũ nhận 40.000 VND × số combo nhánh thoát ly
+//     Level 3 (≈1%): GĐKD nhận 20.000 VND × số combo nhánh thoát ly
+//                    CHỈ khi GĐKD không phải F1/F2 cũ.
 //
 // Sau 12 tháng (GIAI ĐOẠN 2): BreakawayLog chuyển sang EXPIRED, cơ chế trở
 // về mặc định F1=10% / F2=5% / F3=3% với cấp trên MỚI (đã là grandParent).
@@ -22,6 +24,13 @@
 // =======================================================================
 
 const prisma = require('../lib/prisma');
+
+// Combo unit price (VND) — kept in sync with COMBO_PRICE env. Used to convert
+// breakaway-team revenue to combo count for fixed-amount fee tiers.
+const COMBO_PRICE = parseInt(process.env.COMBO_PRICE || '2000000', 10);
+
+// Breakaway fee per combo, by level. Math: 60K/40K/20K = 3%/2%/1% × 2M.
+const BREAKAWAY_FEE_PER_COMBO = { L1: 60_000, L2: 40_000, L3: 20_000 };
 
 // Rank hierarchy (higher index = higher rank)
 const RANK_ORDER = ['CTV', 'PP', 'TP', 'GDV', 'GDKD'];
@@ -260,8 +269,12 @@ async function processMonthlyBreakawayFees(month) {
     const revenue = await getSubtreeRevenue(log.userId, month);
     if (revenue <= 0) continue;
 
-    // Level 1: F1 cũ (mentor cũ)
-    const amt1 = Math.floor(revenue * 0.03);
+    // Convert revenue → combo count (rounded down — partial combos do not pay).
+    const comboCount = Math.floor(revenue / COMBO_PRICE);
+    if (comboCount <= 0) continue;
+
+    // Level 1: F1 cũ (mentor cũ) — 60.000 VND × số combo
+    const amt1 = comboCount * BREAKAWAY_FEE_PER_COMBO.L1;
     if (amt1 > 0) {
       const rec = await prisma.breakawayFee.create({
         data: {
@@ -277,8 +290,8 @@ async function processMonthlyBreakawayFees(month) {
       created.push(rec);
     }
 
-    // Level 2: F2 cũ (ông của mentor cũ tại thời điểm breakaway = newParentId)
-    const amt2 = Math.floor(revenue * 0.02);
+    // Level 2: F2 cũ (ông của mentor cũ = newParentId) — 40.000 VND × số combo
+    const amt2 = comboCount * BREAKAWAY_FEE_PER_COMBO.L2;
     if (amt2 > 0 && log.newParentId && log.newParentId !== log.oldParentId) {
       const rec = await prisma.breakawayFee.create({
         data: {
@@ -294,12 +307,12 @@ async function processMonthlyBreakawayFees(month) {
       created.push(rec);
     }
 
-    // Level 3: 1% cho GĐKD — CHỈ khi GĐKD không phải F1/F2 cũ
+    // Level 3: GĐKD — 20.000 VND × số combo, CHỈ khi GĐKD không phải F1/F2 cũ
     if (gdkdUser) {
       const isGdkdAsF1 = gdkdUser.id === log.oldParentId;
       const isGdkdAsF2 = gdkdUser.id === log.newParentId;
       if (!isGdkdAsF1 && !isGdkdAsF2) {
-        const amt3 = Math.floor(revenue * 0.01);
+        const amt3 = comboCount * BREAKAWAY_FEE_PER_COMBO.L3;
         if (amt3 > 0) {
           const rec = await prisma.breakawayFee.create({
             data: {
@@ -339,6 +352,8 @@ async function getReceivedBreakawayFeesSummary(userId, month) {
 }
 
 module.exports = {
+  COMBO_PRICE,
+  BREAKAWAY_FEE_PER_COMBO,
   shouldBreakaway,
   handleBreakaway,
   processMonthlyBreakawayFees,
