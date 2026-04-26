@@ -309,13 +309,13 @@ async function main() {
   ]);
   console.log(`${products.length} products created`);
 
-  // 7. Customers (200) — anchored at 2026-08-15 so monthly windows fall on
+  // 7. Customers (120) — anchored at 2026-08-15 so monthly windows fall on
   // 2026-05/06/07/08 (per requirement: "compute data starting from 5/2026").
   const now = new Date('2026-08-15T00:00:00Z');
   const threeMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 3, 1);
   const customers = [];
 
-  for (let i = 0; i < 200; i++) {
+  for (let i = 0; i < 120; i++) {
     const isCtvCustomer = i < 60;
     const isAgencyCustomer = i >= 60 && i < 80;
 
@@ -331,16 +331,18 @@ async function main() {
     });
     customers.push(customer);
   }
-  console.log('200 customers created');
+  console.log('120 customers created');
 
-  // 8. Transactions (1500, spread across 4 months: May/Jun/Jul/Aug 2026)
-  let txnCount = 0;
+  // 8. Transactions (400, spread across 4 months: May/Jun/Jul/Aug 2026).
+  // Batched with Promise.all (25 per batch) so staging Postgres (~50ms RTT)
+  // finishes in seconds instead of minutes.
   const comboProduct = products[0];
+  const TXN_TOTAL = 400;
+  const TXN_BATCH = 25;
 
-  for (let i = 0; i < 1500; i++) {
-    const channel = i < 900 ? 'ctv' : i < 1200 ? 'agency' : 'showroom';
+  function buildTxnData(i) {
+    const channel = i < 240 ? 'ctv' : i < 320 ? 'agency' : 'showroom';
     const txnDate = randomDate(threeMonthsAgo, now);
-
     let ctvId = null;
     let agencyId = null;
     let customerId = null;
@@ -350,8 +352,7 @@ async function main() {
 
     if (channel === 'ctv') {
       ctvId = allCtvUsers[i % allCtvUsers.length].id;
-      customerId = customers[i % 120].id;
-
+      customerId = customers[i % 80].id;
       if (Math.random() < 0.7) {
         const qty = Math.floor(Math.random() * 3) + 1;
         totalAmount = comboProduct.price * qty;
@@ -370,8 +371,7 @@ async function main() {
       }
     } else if (channel === 'agency') {
       agencyId = agencies[i % agencies.length].id;
-      customerId = customers[120 + (i % 40)].id;
-
+      customerId = customers[80 + (i % 20)].id;
       const numProducts = Math.floor(Math.random() * 4) + 1;
       for (let j = 0; j < numProducts; j++) {
         const prod = products[Math.floor(Math.random() * products.length)];
@@ -382,8 +382,7 @@ async function main() {
         items.push({ productId: prod.id, quantity: qty, unitPrice: prod.price, totalPrice: lineTotal });
       }
     } else {
-      customerId = customers[160 + (i % 40)].id;
-
+      customerId = customers[100 + (i % 20)].id;
       if (Math.random() < 0.5) {
         const suatAn = products[6];
         const qty = Math.floor(Math.random() * 5) + 1;
@@ -402,9 +401,8 @@ async function main() {
         }
       }
     }
-
-    await prisma.transaction.create({
-      data: {
+    return {
+      txnInput: {
         kiotvietOrderId: `KV-${String(txnDate.getFullYear()).slice(2)}${String(txnDate.getMonth() + 1).padStart(2, '0')}-${String(i + 1).padStart(4, '0')}`,
         customerId,
         ctvId,
@@ -415,18 +413,25 @@ async function main() {
         createdAt: txnDate,
         items: { create: items },
       },
-    });
-
-    if (customerId) {
-      await prisma.customer.update({
-        where: { id: customerId },
-        data: { totalSpent: { increment: totalAmount } },
-      });
-    }
-
-    txnCount++;
+      customerId,
+      totalAmount,
+    };
   }
-  console.log(`${txnCount} transactions created`);
+
+  for (let start = 0; start < TXN_TOTAL; start += TXN_BATCH) {
+    const batchPayload = [];
+    for (let k = 0; k < TXN_BATCH && start + k < TXN_TOTAL; k++) {
+      batchPayload.push(buildTxnData(start + k));
+    }
+    await Promise.all(batchPayload.map(b =>
+      prisma.transaction.create({ data: b.txnInput })
+        .then(() => b.customerId
+          ? prisma.customer.update({ where: { id: b.customerId }, data: { totalSpent: { increment: b.totalAmount } } })
+          : null
+        )
+    ));
+  }
+  console.log(`${TXN_TOTAL} transactions created`);
 
   // 9. KPI Logs — 4 months (May–Aug 2026)
   const keyCtvsForKpi = [gdkd, gdv1, gdv2, tp1, tp2, tp3, ...pps.slice(0, 3)];
@@ -822,51 +827,48 @@ async function main() {
   for (let mo = 3; mo >= 0; mo--) {
     trainingPayoutMonths.push(new Date(now.getFullYear(), now.getMonth() - mo, 1));
   }
-  let trainingLogCount = 0;
+  // Each pair gets 4 sessions × 6h = 24h/month (≥ 20h threshold). Batched for speed.
+  const verifiedLogPayloads = [];
   for (const monthStart of trainingPayoutMonths) {
     for (const p of contractPairs) {
-      for (let s = 0; s < 8; s++) {
+      for (let s = 0; s < 4; s++) {
         const sessionDate = new Date(monthStart);
-        sessionDate.setDate(2 + s * 3);
-        await prisma.trainingLog.create({
-          data: {
-            trainerId: p.trainer.id,
-            traineeId: p.trainee.id,
-            sessionDate,
-            durationMinutes: 180,
-            content: `Đào tạo ${monthStart.getMonth() + 1}/${monthStart.getFullYear()} · buổi #${s + 1}`,
-            menteeConfirmed: true,
-            mentorConfirmed: true,
-            status: 'VERIFIED',
-            verifiedBy: admin.id,
-            verifiedAt: sessionDate,
-          },
+        sessionDate.setDate(3 + s * 6);
+        verifiedLogPayloads.push({
+          trainerId: p.trainer.id,
+          traineeId: p.trainee.id,
+          sessionDate,
+          durationMinutes: 360, // 6 hours
+          content: `Đào tạo ${monthStart.getMonth() + 1}/${monthStart.getFullYear()} · buổi #${s + 1}`,
+          menteeConfirmed: true,
+          mentorConfirmed: true,
+          status: 'VERIFIED',
+          verifiedBy: admin.id,
+          verifiedAt: sessionDate,
         });
-        trainingLogCount++;
       }
     }
   }
-  // 9 extra logs in the latest month with mixed statuses for UI demo
+  // Mixed-status extras for UI variety
   const latestMonthStart = trainingPayoutMonths[trainingPayoutMonths.length - 1];
-  for (let i = 0; i < 9; i++) {
+  for (let i = 0; i < 6; i++) {
     const p = contractPairs[i % contractPairs.length];
     const sessionDate = new Date(latestMonthStart);
     sessionDate.setDate(26 + (i % 4));
-    await prisma.trainingLog.create({
-      data: {
-        trainerId: p.trainer.id,
-        traineeId: p.trainee.id,
-        sessionDate,
-        durationMinutes: 90,
-        content: `Buổi bổ sung ${i + 1}`,
-        menteeConfirmed: i % 3 !== 0,
-        mentorConfirmed: true,
-        status: i < 6 ? 'PENDING' : 'REJECTED',
-      },
+    verifiedLogPayloads.push({
+      trainerId: p.trainer.id,
+      traineeId: p.trainee.id,
+      sessionDate,
+      durationMinutes: 90,
+      content: `Buổi bổ sung ${i + 1}`,
+      menteeConfirmed: i % 2 === 0,
+      mentorConfirmed: true,
+      status: i < 4 ? 'PENDING' : 'REJECTED',
     });
-    trainingLogCount++;
   }
-  console.log(`${trainingLogCount} TrainingLog records created (≥20h/trainer/month for 4 months)`);
+  // Bulk insert (createMany) — single round-trip for ~86 rows
+  await prisma.trainingLog.createMany({ data: verifiedLogPayloads });
+  console.log(`${verifiedLogPayloads.length} TrainingLog records created (≥20h/trainer/month for 4 months)`);
 
   // 20–21. Invoice + PayoutLog: engine populates these (see "Run payout engine"
   // section near the bottom). No hardcoded rows here so the data matches V13.4
