@@ -10,7 +10,7 @@ import { CreditCard, CheckCircle, XCircle } from 'lucide-react';
 
 const STATUS_LABELS: Record<string, string> = {
   PENDING: 'Chờ duyệt',
-  CONFIRMED: 'Đã duyệt',
+  CONFIRMED: 'Đã xác nhận',
   REJECTED: 'Từ chối',
 };
 
@@ -82,7 +82,7 @@ export default function AdminMemberDeposits() {
                     <TableHead>Thành viên</TableHead>
                     <TableHead>Hạng</TableHead>
                     <TableHead className="text-right">Số tiền</TableHead>
-                    <TableHead>PT</TableHead>
+                    <TableHead>Phương thức</TableHead>
                     <TableHead>Trạng thái</TableHead>
                     <TableHead>Ngày</TableHead>
                     <TableHead>Hành động</TableHead>
@@ -95,7 +95,7 @@ export default function AdminMemberDeposits() {
                       <TableCell>{d.wallet?.user?.name}</TableCell>
                       <TableCell><Badge variant="outline">{d.wallet?.tier?.name}</Badge></TableCell>
                       <TableCell className="text-right font-semibold">{formatVND(d.amount)}</TableCell>
-                      <TableCell>{d.method === 'bank_transfer' ? 'CK' : 'TM'}</TableCell>
+                      <TableCell>{d.method === 'bank_transfer' ? 'Chuyển khoản' : 'Tiền mặt'}</TableCell>
                       <TableCell>
                         <Badge className={d.status === 'CONFIRMED' ? 'bg-green-100 text-green-700' : d.status === 'PENDING' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'} variant="outline">{STATUS_LABELS[d.status] || d.status}</Badge>
                       </TableCell>

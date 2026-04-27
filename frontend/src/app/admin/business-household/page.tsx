@@ -200,7 +200,7 @@ export default function BusinessHouseholdPage() {
                       </TableCell>
                       <TableCell>
                         <div className="text-sm">{h.user.name}</div>
-                        <Badge variant="outline" className="text-xs">{h.user.rank}</Badge>
+                        <Badge variant="outline" className="text-xs">{RANK_LABEL[h.user.rank] ?? h.user.rank}</Badge>
                       </TableCell>
                       <TableCell className="text-xs">
                         <div className="font-mono">{h.taxCode || '—'}</div>
@@ -294,7 +294,7 @@ export default function BusinessHouseholdPage() {
                   {/* Row 2: Rank + Status (same row, per user request) */}
                   <div className="flex items-center justify-between gap-2 text-sm">
                     <div className="flex items-center gap-2 min-w-0">
-                      <Badge variant="outline" className="text-xs shrink-0">{h.user.rank}</Badge>
+                      <Badge variant="outline" className="text-xs shrink-0">{RANK_LABEL[h.user.rank] ?? h.user.rank}</Badge>
                       <span className="text-gray-700 truncate">{h.user.name}</span>
                     </div>
                     <Badge className={STATUS_COLORS[h.status] || 'bg-gray-100 text-gray-700'}>

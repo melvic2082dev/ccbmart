@@ -124,7 +124,7 @@ export default function AdminBreakawayLogsPage() {
         Sau 12 tháng: tự động chuyển sang cơ chế mặc định.
       </p>
 
-      <div className="mb-4 flex gap-3 items-center">
+      <div className="mb-4 flex flex-wrap gap-2 items-center">
         <input
           type="month"
           value={month}

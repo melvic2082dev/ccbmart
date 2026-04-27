@@ -7,9 +7,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Award } from 'lucide-react';
 
 const TIER_LABELS: Record<string, string> = {
-  GREEN: 'Green — Khởi đầu',
-  BASIC: 'Basic',
-  STANDARD: 'Standard',
+  GREEN: 'Khởi đầu',
+  BASIC: 'Cơ bản',
+  STANDARD: 'Tiêu chuẩn',
   VIP_GOLD: 'VIP Gold',
 };
 

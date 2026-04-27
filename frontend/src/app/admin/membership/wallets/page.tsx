@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useMemo, useState } from 'react';
-import { api, formatVND } from '@/lib/api';
+import { api, formatVND, formatVNDCompact } from '@/lib/api';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -120,8 +120,8 @@ export default function AdminMemberWallets() {
             className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm h-9"
           >
             <option value="all">Mọi trạng thái</option>
-            <option value="active">Active</option>
-            <option value="locked">Locked</option>
+            <option value="active">Hoạt động</option>
+            <option value="locked">Khóa</option>
           </select>
         </div>
         <div className="md:col-span-2">
@@ -178,7 +178,7 @@ export default function AdminMemberWallets() {
                       <TableCell className="text-right">{w._count?.referrals || 0}</TableCell>
                       <TableCell>
                         <Badge className={w.user?.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'} variant="outline">
-                          {w.user?.isActive ? 'Active' : 'Locked'}
+                          {w.user?.isActive ? 'Hoạt động' : 'Khóa'}
                         </Badge>
                       </TableCell>
                     </TableRow>
@@ -198,7 +198,7 @@ export default function AdminMemberWallets() {
                     {w.tier?.name}
                   </Badge>
                   <Badge className={w.user?.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'} variant="outline">
-                    {w.user?.isActive ? 'Active' : 'Locked'}
+                    {w.user?.isActive ? 'Hoạt động' : 'Khóa'}
                   </Badge>
                 </div>
                 {/* Row 2: icon + name · email · phone (no labels) */}
@@ -211,13 +211,13 @@ export default function AdminMemberWallets() {
                 </div>
                 {/* Row 3: stats compact */}
                 <div className="grid grid-cols-3 gap-2 pt-2 border-t text-center">
-                  <div>
+                  <div title={formatVND(Number(w.balance ?? 0))}>
                     <p className="text-[10px] uppercase text-gray-500 tracking-wide">Số dư</p>
-                    <p className="text-sm font-semibold text-emerald-700">{formatVND(Number(w.balance ?? 0))}</p>
+                    <p className="text-sm font-semibold text-emerald-700 tabular-nums whitespace-nowrap">{formatVNDCompact(Number(w.balance ?? 0))}</p>
                   </div>
-                  <div>
+                  <div title={formatVND(Number(w.totalDeposit ?? 0))}>
                     <p className="text-[10px] uppercase text-gray-500 tracking-wide">Tổng nạp</p>
-                    <p className="text-sm font-semibold text-gray-800">{formatVND(Number(w.totalDeposit ?? 0))}</p>
+                    <p className="text-sm font-semibold text-gray-800 tabular-nums whitespace-nowrap">{formatVNDCompact(Number(w.totalDeposit ?? 0))}</p>
                   </div>
                   <div>
                     <p className="text-[10px] uppercase text-gray-500 tracking-wide">Giới thiệu</p>

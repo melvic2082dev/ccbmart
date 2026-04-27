@@ -75,7 +75,7 @@ export default function FeeConfigPage() {
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right font-mono">{c.minCombo}</TableCell>
-                      <TableCell className="text-right font-mono">{c.maxCombo !== null ? c.maxCombo : '∞'}</TableCell>
+                      <TableCell className="text-right font-mono">{c.maxCombo !== null ? c.maxCombo : 'Không giới hạn'}</TableCell>
                       <TableCell className="text-right font-semibold text-emerald-700">
                         {c.feeAmount > 0 ? formatVND(c.feeAmount) : '—'}
                       </TableCell>
@@ -105,7 +105,7 @@ export default function FeeConfigPage() {
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-gray-500">Combo:</span>
                     <span className="font-mono font-semibold text-gray-800">
-                      {c.minCombo} – {c.maxCombo !== null ? c.maxCombo : '∞'}
+                      {c.minCombo} – {c.maxCombo !== null ? c.maxCombo : 'Không giới hạn'}
                     </span>
                   </div>
                   <div className="flex items-center justify-between text-sm pt-2 border-t">

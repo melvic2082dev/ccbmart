@@ -136,7 +136,7 @@ export default function SalaryReportPage() {
               </Card>
               <Card className="border-emerald-100 shadow-sm">
                 <CardContent className="p-4">
-                  <p className="text-xs text-gray-500 uppercase tracking-wide">% ngưỡng</p>
+                  <p className="text-xs text-gray-500 uppercase tracking-wide">Tỷ lệ sử dụng</p>
                   <p className={`text-lg font-bold mt-1 ${overallPct >= 100 ? 'text-red-600' : overallPct >= 80 ? 'text-yellow-700' : 'text-emerald-700'}`}>
                     {overallPct.toFixed(1)}%
                   </p>
@@ -164,7 +164,7 @@ export default function SalaryReportPage() {
                         <TableHead>Tên</TableHead>
                         <TableHead>Cấp bậc</TableHead>
                         <TableHead className="text-right">Lương cứng</TableHead>
-                        <TableHead className="text-right">% ngưỡng</TableHead>
+                        <TableHead className="text-right">Tỷ lệ sử dụng</TableHead>
                         <TableHead className="text-center">Trạng thái</TableHead>
                       </TableRow>
                     </TableHeader>
