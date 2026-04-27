@@ -126,62 +126,79 @@ export default function AdminUsersPage() {
           <CardHeader>
             <CardTitle>Danh sách</CardTitle>
           </CardHeader>
-          <CardContent className="p-0 overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Tên</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Role</TableHead>
-                  <TableHead>Trạng thái</TableHead>
-                  <TableHead>Đổi role</TableHead>
-                  <TableHead className="text-right">Tác vụ</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {users.map((u) => (
-                  <TableRow key={u.id}>
-                    <TableCell className="font-medium">{u.name}</TableCell>
-                    <TableCell className="text-xs">{u.email}</TableCell>
-                    <TableCell>
-                      <Badge className={`${ROLE_COLOR[u.role] || 'bg-gray-100'} text-xs`}>
-                        {ROLE_LABELS[u.role] ?? u.role}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge className={u.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'} variant="outline">
-                        {u.isActive ? 'Active' : 'Locked'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <select
-                        value={u.role}
-                        onChange={(e) => changeRole(u, e.target.value)}
-                        disabled={u.role === SUPER_ADMIN && users.filter((x) => x.role === SUPER_ADMIN).length === 1}
-                        className="rounded-md border border-input bg-background px-2 py-1 text-xs h-8"
-                        title={u.role === SUPER_ADMIN ? 'Không thể hạ quyền super_admin cuối cùng' : undefined}
-                      >
-                        {ADMIN_ROLES.map((r) => (
-                          <option key={r} value={r}>{ROLE_LABELS[r]}</option>
-                        ))}
-                      </select>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button size="sm" variant="outline" onClick={() => toggleActive(u)}>
-                        {u.isActive ? <><Lock className="w-3.5 h-3.5 mr-1" /> Khoá</> : <><Unlock className="w-3.5 h-3.5 mr-1" /> Kích hoạt</>}
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-                {users.length === 0 && !loading && (
+          <CardContent className="p-0">
+            {/* Desktop table */}
+            <div className="hidden md:block overflow-x-auto">
+              <Table>
+                <TableHeader>
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8 text-gray-500">
-                      Chưa có tài khoản admin nào.
-                    </TableCell>
+                    <TableHead>Tên</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Role</TableHead>
+                    <TableHead>Trạng thái</TableHead>
+                    <TableHead>Đổi role</TableHead>
+                    <TableHead className="text-right">Tác vụ</TableHead>
                   </TableRow>
-                )}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {users.map((u) => (
+                    <TableRow key={u.id}>
+                      <TableCell className="font-medium">{u.name}</TableCell>
+                      <TableCell className="text-xs">{u.email}</TableCell>
+                      <TableCell><Badge className={`${ROLE_COLOR[u.role] || 'bg-gray-100'} text-xs`}>{ROLE_LABELS[u.role] ?? u.role}</Badge></TableCell>
+                      <TableCell><Badge className={u.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'} variant="outline">{u.isActive ? 'Active' : 'Locked'}</Badge></TableCell>
+                      <TableCell>
+                        <select value={u.role} onChange={(e) => changeRole(u, e.target.value)} disabled={u.role === SUPER_ADMIN && users.filter((x) => x.role === SUPER_ADMIN).length === 1} className="rounded-md border border-input bg-background px-2 py-1 text-xs h-8" title={u.role === SUPER_ADMIN ? 'Không thể hạ quyền super_admin cuối cùng' : undefined}>
+                          {ADMIN_ROLES.map((r) => (<option key={r} value={r}>{ROLE_LABELS[r]}</option>))}
+                        </select>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button size="sm" variant="outline" onClick={() => toggleActive(u)}>
+                          {u.isActive ? <><Lock className="w-3.5 h-3.5 mr-1" /> Khoá</> : <><Unlock className="w-3.5 h-3.5 mr-1" /> Kích hoạt</>}
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {users.length === 0 && !loading && (
+                    <TableRow><TableCell colSpan={6} className="text-center py-8 text-gray-500">Chưa có tài khoản admin nào.</TableCell></TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+
+            {/* Mobile compact card */}
+            <div className="md:hidden p-3 space-y-2">
+              {users.length === 0 && !loading ? (
+                <p className="text-center py-8 text-gray-500">Chưa có tài khoản admin nào.</p>
+              ) : users.map((u) => (
+                <div key={u.id} className="rounded-lg border border-gray-200 bg-white p-3 space-y-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <Badge className={`${ROLE_COLOR[u.role] || 'bg-gray-100'} text-xs shrink-0`}>{ROLE_LABELS[u.role] ?? u.role}</Badge>
+                      <p className="font-medium text-gray-800 truncate">{u.name}</p>
+                    </div>
+                    <Badge className={u.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'} variant="outline">
+                      {u.isActive ? 'Active' : 'Locked'}
+                    </Badge>
+                  </div>
+                  <p className="text-xs text-gray-500 truncate">{u.email}</p>
+                  <div className="flex items-center gap-2 pt-2 border-t">
+                    <select
+                      value={u.role}
+                      onChange={(e) => changeRole(u, e.target.value)}
+                      disabled={u.role === SUPER_ADMIN && users.filter((x) => x.role === SUPER_ADMIN).length === 1}
+                      className="rounded-md border border-input bg-background px-2 py-1 text-xs h-9 flex-1"
+                      title={u.role === SUPER_ADMIN ? 'Không thể hạ quyền super_admin cuối cùng' : undefined}
+                    >
+                      {ADMIN_ROLES.map((r) => (<option key={r} value={r}>{ROLE_LABELS[r]}</option>))}
+                    </select>
+                    <Button size="sm" variant="outline" onClick={() => toggleActive(u)}>
+                      {u.isActive ? <><Lock className="w-3.5 h-3.5 mr-1" /> Khoá</> : <><Unlock className="w-3.5 h-3.5 mr-1" /> Kích hoạt</>}
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
           </CardContent>
         </Card>
       )}

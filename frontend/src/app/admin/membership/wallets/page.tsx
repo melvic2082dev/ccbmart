@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Wallet, Search, X } from 'lucide-react';
+import { Wallet, Search, X, User } from 'lucide-react';
 
 interface Tier { id: number; name: string; color?: string }
 interface WalletRow {
@@ -147,44 +147,87 @@ export default function AdminMemberWallets() {
           {filtersActive ? 'Không có thành viên khớp bộ lọc.' : 'Chưa có thành viên nào.'}
         </div>
       ) : !error ? (
-        <Card>
-          <CardContent className="overflow-x-auto p-0">
-            <Table>
-              <TableHeader><TableRow>
-                <TableHead>Tên</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>SĐT</TableHead>
-                <TableHead>Hạng</TableHead>
-                <TableHead className="text-right">Số dư</TableHead>
-                <TableHead className="text-right">Tổng nạp</TableHead>
-                <TableHead className="text-right">Giới thiệu</TableHead>
-                <TableHead>Trạng thái</TableHead>
-              </TableRow></TableHeader>
-              <TableBody>
-                {(data?.wallets || []).map((w) => (
-                  <TableRow key={w.id}>
-                    <TableCell className="font-medium">{w.user?.name}</TableCell>
-                    <TableCell className="text-xs">{w.user?.email}</TableCell>
-                    <TableCell className="text-xs">{w.user?.phone}</TableCell>
-                    <TableCell>
-                      <Badge className={TIER_COLOR[w.tier?.color] || 'bg-gray-100 text-gray-700'} variant="outline">
-                        {w.tier?.name}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right font-semibold">{formatVND(Number(w.balance ?? 0))}</TableCell>
-                    <TableCell className="text-right">{formatVND(Number(w.totalDeposit ?? 0))}</TableCell>
-                    <TableCell className="text-right">{w._count?.referrals || 0}</TableCell>
-                    <TableCell>
-                      <Badge className={w.user?.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'} variant="outline">
-                        {w.user?.isActive ? 'Active' : 'Locked'}
-                      </Badge>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+        <>
+          {/* Desktop table */}
+          <Card className="hidden md:block">
+            <CardContent className="overflow-x-auto p-0">
+              <Table>
+                <TableHeader><TableRow>
+                  <TableHead>Tên</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>SĐT</TableHead>
+                  <TableHead>Hạng</TableHead>
+                  <TableHead className="text-right">Số dư</TableHead>
+                  <TableHead className="text-right">Tổng nạp</TableHead>
+                  <TableHead className="text-right">Giới thiệu</TableHead>
+                  <TableHead>Trạng thái</TableHead>
+                </TableRow></TableHeader>
+                <TableBody>
+                  {(data?.wallets || []).map((w) => (
+                    <TableRow key={w.id}>
+                      <TableCell className="font-medium">{w.user?.name}</TableCell>
+                      <TableCell className="text-xs">{w.user?.email}</TableCell>
+                      <TableCell className="text-xs">{w.user?.phone}</TableCell>
+                      <TableCell>
+                        <Badge className={TIER_COLOR[w.tier?.color] || 'bg-gray-100 text-gray-700'} variant="outline">
+                          {w.tier?.name}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right font-semibold">{formatVND(Number(w.balance ?? 0))}</TableCell>
+                      <TableCell className="text-right">{formatVND(Number(w.totalDeposit ?? 0))}</TableCell>
+                      <TableCell className="text-right">{w._count?.referrals || 0}</TableCell>
+                      <TableCell>
+                        <Badge className={w.user?.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'} variant="outline">
+                          {w.user?.isActive ? 'Active' : 'Locked'}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+
+          {/* Mobile compact card list */}
+          <div className="md:hidden space-y-2">
+            {(data?.wallets || []).map((w) => (
+              <div key={w.id} className="rounded-lg border border-gray-200 bg-white p-3 space-y-2">
+                {/* Row 1: tier + status */}
+                <div className="flex items-center justify-between gap-2">
+                  <Badge className={TIER_COLOR[w.tier?.color] || 'bg-gray-100 text-gray-700'} variant="outline">
+                    {w.tier?.name}
+                  </Badge>
+                  <Badge className={w.user?.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'} variant="outline">
+                    {w.user?.isActive ? 'Active' : 'Locked'}
+                  </Badge>
+                </div>
+                {/* Row 2: icon + name · email · phone (no labels) */}
+                <div className="flex items-start gap-2 text-sm">
+                  <User className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium text-gray-800 truncate">{w.user?.name}</p>
+                    <p className="text-xs text-gray-500 truncate">{w.user?.email} · {w.user?.phone}</p>
+                  </div>
+                </div>
+                {/* Row 3: stats compact */}
+                <div className="grid grid-cols-3 gap-2 pt-2 border-t text-center">
+                  <div>
+                    <p className="text-[10px] uppercase text-gray-500 tracking-wide">Số dư</p>
+                    <p className="text-sm font-semibold text-emerald-700">{formatVND(Number(w.balance ?? 0))}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] uppercase text-gray-500 tracking-wide">Tổng nạp</p>
+                    <p className="text-sm font-semibold text-gray-800">{formatVND(Number(w.totalDeposit ?? 0))}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] uppercase text-gray-500 tracking-wide">Giới thiệu</p>
+                    <p className="text-sm font-semibold text-gray-800">{w._count?.referrals || 0}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
       ) : null}
 
       {(data?.totalPages || 1) > 1 && (

@@ -49,14 +49,14 @@ export default function DashboardLayout({ role, children }: { role: string; chil
     <div className="min-h-screen bg-background text-foreground">
       <Sidebar role={user.role} />
       <main
-        className="min-h-screen p-4 sm:p-6 pt-16 lg:pt-6 lg:ml-[var(--sidebar-w)]"
+        className="min-h-screen p-4 sm:p-6 pt-14 lg:pt-6 lg:ml-[var(--sidebar-w)]"
         style={{ ['--sidebar-w' as string]: sidebarExpanded ? '14rem' : '4rem' }}
       >
-        <div className="mb-6 flex items-center justify-between">
-          <div>
-            <p className="text-sm text-muted-foreground">Xin chào,</p>
-            <p className="text-lg font-semibold">{user.name} {user.rank ? `(${user.rank})` : ''}</p>
-          </div>
+        {/* Compact user badge in top-right corner — saves vertical space.
+            On mobile (lg:hidden), padded to clear the hamburger button. */}
+        <div className="absolute top-3 right-4 lg:top-4 lg:right-6 flex items-center gap-1.5 text-xs text-muted-foreground">
+          <span className="font-semibold text-foreground truncate max-w-[60vw] lg:max-w-none">{user.name}</span>
+          {user.rank && <span className="text-[10px] uppercase tracking-wide bg-muted px-1.5 py-0.5 rounded">{user.rank}</span>}
         </div>
         {children}
       </main>

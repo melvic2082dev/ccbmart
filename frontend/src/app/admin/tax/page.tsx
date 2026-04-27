@@ -153,79 +153,115 @@ export default function AdminTaxPage() {
             <CardTitle>Bảng thuế ({records.length})</CardTitle>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Người nộp</TableHead>
-                  <TableHead>Rank</TableHead>
-                  <TableHead>HKD</TableHead>
-                  <TableHead>Tháng</TableHead>
-                  <TableHead className="text-right">Thu nhập</TableHead>
-                  <TableHead className="text-right">Thuế 10%</TableHead>
-                  <TableHead>Trạng thái</TableHead>
-                  <TableHead>Ngày nộp</TableHead>
-                  <TableHead>Thao tác</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {pagedRecords.map((r) => {
-                  const pi = paymentInfo(r);
-                  return (
-                    <TableRow key={r.id}>
-                      <TableCell className="font-medium">{r.user.name}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline">{r.user.rank || '—'}</Badge>
-                      </TableCell>
-                      <TableCell>
-                        {r.user.isBusinessHousehold ? (
-                          <Badge className="bg-blue-100 text-blue-700">HKD</Badge>
-                        ) : (
-                          <Badge variant="outline">Cá nhân</Badge>
-                        )}
-                      </TableCell>
-                      <TableCell className="font-mono text-sm">{r.month}</TableCell>
-                      <TableCell className="text-right font-mono">{formatVND(r.taxableIncome)}</TableCell>
-                      <TableCell className="text-right font-mono font-semibold text-red-600">
-                        {formatVND(r.taxAmount)}
-                      </TableCell>
-                      <TableCell>
-                        <Badge className={r.status === 'PAID' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}>
-                          {r.status === 'PAID' ? 'Đã nộp' : r.status === 'PENDING' ? 'Chờ nộp' : r.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-xs text-gray-600">
-                        {pi.paidAt ? new Date(pi.paidAt).toLocaleDateString('vi-VN') : '—'}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-1">
-                          {r.status === 'PENDING' ? (
-                            <Button variant="outline" size="sm" onClick={() => handleMarkPaid(r.id)}>
-                              Đánh dấu đã nộp
-                            </Button>
-                          ) : (
-                            <>
-                              <Button variant="ghost" size="icon-sm" title="Xem chứng từ" onClick={() => setViewCertFor(r)}>
-                                <Eye className="w-4 h-4 text-blue-600" />
-                              </Button>
-                              <Button variant="ghost" size="icon-sm" title="Xuất chứng từ PDF" onClick={() => alert(`Xuất chứng từ ${pi.cert} (PDF)`)}>
-                                <Download className="w-4 h-4 text-emerald-600" />
-                              </Button>
-                            </>
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-                {pagedRecords.length === 0 && (
+            {/* Desktop table */}
+            <div className="hidden md:block">
+              <Table>
+                <TableHeader>
                   <TableRow>
-                    <TableCell colSpan={9} className="text-center py-8 text-slate-500">
-                      Chưa có bản ghi thuế
-                    </TableCell>
+                    <TableHead>Người nộp</TableHead>
+                    <TableHead>Rank</TableHead>
+                    <TableHead>HKD</TableHead>
+                    <TableHead>Tháng</TableHead>
+                    <TableHead className="text-right">Thu nhập</TableHead>
+                    <TableHead className="text-right">Thuế 10%</TableHead>
+                    <TableHead>Trạng thái</TableHead>
+                    <TableHead>Ngày nộp</TableHead>
+                    <TableHead>Thao tác</TableHead>
                   </TableRow>
-                )}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {pagedRecords.map((r) => {
+                    const pi = paymentInfo(r);
+                    return (
+                      <TableRow key={r.id}>
+                        <TableCell className="font-medium">{r.user.name}</TableCell>
+                        <TableCell><Badge variant="outline">{r.user.rank || '—'}</Badge></TableCell>
+                        <TableCell>
+                          {r.user.isBusinessHousehold ? <Badge className="bg-blue-100 text-blue-700">HKD</Badge> : <Badge variant="outline">Cá nhân</Badge>}
+                        </TableCell>
+                        <TableCell className="font-mono text-sm">{r.month}</TableCell>
+                        <TableCell className="text-right font-mono">{formatVND(r.taxableIncome)}</TableCell>
+                        <TableCell className="text-right font-mono font-semibold text-red-600">{formatVND(r.taxAmount)}</TableCell>
+                        <TableCell>
+                          <Badge className={r.status === 'PAID' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}>
+                            {r.status === 'PAID' ? 'Đã nộp' : r.status === 'PENDING' ? 'Chờ nộp' : r.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-xs text-gray-600">{pi.paidAt ? new Date(pi.paidAt).toLocaleDateString('vi-VN') : '—'}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1">
+                            {r.status === 'PENDING' ? (
+                              <Button variant="outline" size="sm" onClick={() => handleMarkPaid(r.id)}>Đánh dấu đã nộp</Button>
+                            ) : (
+                              <>
+                                <Button variant="ghost" size="icon-sm" title="Xem chứng từ" onClick={() => setViewCertFor(r)}><Eye className="w-4 h-4 text-blue-600" /></Button>
+                                <Button variant="ghost" size="icon-sm" title="Xuất chứng từ PDF" onClick={() => alert(`Xuất chứng từ ${pi.cert} (PDF)`)}><Download className="w-4 h-4 text-emerald-600" /></Button>
+                              </>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                  {pagedRecords.length === 0 && (
+                    <TableRow><TableCell colSpan={9} className="text-center py-8 text-slate-500">Chưa có bản ghi thuế</TableCell></TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+
+            {/* Mobile compact card */}
+            <div className="md:hidden space-y-2">
+              {pagedRecords.length === 0 ? (
+                <p className="text-center py-8 text-slate-500">Chưa có bản ghi thuế</p>
+              ) : pagedRecords.map((r) => {
+                const pi = paymentInfo(r);
+                return (
+                  <div key={r.id} className="rounded-lg border border-gray-200 bg-white p-3 space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <Badge variant="outline" className="text-xs shrink-0">{r.user.rank || '—'}</Badge>
+                        <p className="font-medium text-gray-800 truncate">{r.user.name}</p>
+                      </div>
+                      <Badge className={r.status === 'PAID' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}>
+                        {r.status === 'PAID' ? 'Đã nộp' : r.status === 'PENDING' ? 'Chờ nộp' : r.status}
+                      </Badge>
+                    </div>
+                    <div className="flex items-center gap-2 text-xs text-gray-500">
+                      {r.user.isBusinessHousehold ? <Badge className="bg-blue-100 text-blue-700 text-[10px] py-0">HKD</Badge> : <Badge variant="outline" className="text-[10px] py-0">Cá nhân</Badge>}
+                      <span>· Tháng {r.month}</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 pt-2 border-t">
+                      <div>
+                        <p className="text-[10px] uppercase text-gray-500">Thu nhập</p>
+                        <p className="text-sm font-semibold text-gray-800 tabular-nums">{formatVND(r.taxableIncome)}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] uppercase text-gray-500">Thuế 10%</p>
+                        <p className="text-sm font-semibold text-red-600 tabular-nums">{formatVND(r.taxAmount)}</p>
+                      </div>
+                    </div>
+                    {pi.paidAt && (
+                      <p className="text-xs text-gray-500">Nộp ngày: {new Date(pi.paidAt).toLocaleDateString('vi-VN')}</p>
+                    )}
+                    <div className="flex gap-2 pt-2 border-t">
+                      {r.status === 'PENDING' ? (
+                        <Button variant="outline" size="sm" className="flex-1" onClick={() => handleMarkPaid(r.id)}>Đánh dấu đã nộp</Button>
+                      ) : (
+                        <>
+                          <Button variant="outline" size="sm" className="flex-1" onClick={() => setViewCertFor(r)}>
+                            <Eye className="w-4 h-4 mr-1 text-blue-600" /> Chứng từ
+                          </Button>
+                          <Button variant="outline" size="sm" onClick={() => alert(`Xuất chứng từ ${pi.cert} (PDF)`)}>
+                            <Download className="w-4 h-4 text-emerald-600" />
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
             {records.length > PAGE_SIZE_TAX && (
               <div className="flex items-center justify-between px-4 py-3 border-t text-sm">
                 <p className="text-gray-500">Trang {page}/{totalPages}</p>

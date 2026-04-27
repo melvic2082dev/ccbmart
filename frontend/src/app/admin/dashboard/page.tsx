@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   LineChart, Line, Legend,
+  PieChart, Pie, Cell,
 } from 'recharts'
 import {
   DollarSign, TrendingUp, Users, Store, AlertTriangle, CheckCircle, AlertCircle,
@@ -89,6 +90,44 @@ const COGS_RATIO = 0.5
 
 const DEFAULT_REVENUE_TARGET = 600_000_000
 const DEFAULT_NET_PROFIT_TARGET = 30_000_000
+
+// Distinct hues for the cost-breakdown pie slices
+const COST_PIE_COLORS = [
+  '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899',
+  '#06b6d4', '#f97316', '#84cc16', '#6366f1', '#ef4444',
+]
+
+// Custom pie label: leader line elbow + name / % / amount stacked text.
+// Slices < 6% are skipped (their labels collide); they show in the legend below.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function renderCostPieLabel(props: any) {
+  const { cx, cy, midAngle, outerRadius, name, value, percent } = props
+  if (percent < 0.06) return null
+  const RADIAN = Math.PI / 180
+  const sin = Math.sin(-midAngle * RADIAN)
+  const cos = Math.cos(-midAngle * RADIAN)
+  const sx = cx + outerRadius * cos
+  const sy = cy + outerRadius * sin
+  const mx = cx + (outerRadius + 16) * cos
+  const my = cy + (outerRadius + 16) * sin
+  const ex = mx + (cos >= 0 ? 1 : -1) * 14
+  const ey = my
+  const textAnchor = cos >= 0 ? 'start' : 'end'
+  const textX = ex + (cos >= 0 ? 4 : -4)
+  return (
+    <g>
+      <path d={`M${sx},${sy}L${mx},${my}L${ex},${ey}`} stroke="#9ca3af" strokeWidth={1} fill="none" />
+      <circle cx={ex} cy={ey} r={2} fill="#9ca3af" stroke="none" />
+      <text x={textX} y={ey} dy={-7} textAnchor={textAnchor} fontSize={10} fill="#374151">{name}</text>
+      <text x={textX} y={ey} dy={5} textAnchor={textAnchor} fontSize={11} fontWeight={700} fill="#111827">
+        {(percent * 100).toFixed(1)}%
+      </text>
+      <text x={textX} y={ey} dy={17} textAnchor={textAnchor} fontSize={9} fill="#6b7280">
+        {formatVND(value)}
+      </text>
+    </g>
+  )
+}
 
 function getSalaryFundColor(pct: number) {
   if (pct >= 100) return { bar: 'bg-red-500', text: 'text-red-700', bg: 'bg-red-50 border-red-200' }
@@ -626,8 +665,43 @@ export default function AdminDashboardPage() {
               <CardContent>
                 {(() => {
                   const total = Object.values(data.costBreakdown).reduce((a, b) => a + b, 0)
+                  const pieData = Object.entries(data.costBreakdown)
+                    .map(([key, value]) => ({ name: COST_LABEL_MAP[key] ?? key, value }))
+                    .filter(d => d.value > 0)
                   return (
                     <>
+                      {/* Pie chart with leader-line labels (name / % / amount) */}
+                      {pieData.length > 0 && (
+                        <div className="mb-6">
+                          <ResponsiveContainer width="100%" height={460}>
+                            <PieChart margin={{ top: 20, right: 80, bottom: 20, left: 80 }}>
+                              <Pie
+                                data={pieData}
+                                dataKey="value"
+                                nameKey="name"
+                                cx="50%"
+                                cy="50%"
+                                outerRadius={90}
+                                label={renderCostPieLabel}
+                                labelLine={false}
+                                isAnimationActive={false}
+                                stroke="#fff"
+                                strokeWidth={2}
+                              >
+                                {pieData.map((_, idx) => (
+                                  <Cell key={idx} fill={COST_PIE_COLORS[idx % COST_PIE_COLORS.length]} />
+                                ))}
+                              </Pie>
+                              <Tooltip
+                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                formatter={(v: any, n: any) => [formatVND(Number(v)), String(n)]}
+                                contentStyle={{ borderRadius: '8px', border: '1px solid #d1fae5' }}
+                              />
+                            </PieChart>
+                          </ResponsiveContainer>
+                        </div>
+                      )}
+
                       {/* Desktop table */}
                       <div className="hidden md:block overflow-x-auto">
                         <table className="w-full text-sm">
@@ -669,26 +743,27 @@ export default function AdminDashboardPage() {
                         </table>
                       </div>
 
-                      {/* Mobile card list */}
-                      <div className="md:hidden space-y-2">
-                        {Object.entries(data.costBreakdown).map(([key, value]) => {
+                      {/* Mobile card list — single row per item */}
+                      <div className="md:hidden divide-y divide-gray-100 border border-gray-100 rounded-lg overflow-hidden">
+                        {Object.entries(data.costBreakdown).map(([key, value], idx) => {
                           const pct = total > 0 ? ((value / total) * 100).toFixed(1) : '0.0'
                           return (
-                            <div key={key} className="rounded-lg border border-gray-100 bg-white p-3">
-                              <div className="flex justify-between items-start gap-2 mb-1">
-                                <span className="text-sm text-gray-700">{COST_LABEL_MAP[key] ?? key}</span>
-                                <span className="text-xs text-gray-500 shrink-0">{pct}%</span>
-                              </div>
-                              <p className="text-right font-semibold text-gray-900">{formatVND(value)}</p>
+                            <div key={key} className="flex items-center gap-2 px-3 py-2 bg-white text-sm">
+                              <span
+                                className="w-2.5 h-2.5 rounded-sm shrink-0"
+                                style={{ backgroundColor: COST_PIE_COLORS[idx % COST_PIE_COLORS.length] }}
+                              />
+                              <span className="text-gray-700 flex-1 min-w-0 truncate">{COST_LABEL_MAP[key] ?? key}</span>
+                              <span className="text-xs text-gray-500 shrink-0">{pct}%</span>
+                              <span className="font-semibold text-gray-900 shrink-0 tabular-nums">{formatVND(value)}</span>
                             </div>
                           )
                         })}
-                        <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3">
-                          <div className="flex justify-between items-start gap-2 mb-1">
-                            <span className="text-sm font-bold text-emerald-800">Tổng chi phí</span>
-                            <span className="text-xs text-emerald-700 shrink-0">100%</span>
-                          </div>
-                          <p className="text-right font-bold text-emerald-800">{formatVND(total)}</p>
+                        <div className="flex items-center gap-2 px-3 py-2 bg-emerald-50 text-sm">
+                          <span className="w-2.5 h-2.5 shrink-0" />
+                          <span className="font-bold text-emerald-800 flex-1">Tổng chi phí</span>
+                          <span className="text-xs text-emerald-700 shrink-0">100%</span>
+                          <span className="font-bold text-emerald-800 shrink-0 tabular-nums">{formatVND(total)}</span>
                         </div>
                       </div>
                     </>

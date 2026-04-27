@@ -131,36 +131,64 @@ export default function AdminPaymentLogsPage() {
               {payoutLogs.length === 0 ? (
                 <p className="text-sm text-slate-500 px-4 py-6">Chưa có payout cho tháng này. Vào trang Phí quản lý → Tính lại tháng.</p>
               ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Đối tác</TableHead>
-                      <TableHead>Xếp hạng</TableHead>
-                      <TableHead>Tháng</TableHead>
-                      <TableHead className="text-right">Tổng</TableHead>
-                      <TableHead className="text-center">Log 20h</TableHead>
-                      <TableHead className="text-right">K-factor</TableHead>
-                      <TableHead>Trạng thái</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
+                <>
+                  {/* Desktop table */}
+                  <div className="hidden md:block">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Đối tác</TableHead>
+                          <TableHead>Xếp hạng</TableHead>
+                          <TableHead>Tháng</TableHead>
+                          <TableHead className="text-right">Tổng</TableHead>
+                          <TableHead className="text-center">Log 20h</TableHead>
+                          <TableHead className="text-right">K-factor</TableHead>
+                          <TableHead>Trạng thái</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {payoutLogs.map((log) => (
+                          <TableRow key={log.id}>
+                            <TableCell className="font-medium">{log.partnerName}</TableCell>
+                            <TableCell><Badge variant="outline" className="text-xs">{log.partnerRank}</Badge></TableCell>
+                            <TableCell className="font-mono text-xs">{log.month}</TableCell>
+                            <TableCell className="text-right font-mono font-semibold">{formatVND(Number(log.totalAmount) || 0)}</TableCell>
+                            <TableCell className="text-center">
+                              {log.hasValidLog ? <CheckCircle2 className="w-4 h-4 text-green-600 inline" /> : <AlertCircle className="w-4 h-4 text-amber-500 inline" />}
+                            </TableCell>
+                            <TableCell className="text-right font-mono text-xs">{Number(log.kFactor).toFixed(2)}</TableCell>
+                            <TableCell><Badge className="bg-green-100 text-green-700">{log.status === 'PROCESSED' ? 'Đã xử lý' : log.status}</Badge></TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+
+                  {/* Mobile compact card */}
+                  <div className="md:hidden p-3 space-y-2">
                     {payoutLogs.map((log) => (
-                      <TableRow key={log.id}>
-                        <TableCell className="font-medium">{log.partnerName}</TableCell>
-                        <TableCell><Badge variant="outline" className="text-xs">{log.partnerRank}</Badge></TableCell>
-                        <TableCell className="font-mono text-xs">{log.month}</TableCell>
-                        <TableCell className="text-right font-mono font-semibold">{formatVND(Number(log.totalAmount) || 0)}</TableCell>
-                        <TableCell className="text-center">
-                          {log.hasValidLog
-                            ? <CheckCircle2 className="w-4 h-4 text-green-600 inline" />
-                            : <AlertCircle className="w-4 h-4 text-amber-500 inline" />}
-                        </TableCell>
-                        <TableCell className="text-right font-mono text-xs">{Number(log.kFactor).toFixed(2)}</TableCell>
-                        <TableCell><Badge className="bg-green-100 text-green-700">{log.status === 'PROCESSED' ? 'Đã xử lý' : log.status}</Badge></TableCell>
-                      </TableRow>
+                      <div key={log.id} className="rounded-lg border border-gray-200 bg-white p-3 space-y-2">
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <Badge variant="outline" className="text-xs shrink-0">{log.partnerRank}</Badge>
+                            <p className="font-medium text-gray-800 truncate">{log.partnerName}</p>
+                          </div>
+                          <Badge className="bg-green-100 text-green-700 text-xs shrink-0">{log.status === 'PROCESSED' ? 'Đã xử lý' : log.status}</Badge>
+                        </div>
+                        <div className="flex items-center justify-between gap-2 text-sm">
+                          <span className="font-mono text-xs text-gray-500">{log.month}</span>
+                          <p className="font-bold text-emerald-700 tabular-nums">{formatVND(Number(log.totalAmount) || 0)}</p>
+                        </div>
+                        <div className="flex items-center justify-between gap-2 text-xs text-gray-500 pt-2 border-t">
+                          <span className="flex items-center gap-1">
+                            Log 20h: {log.hasValidLog ? <CheckCircle2 className="w-3.5 h-3.5 text-green-600" /> : <AlertCircle className="w-3.5 h-3.5 text-amber-500" />}
+                          </span>
+                          <span>K-factor: <span className="font-mono font-semibold text-gray-700">{Number(log.kFactor).toFixed(2)}</span></span>
+                        </div>
+                      </div>
                     ))}
-                  </TableBody>
-                </Table>
+                  </div>
+                </>
               )}
             </CardContent>
           </Card>
@@ -173,39 +201,71 @@ export default function AdminPaymentLogsPage() {
               {filteredInvoices.length === 0 ? (
                 <p className="text-sm text-slate-500 px-4 py-6">Chưa có hóa đơn cho tháng này.</p>
               ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Ngày</TableHead>
-                      <TableHead>Bên chuyển</TableHead>
-                      <TableHead>Bên nhận</TableHead>
-                      <TableHead className="text-right">Số tiền</TableHead>
-                      <TableHead>Loại</TableHead>
-                      <TableHead>Hóa đơn</TableHead>
-                      <TableHead>Trạng thái</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
+                <>
+                  {/* Desktop table */}
+                  <div className="hidden md:block">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Ngày</TableHead>
+                          <TableHead>Bên chuyển</TableHead>
+                          <TableHead>Bên nhận</TableHead>
+                          <TableHead className="text-right">Số tiền</TableHead>
+                          <TableHead>Loại</TableHead>
+                          <TableHead>Hóa đơn</TableHead>
+                          <TableHead>Trạng thái</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {filteredInvoices.map((inv) => (
+                          <TableRow key={inv.id}>
+                            <TableCell className="text-sm">{new Date(inv.issuedAt).toLocaleDateString('vi-VN')}</TableCell>
+                            <TableCell><span className="font-medium">{inv.fromParty || 'CCB Mart'}</span></TableCell>
+                            <TableCell>
+                              <div className="text-sm font-medium">{inv.toUser.name}</div>
+                              <Badge variant="outline" className="text-xs">{inv.toUser.rank}</Badge>
+                            </TableCell>
+                            <TableCell className="text-right font-mono font-semibold">{formatVND(Number(inv.amount) || 0)}</TableCell>
+                            <TableCell>
+                              <Badge className="bg-purple-100 text-purple-700 text-xs">
+                                {PAYOUT_TYPE_LABEL[inv.payoutType ?? ''] ?? inv.payoutType ?? '—'}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="font-mono text-xs">{inv.invoiceNumber}</TableCell>
+                            <TableCell><Badge className={STATUS_STYLES[inv.status]}>{STATUS_LABEL[inv.status] ?? inv.status}</Badge></TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+
+                  {/* Mobile compact card */}
+                  <div className="md:hidden p-3 space-y-2">
                     {filteredInvoices.map((inv) => (
-                      <TableRow key={inv.id}>
-                        <TableCell className="text-sm">{new Date(inv.issuedAt).toLocaleDateString('vi-VN')}</TableCell>
-                        <TableCell><span className="font-medium">{inv.fromParty || 'CCB Mart'}</span></TableCell>
-                        <TableCell>
-                          <div className="text-sm font-medium">{inv.toUser.name}</div>
-                          <Badge variant="outline" className="text-xs">{inv.toUser.rank}</Badge>
-                        </TableCell>
-                        <TableCell className="text-right font-mono font-semibold">{formatVND(Number(inv.amount) || 0)}</TableCell>
-                        <TableCell>
+                      <div key={inv.id} className="rounded-lg border border-gray-200 bg-white p-3 space-y-2">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="font-mono text-xs text-gray-500">{inv.invoiceNumber}</span>
+                          <Badge className={STATUS_STYLES[inv.status]}>{STATUS_LABEL[inv.status] ?? inv.status}</Badge>
+                        </div>
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="min-w-0 flex-1">
+                            <p className="font-medium text-gray-800 truncate">{inv.toUser.name}</p>
+                            <p className="text-xs text-gray-500">
+                              <Badge variant="outline" className="text-[10px] py-0">{inv.toUser.rank}</Badge>
+                              {' '}· {new Date(inv.issuedAt).toLocaleDateString('vi-VN')}
+                            </p>
+                          </div>
+                          <p className="font-bold text-emerald-700 shrink-0 tabular-nums">{formatVND(Number(inv.amount) || 0)}</p>
+                        </div>
+                        <div className="flex items-center pt-2 border-t">
                           <Badge className="bg-purple-100 text-purple-700 text-xs">
                             {PAYOUT_TYPE_LABEL[inv.payoutType ?? ''] ?? inv.payoutType ?? '—'}
                           </Badge>
-                        </TableCell>
-                        <TableCell className="font-mono text-xs">{inv.invoiceNumber}</TableCell>
-                        <TableCell><Badge className={STATUS_STYLES[inv.status]}>{STATUS_LABEL[inv.status] ?? inv.status}</Badge></TableCell>
-                      </TableRow>
+                        </div>
+                      </div>
                     ))}
-                  </TableBody>
-                </Table>
+                  </div>
+                </>
               )}
             </CardContent>
           </Card>

@@ -203,55 +203,85 @@ export default function AdminInvoicesPage() {
             <CardTitle>Danh sách hóa đơn ({filtered.length}/{invoices.length})</CardTitle>
           </CardHeader>
           <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Số hóa đơn</TableHead>
-                  <TableHead>Ngày</TableHead>
-                  <TableHead>Bên trả</TableHead>
-                  <TableHead>Bên nhận</TableHead>
-                  <TableHead title="Loại khoản thanh toán">Loại payout</TableHead>
-                  <TableHead className="text-right">Số tiền</TableHead>
-                  <TableHead>Trạng thái</TableHead>
-                  <TableHead>Hợp đồng</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {paged.map((inv) => (
-                  <TableRow key={inv.id}>
-                    <TableCell className="font-mono text-xs">{inv.invoiceNumber}</TableCell>
-                    <TableCell className="text-sm">{new Date(inv.issuedAt).toLocaleDateString('vi-VN')}</TableCell>
-                    <TableCell>
-                      <div className="text-sm font-medium">{inv.fromParty || 'CCB Mart'}</div>
-                      <Badge variant="outline" className="text-xs">Công ty</Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="text-sm font-medium">{inv.toUser.name}</div>
-                      <Badge variant="outline" className="text-xs">{inv.toUser.rank}</Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge className="bg-purple-100 text-purple-700" title={inv.payoutType ?? inv.feeTier}>
-                        {PAYOUT_TYPE_LABEL[inv.payoutType ?? ''] ?? inv.feeTier}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right font-mono font-semibold text-emerald-700">
-                      {formatVND(inv.amount)}
-                    </TableCell>
-                    <TableCell>
-                      <Badge className={STATUS_STYLES[inv.status]}>{STATUS_LABEL[inv.status] ?? inv.status}</Badge>
-                    </TableCell>
-                    <TableCell className="text-xs">{inv.contract?.contractNo || '—'}</TableCell>
-                  </TableRow>
-                ))}
-                {paged.length === 0 && (
+            {/* Desktop table */}
+            <div className="hidden md:block">
+              <Table>
+                <TableHeader>
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8 text-slate-500">
-                      Không có hóa đơn phù hợp
-                    </TableCell>
+                    <TableHead>Số hóa đơn</TableHead>
+                    <TableHead>Ngày</TableHead>
+                    <TableHead>Bên trả</TableHead>
+                    <TableHead>Bên nhận</TableHead>
+                    <TableHead title="Loại khoản thanh toán">Loại payout</TableHead>
+                    <TableHead className="text-right">Số tiền</TableHead>
+                    <TableHead>Trạng thái</TableHead>
+                    <TableHead>Hợp đồng</TableHead>
                   </TableRow>
-                )}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {paged.map((inv) => (
+                    <TableRow key={inv.id}>
+                      <TableCell className="font-mono text-xs">{inv.invoiceNumber}</TableCell>
+                      <TableCell className="text-sm">{new Date(inv.issuedAt).toLocaleDateString('vi-VN')}</TableCell>
+                      <TableCell>
+                        <div className="text-sm font-medium">{inv.fromParty || 'CCB Mart'}</div>
+                        <Badge variant="outline" className="text-xs">Công ty</Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-sm font-medium">{inv.toUser.name}</div>
+                        <Badge variant="outline" className="text-xs">{inv.toUser.rank}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge className="bg-purple-100 text-purple-700" title={inv.payoutType ?? inv.feeTier}>
+                          {PAYOUT_TYPE_LABEL[inv.payoutType ?? ''] ?? inv.feeTier}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right font-mono font-semibold text-emerald-700">{formatVND(inv.amount)}</TableCell>
+                      <TableCell>
+                        <Badge className={STATUS_STYLES[inv.status]}>{STATUS_LABEL[inv.status] ?? inv.status}</Badge>
+                      </TableCell>
+                      <TableCell className="text-xs">{inv.contract?.contractNo || '—'}</TableCell>
+                    </TableRow>
+                  ))}
+                  {paged.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={8} className="text-center py-8 text-slate-500">Không có hóa đơn phù hợp</TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+
+            {/* Mobile compact card */}
+            <div className="md:hidden p-3 space-y-2">
+              {paged.length === 0 ? (
+                <p className="text-center py-8 text-slate-500">Không có hóa đơn phù hợp</p>
+              ) : paged.map((inv) => (
+                <div key={inv.id} className="rounded-lg border border-gray-200 bg-white p-3 space-y-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-mono text-xs text-gray-500">{inv.invoiceNumber}</span>
+                    <Badge className={STATUS_STYLES[inv.status]}>{STATUS_LABEL[inv.status] ?? inv.status}</Badge>
+                  </div>
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium text-gray-800 truncate">{inv.toUser.name}</p>
+                      <p className="text-xs text-gray-500">
+                        <Badge variant="outline" className="text-[10px] py-0">{inv.toUser.rank}</Badge>
+                        {' '}· {new Date(inv.issuedAt).toLocaleDateString('vi-VN')}
+                      </p>
+                    </div>
+                    <p className="font-bold text-emerald-700 shrink-0 tabular-nums">{formatVND(inv.amount)}</p>
+                  </div>
+                  <div className="flex items-center justify-between gap-2 pt-2 border-t">
+                    <Badge className="bg-purple-100 text-purple-700 text-xs" title={inv.payoutType ?? inv.feeTier}>
+                      {PAYOUT_TYPE_LABEL[inv.payoutType ?? ''] ?? inv.feeTier}
+                    </Badge>
+                    {inv.contract?.contractNo && <span className="text-xs text-gray-500 truncate">HĐ: {inv.contract.contractNo}</span>}
+                  </div>
+                </div>
+              ))}
+            </div>
+
             {filtered.length > PAGE_SIZE && (
               <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100 text-sm">
                 <p className="text-gray-500">Trang {page}/{totalPages} · Hiển thị {paged.length} trong {filtered.length}</p>

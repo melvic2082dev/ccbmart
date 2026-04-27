@@ -537,10 +537,9 @@ export default function AdminCtvPage() {
                           </div>
                         </div>
 
-                        {/* Badges row */}
+                        {/* Badges row — status indicator is the colored Power button below */}
                         <div className="flex flex-wrap items-center gap-1.5">
                           <AccountTypeBadges ctv={ctv} />
-                          <StatusBadge status={ctv.status} />
                           <TrainingHoursCell
                             hours={ctv.currentMonthTrainingHours ?? 0}
                             required={ctv.requiredTrainingHours ?? 20}

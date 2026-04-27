@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { api, formatVND } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Coins, Play, Info, Check, X } from 'lucide-react';
 
 interface AdminMgmtFeeRecord {
@@ -136,44 +137,78 @@ export default function AdminManagementFeesPage() {
               {partners.length === 0 ? (
                 <p className="text-sm text-slate-500">Chưa có dữ liệu. Nhấn &quot;Tính lại tháng&quot; để trigger.</p>
               ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead className="text-left border-b bg-gray-50">
-                      <tr>
-                        <th className="py-2 px-2">Tháng</th>
-                        <th className="py-2 px-2">Đối tác</th>
-                        <th className="py-2 px-2">Xếp hạng</th>
-                        <th className="py-2 px-2 text-right">Cấp 1 (10%)</th>
-                        <th className="py-2 px-2 text-right">Cấp 2 (5%)</th>
-                        <th className="py-2 px-2 text-right">Cấp 3 (3%)</th>
-                        <th className="py-2 px-2 text-center">Log 20h</th>
-                        <th className="py-2 px-2 text-right">Tổng</th>
-                        <th className="py-2 px-2">Trạng thái</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {partners.map((p) => (
-                        <tr key={p.partnerId} className="border-b last:border-0 hover:bg-gray-50/60">
-                          <td className="py-2 px-2 font-mono text-xs">{p.month}</td>
-                          <td className="py-2 px-2 font-medium">{p.partnerName}</td>
-                          <td className="py-2 px-2"><Badge className="bg-slate-100 text-slate-700 text-xs">{p.partnerRank}</Badge></td>
-                          <td className="py-2 px-2 text-right font-mono">{Number(p.f1) > 0 ? formatVND(Number(p.f1)) : '—'}</td>
-                          <td className="py-2 px-2 text-right font-mono">{Number(p.f2) > 0 ? formatVND(Number(p.f2)) : '—'}</td>
-                          <td className="py-2 px-2 text-right font-mono">{Number(p.f3) > 0 ? formatVND(Number(p.f3)) : '—'}</td>
-                          <td className="py-2 px-2 text-center">
-                            {p.hasValidLog
-                              ? <Check className="w-4 h-4 text-green-600 inline" />
-                              : <X className="w-4 h-4 text-red-500 inline" />}
-                          </td>
-                          <td className="py-2 px-2 text-right font-mono font-semibold">{formatVND(Number(p.total) || 0)}</td>
-                          <td className="py-2 px-2">
-                            <Badge className={`${STATUS_COLOR[p.status]} text-xs`}>{STATUS_LABEL[p.status]}</Badge>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                <>
+                  {/* Desktop table */}
+                  <div className="hidden md:block">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Tháng</TableHead>
+                          <TableHead>Đối tác</TableHead>
+                          <TableHead>Xếp hạng</TableHead>
+                          <TableHead className="text-right">Cấp 1 (10%)</TableHead>
+                          <TableHead className="text-right">Cấp 2 (5%)</TableHead>
+                          <TableHead className="text-right">Cấp 3 (3%)</TableHead>
+                          <TableHead className="text-center">Log 20h</TableHead>
+                          <TableHead className="text-right">Tổng</TableHead>
+                          <TableHead>Trạng thái</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {partners.map((p) => (
+                          <TableRow key={p.partnerId}>
+                            <TableCell className="font-mono text-xs">{p.month}</TableCell>
+                            <TableCell className="font-medium">{p.partnerName}</TableCell>
+                            <TableCell><Badge className="bg-slate-100 text-slate-700 text-xs">{p.partnerRank}</Badge></TableCell>
+                            <TableCell className="text-right font-mono">{Number(p.f1) > 0 ? formatVND(Number(p.f1)) : '—'}</TableCell>
+                            <TableCell className="text-right font-mono">{Number(p.f2) > 0 ? formatVND(Number(p.f2)) : '—'}</TableCell>
+                            <TableCell className="text-right font-mono">{Number(p.f3) > 0 ? formatVND(Number(p.f3)) : '—'}</TableCell>
+                            <TableCell className="text-center">
+                              {p.hasValidLog ? <Check className="w-4 h-4 text-green-600 inline" /> : <X className="w-4 h-4 text-red-500 inline" />}
+                            </TableCell>
+                            <TableCell className="text-right font-mono font-semibold">{formatVND(Number(p.total) || 0)}</TableCell>
+                            <TableCell><Badge className={`${STATUS_COLOR[p.status]} text-xs`}>{STATUS_LABEL[p.status]}</Badge></TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+
+                  {/* Mobile compact card */}
+                  <div className="md:hidden space-y-2">
+                    {partners.map((p) => (
+                      <div key={p.partnerId} className="rounded-lg border border-gray-200 bg-white p-3 space-y-2">
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <Badge className="bg-slate-100 text-slate-700 text-xs shrink-0">{p.partnerRank}</Badge>
+                            <p className="font-medium text-gray-800 truncate">{p.partnerName}</p>
+                          </div>
+                          <Badge className={`${STATUS_COLOR[p.status]} text-xs shrink-0`}>{STATUS_LABEL[p.status]}</Badge>
+                        </div>
+                        <div className="grid grid-cols-3 gap-2 text-center">
+                          <div>
+                            <p className="text-[10px] uppercase text-gray-500">F1 (10%)</p>
+                            <p className="text-xs font-mono">{Number(p.f1) > 0 ? formatVND(Number(p.f1)) : '—'}</p>
+                          </div>
+                          <div>
+                            <p className="text-[10px] uppercase text-gray-500">F2 (5%)</p>
+                            <p className="text-xs font-mono">{Number(p.f2) > 0 ? formatVND(Number(p.f2)) : '—'}</p>
+                          </div>
+                          <div>
+                            <p className="text-[10px] uppercase text-gray-500">F3 (3%)</p>
+                            <p className="text-xs font-mono">{Number(p.f3) > 0 ? formatVND(Number(p.f3)) : '—'}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-between gap-2 pt-2 border-t text-sm">
+                          <div className="flex items-center gap-1 text-xs text-gray-500">
+                            Log 20h: {p.hasValidLog ? <Check className="w-3.5 h-3.5 text-green-600" /> : <X className="w-3.5 h-3.5 text-red-500" />}
+                          </div>
+                          <p className="font-bold text-emerald-700">{formatVND(Number(p.total) || 0)}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </>
               )}
             </CardContent>
           </Card>

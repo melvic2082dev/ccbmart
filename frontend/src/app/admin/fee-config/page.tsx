@@ -54,38 +54,72 @@ export default function FeeConfigPage() {
             </p>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Mốc</TableHead>
-                  <TableHead className="text-right">Combo tối thiểu</TableHead>
-                  <TableHead className="text-right">Combo tối đa</TableHead>
-                  <TableHead className="text-right">Phí lý thuyết</TableHead>
-                  <TableHead>Trạng thái</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {configs.map((c) => (
-                  <TableRow key={c.id}>
-                    <TableCell>
-                      <Badge variant={c.feeAmount > 0 ? 'default' : 'secondary'} title={c.description}>
-                        {c.tier}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right font-mono">{c.minCombo}</TableCell>
-                    <TableCell className="text-right font-mono">{c.maxCombo !== null ? c.maxCombo : '∞'}</TableCell>
-                    <TableCell className="text-right font-semibold text-emerald-700">
-                      {c.feeAmount > 0 ? formatVND(c.feeAmount) : '—'}
-                    </TableCell>
-                    <TableCell>
-                      <Badge className={c.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}>
-                        {c.isActive ? 'Đang áp dụng' : 'Ngừng'}
-                      </Badge>
-                    </TableCell>
+            {/* Desktop table */}
+            <div className="hidden md:block">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Mốc</TableHead>
+                    <TableHead className="text-right">Combo tối thiểu</TableHead>
+                    <TableHead className="text-right">Combo tối đa</TableHead>
+                    <TableHead className="text-right">Phí lý thuyết</TableHead>
+                    <TableHead>Trạng thái</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {configs.map((c) => (
+                    <TableRow key={c.id}>
+                      <TableCell>
+                        <Badge variant={c.feeAmount > 0 ? 'default' : 'secondary'} title={c.description}>
+                          {c.tier}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right font-mono">{c.minCombo}</TableCell>
+                      <TableCell className="text-right font-mono">{c.maxCombo !== null ? c.maxCombo : '∞'}</TableCell>
+                      <TableCell className="text-right font-semibold text-emerald-700">
+                        {c.feeAmount > 0 ? formatVND(c.feeAmount) : '—'}
+                      </TableCell>
+                      <TableCell>
+                        <Badge className={c.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}>
+                          {c.isActive ? 'Đang áp dụng' : 'Ngừng'}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+
+            {/* Mobile compact card */}
+            <div className="md:hidden space-y-2">
+              {configs.map((c) => (
+                <div key={c.id} className="rounded-lg border border-gray-200 bg-white p-3 space-y-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <Badge variant={c.feeAmount > 0 ? 'default' : 'secondary'} title={c.description}>
+                      {c.tier}
+                    </Badge>
+                    <Badge className={c.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}>
+                      {c.isActive ? 'Đang áp dụng' : 'Ngừng'}
+                    </Badge>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-gray-500">Combo:</span>
+                    <span className="font-mono font-semibold text-gray-800">
+                      {c.minCombo} – {c.maxCombo !== null ? c.maxCombo : '∞'}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm pt-2 border-t">
+                    <span className="text-gray-500">Phí lý thuyết:</span>
+                    <span className="font-semibold text-emerald-700">
+                      {c.feeAmount > 0 ? formatVND(c.feeAmount) : '—'}
+                    </span>
+                  </div>
+                  {c.description && (
+                    <p className="text-xs text-gray-500 italic pt-1">{c.description}</p>
+                  )}
+                </div>
+              ))}
+            </div>
           </CardContent>
         </Card>
       )}

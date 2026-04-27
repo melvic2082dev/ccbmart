@@ -149,7 +149,7 @@ export default function TrainingLogsPage() {
         </CardContent>
       </Card>
 
-      <div className="flex gap-2 mb-4">
+      <div className="flex flex-wrap gap-2 mb-4">
         {['', 'PENDING', 'VERIFIED', 'REJECTED'].map((s) => (
           <button
             key={s}
@@ -173,79 +173,103 @@ export default function TrainingLogsPage() {
             <CardTitle>Nhật ký ({logs.length} bản ghi)</CardTitle>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Ngày</TableHead>
-                  <TableHead>Giảng viên</TableHead>
-                  <TableHead>Học viên</TableHead>
-                  <TableHead>Thời lượng</TableHead>
-                  <TableHead>Nội dung</TableHead>
-                  <TableHead>Xác nhận</TableHead>
-                  <TableHead>Trạng thái</TableHead>
-                  <TableHead>Thao tác</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {logs.map((log) => (
-                  <TableRow key={log.id}>
-                    <TableCell className="text-sm">
-                      {new Date(log.sessionDate).toLocaleDateString('vi-VN')}
-                    </TableCell>
-                    <TableCell>
-                      <div className="text-sm font-medium">{log.trainer.name}</div>
-                      <Badge variant="outline" className="text-xs">{log.trainer.rank}</Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="text-sm font-medium">{log.trainee.name}</div>
-                      <Badge variant="outline" className="text-xs">{log.trainee.rank}</Badge>
-                    </TableCell>
-                    <TableCell className="text-sm">{log.durationMinutes} phút</TableCell>
-                    <TableCell className="text-sm max-w-[200px] truncate">{log.content}</TableCell>
-                    <TableCell>
-                      <div className="flex gap-1">
-                        <Badge className={log.mentorConfirmed ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'} >
-                          Giảng viên {log.mentorConfirmed ? '✓' : '✗'}
-                        </Badge>
-                        <Badge className={log.menteeConfirmed ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}>
-                          Học viên {log.menteeConfirmed ? '✓' : '✗'}
-                        </Badge>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge className={STATUS_STYLES[log.status] || 'bg-gray-100 text-gray-700'}>
-                        {STATUS_LABELS[log.status] || log.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {log.status === 'PENDING' && (
-                        <div className="flex gap-1">
-                          <button
-                            onClick={() => handleVerify(log.id, 'verify')}
-                            className="px-2 py-1 text-xs bg-green-100 text-green-700 rounded hover:bg-green-200"
-                          >
-                            Xác nhận
-                          </button>
-                          <button
-                            onClick={() => handleVerify(log.id, 'reject')}
-                            className="px-2 py-1 text-xs bg-red-100 text-red-700 rounded hover:bg-red-200"
-                          >
-                            Từ chối
-                          </button>
-                        </div>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))}
-                {logs.length === 0 && (
+            {/* Desktop table */}
+            <div className="hidden md:block">
+              <Table>
+                <TableHeader>
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8 text-slate-500">
-                      Không có nhật ký đào tạo
-                    </TableCell>
+                    <TableHead>Ngày</TableHead>
+                    <TableHead>Giảng viên</TableHead>
+                    <TableHead>Học viên</TableHead>
+                    <TableHead>Thời lượng</TableHead>
+                    <TableHead>Nội dung</TableHead>
+                    <TableHead>Xác nhận</TableHead>
+                    <TableHead>Trạng thái</TableHead>
+                    <TableHead>Thao tác</TableHead>
                   </TableRow>
-                )}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {logs.map((log) => (
+                    <TableRow key={log.id}>
+                      <TableCell className="text-sm">{new Date(log.sessionDate).toLocaleDateString('vi-VN')}</TableCell>
+                      <TableCell>
+                        <div className="text-sm font-medium">{log.trainer.name}</div>
+                        <Badge variant="outline" className="text-xs">{log.trainer.rank}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-sm font-medium">{log.trainee.name}</div>
+                        <Badge variant="outline" className="text-xs">{log.trainee.rank}</Badge>
+                      </TableCell>
+                      <TableCell className="text-sm">{log.durationMinutes} phút</TableCell>
+                      <TableCell className="text-sm max-w-[200px] truncate">{log.content}</TableCell>
+                      <TableCell>
+                        <div className="flex gap-1">
+                          <Badge className={log.mentorConfirmed ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}>Giảng viên {log.mentorConfirmed ? '✓' : '✗'}</Badge>
+                          <Badge className={log.menteeConfirmed ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}>Học viên {log.menteeConfirmed ? '✓' : '✗'}</Badge>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge className={STATUS_STYLES[log.status] || 'bg-gray-100 text-gray-700'}>
+                          {STATUS_LABELS[log.status] || log.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {log.status === 'PENDING' && (
+                          <div className="flex gap-1">
+                            <button onClick={() => handleVerify(log.id, 'verify')} className="px-2 py-1 text-xs bg-green-100 text-green-700 rounded hover:bg-green-200">Xác nhận</button>
+                            <button onClick={() => handleVerify(log.id, 'reject')} className="px-2 py-1 text-xs bg-red-100 text-red-700 rounded hover:bg-red-200">Từ chối</button>
+                          </div>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {logs.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={8} className="text-center py-8 text-slate-500">Không có nhật ký đào tạo</TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+
+            {/* Mobile compact card */}
+            <div className="md:hidden space-y-2">
+              {logs.length === 0 ? (
+                <p className="text-center py-8 text-slate-500">Không có nhật ký đào tạo</p>
+              ) : logs.map((log) => (
+                <div key={log.id} className="rounded-lg border border-gray-200 bg-white p-3 space-y-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-xs text-gray-500">{new Date(log.sessionDate).toLocaleDateString('vi-VN')} · {log.durationMinutes} phút</span>
+                    <Badge className={STATUS_STYLES[log.status] || 'bg-gray-100 text-gray-700'}>
+                      {STATUS_LABELS[log.status] || log.status}
+                    </Badge>
+                  </div>
+                  <div className="text-sm">
+                    <div className="flex items-center gap-2">
+                      <span className="text-gray-500 text-xs w-14 shrink-0">Giảng viên:</span>
+                      <span className="font-medium text-gray-800">{log.trainer.name}</span>
+                      <Badge variant="outline" className="text-xs">{log.trainer.rank}</Badge>
+                    </div>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="text-gray-500 text-xs w-14 shrink-0">Học viên:</span>
+                      <span className="font-medium text-gray-800">{log.trainee.name}</span>
+                      <Badge variant="outline" className="text-xs">{log.trainee.rank}</Badge>
+                    </div>
+                  </div>
+                  {log.content && <p className="text-xs text-gray-600 italic line-clamp-2">{log.content}</p>}
+                  <div className="flex flex-wrap gap-1">
+                    <Badge className={log.mentorConfirmed ? 'bg-green-100 text-green-700 text-xs' : 'bg-gray-100 text-gray-500 text-xs'}>GV {log.mentorConfirmed ? '✓' : '✗'}</Badge>
+                    <Badge className={log.menteeConfirmed ? 'bg-green-100 text-green-700 text-xs' : 'bg-gray-100 text-gray-500 text-xs'}>HV {log.menteeConfirmed ? '✓' : '✗'}</Badge>
+                  </div>
+                  {log.status === 'PENDING' && (
+                    <div className="flex gap-2 pt-2 border-t">
+                      <button onClick={() => handleVerify(log.id, 'verify')} className="flex-1 px-3 py-1.5 text-xs font-medium bg-green-100 text-green-700 rounded hover:bg-green-200">Xác nhận</button>
+                      <button onClick={() => handleVerify(log.id, 'reject')} className="flex-1 px-3 py-1.5 text-xs font-medium bg-red-100 text-red-700 rounded hover:bg-red-200">Từ chối</button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
           </CardContent>
         </Card>
       )}
