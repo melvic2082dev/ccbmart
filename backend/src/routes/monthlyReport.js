@@ -52,8 +52,11 @@ router.get('/ctv/monthly-report', authorize('ctv'), validate(schemas.monthlyRepo
     const level2Ids = directIds.flatMap(id => childrenMap.get(id) || []);
     const allRelevantIds = [userId, ...directIds, ...level2Ids];
 
-    // Single batch query for all team transactions
-    const [allTeamTxns, feeReceivedInvoices, feePaidInvoices] = await Promise.all([
+    // Single batch query for all team transactions.
+    // Invoice model is one-way (CCB Mart -> user): there is no fromUserId,
+    // only toUserId. We expose all invoices issued to the user; "feePaid"
+    // remains 0 because partners do not invoice each other.
+    const [allTeamTxns, feeReceivedInvoices] = await Promise.all([
       prisma.transaction.findMany({
         where: {
           ctvId: { in: allRelevantIds },
@@ -66,10 +69,8 @@ router.get('/ctv/monthly-report', authorize('ctv'), validate(schemas.monthlyRepo
       prisma.invoice.findMany({
         where: { toUserId: userId, issuedAt: { gte: startDate, lt: endDate } },
       }),
-      prisma.invoice.findMany({
-        where: { fromUserId: userId, issuedAt: { gte: startDate, lt: endDate } },
-      }),
     ]);
+    const feePaidInvoices = [];
 
     const revenueMap = new Map();
     for (const txn of allTeamTxns) {
