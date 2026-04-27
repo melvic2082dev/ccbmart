@@ -9,6 +9,8 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { ShoppingCart, QrCode, Upload, CheckCircle, Banknote, CreditCard } from 'lucide-react';
 
+const VN_PHONE_RE = /^0\d{9}$/;
+
 export default function CtvCreateSale() {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -28,6 +30,10 @@ export default function CtvCreateSale() {
   const handleCreateTransaction = async () => {
     if (!customerName || !customerPhone) {
       setError('Vui lòng nhập tên và SĐT khách hàng');
+      return;
+    }
+    if (!VN_PHONE_RE.test(customerPhone)) {
+      setError('Số điện thoại phải có 10 chữ số và bắt đầu bằng số 0');
       return;
     }
     if (paymentMethod === 'bank_transfer' && bankCode && bankCode.length !== 4) {
@@ -107,13 +113,22 @@ export default function CtvCreateSale() {
             </div>
             <div>
               <Label>Số điện thoại *</Label>
-              <Input value={customerPhone} onChange={e => setCustomerPhone(e.target.value)} placeholder="0912345678" />
+              <Input
+                value={customerPhone}
+                onChange={e => setCustomerPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                placeholder="0912345678"
+                inputMode="numeric"
+                maxLength={10}
+              />
+              {customerPhone.length > 0 && !VN_PHONE_RE.test(customerPhone) && (
+                <p className="text-xs text-red-600 mt-1">Số điện thoại phải có 10 chữ số và bắt đầu bằng số 0</p>
+              )}
             </div>
             <div className="pt-2">
               <p className="text-sm text-slate-500 mb-2">Sản phẩm: <strong>Combo CCB Mart</strong></p>
               <p className="text-2xl font-bold text-emerald-600">{formatVND(2000000)}</p>
             </div>
-            <Button onClick={() => setStep(2)} disabled={!customerName || !customerPhone} className="w-full">
+            <Button onClick={() => setStep(2)} disabled={!customerName || !VN_PHONE_RE.test(customerPhone)} className="w-full">
               Tiếp tục
             </Button>
           </CardContent>
