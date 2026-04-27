@@ -274,7 +274,7 @@ export default function BusinessHouseholdPage() {
                   {households.length === 0 ? 'Chưa có HKD nào' : 'Không có HKD phù hợp'}
                 </p>
               ) : filtered.map((h) => (
-                <div key={h.id} className="rounded-lg border border-gray-200 bg-white p-3 space-y-2" onClick={() => openRowDetail(h.id)}>
+                <div key={h.id} className="tap-card rounded-lg border border-gray-200 bg-white p-3 space-y-2" onClick={() => openRowDetail(h.id)}>
                   {/* Row 1: HKD name + download HĐ */}
                   <div className="flex items-center justify-between gap-2">
                     <p className="font-semibold text-gray-800 truncate">{h.businessName}</p>

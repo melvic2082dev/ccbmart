@@ -5,7 +5,7 @@ import { api, formatVND, formatVNDCompact } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Calculator, Play, Eye, Download, FileText } from 'lucide-react';
+import { Calculator, Play, Eye, Download, FileText, Inbox } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const PAGE_SIZE_TAX = 10;
@@ -213,7 +213,11 @@ export default function AdminTaxPage() {
             {/* Mobile compact card */}
             <div className="md:hidden space-y-2">
               {pagedRecords.length === 0 ? (
-                <p className="text-center py-8 text-slate-500">Chưa có bản ghi thuế</p>
+                <div className="py-10 text-center text-slate-500">
+                  <Inbox className="w-8 h-8 mx-auto mb-2 text-gray-300" />
+                  <p className="font-medium text-sm">Chưa có bản ghi thuế</p>
+                  <p className="text-xs text-gray-400">Nhấn &quot;Tính thuế tháng&quot; để khởi tạo</p>
+                </div>
               ) : pagedRecords.map((r) => {
                 const pi = paymentInfo(r);
                 return (

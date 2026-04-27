@@ -503,14 +503,14 @@ export default function AdminCtvPage() {
                 </div>
 
                 {/* Mobile card list */}
-                <div className="md:hidden p-4 space-y-3">
+                <div className="md:hidden p-3 space-y-2">
                   {paged.length === 0 ? (
                     <p className="text-center text-gray-400 py-8">Không có dữ liệu phù hợp</p>
                   ) : (
                     paged.map((ctv) => (
                       <div
                         key={ctv.id}
-                        className={`rounded-lg border p-3 space-y-3 transition-colors ${
+                        className={`rounded-lg border p-3 space-y-2 transition-colors ${
                           selectedIds.has(ctv.id) ? 'border-emerald-300 bg-emerald-50/60' : 'border-gray-200 bg-white'
                         }`}
                       >

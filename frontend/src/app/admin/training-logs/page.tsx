@@ -5,7 +5,7 @@ import { api } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { ClipboardCheck, GraduationCap } from 'lucide-react';
+import { ClipboardCheck, GraduationCap, Inbox } from 'lucide-react';
 
 const REQUIRED_HOURS_PER_MONTH = 20;
 
@@ -235,7 +235,11 @@ export default function TrainingLogsPage() {
             {/* Mobile compact card */}
             <div className="md:hidden space-y-2">
               {logs.length === 0 ? (
-                <p className="text-center py-8 text-slate-500">Không có nhật ký đào tạo</p>
+                <div className="py-10 text-center text-slate-500">
+                  <Inbox className="w-8 h-8 mx-auto mb-2 text-gray-300" />
+                  <p className="font-medium text-sm">Không có nhật ký đào tạo</p>
+                  <p className="text-xs text-gray-400">Chưa có log nào ở trạng thái này</p>
+                </div>
               ) : logs.map((log) => (
                 <div key={log.id} className="rounded-lg border border-gray-200 bg-white p-3 space-y-2">
                   <div className="flex items-center justify-between gap-2">

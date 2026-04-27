@@ -287,6 +287,25 @@
   }
 }
 
+/* Tap feedback for clickable list cards — subtle press scale + bg shift.
+   Use .tap-card on mobile cards that have an onClick handler. */
+.tap-card {
+  transition: transform 120ms ease-out, background-color 120ms ease-out;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.tap-card:active {
+  transform: scale(0.985);
+  background-color: var(--muted);
+}
+
+/* Currency alignment: any .font-mono span carries tabular-nums by default so
+   columns of Vietnamese đồng line up vertically (no more jumping commas
+   between rows of "1.000.000đ" and "100.000.000đ"). */
+.font-mono {
+  font-variant-numeric: tabular-nums;
+}
+
 /* Mobile (< md): auto-stack shadcn Table cells into card-style rows so users
    never have to scroll horizontally. Column headers (from <th>) are mirrored
    into each <td> via data-label (injected at runtime by the Table component)

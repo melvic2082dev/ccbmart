@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { FileText, Play, Search, Download } from 'lucide-react';
+import { FileText, Play, Search, Download, Inbox } from 'lucide-react';
 
 const PAGE_SIZE = 15;
 
@@ -255,7 +255,11 @@ export default function AdminInvoicesPage() {
             {/* Mobile compact card */}
             <div className="md:hidden p-3 space-y-2">
               {paged.length === 0 ? (
-                <p className="text-center py-8 text-slate-500">Không có hóa đơn phù hợp</p>
+                <div className="py-10 text-center text-slate-500">
+                  <Inbox className="w-8 h-8 mx-auto mb-2 text-gray-300" />
+                  <p className="font-medium text-sm">Không có hóa đơn phù hợp</p>
+                  <p className="text-xs text-gray-400">Thử đổi bộ lọc hoặc tháng</p>
+                </div>
               ) : paged.map((inv) => (
                 <div key={inv.id} className="rounded-lg border border-gray-200 bg-white p-3 space-y-2">
                   <div className="flex items-center justify-between gap-2">
