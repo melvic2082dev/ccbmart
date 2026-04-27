@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { api, formatVND } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -26,6 +26,11 @@ export default function CtvCreateSale() {
   const [result, setResult] = useState<any>(null);
   const [proofFile, setProofFile] = useState<File | null>(null);
   const [uploadSuccess, setUploadSuccess] = useState(false);
+
+  const [comboPrice, setComboPrice] = useState<number | null>(null);
+  useEffect(() => {
+    api.appConfig().then(c => setComboPrice(c.comboPrice)).catch(() => setComboPrice(2000000));
+  }, []);
 
   const handleCreateTransaction = async () => {
     if (!customerName || !customerPhone) {
@@ -126,7 +131,9 @@ export default function CtvCreateSale() {
             </div>
             <div className="pt-2">
               <p className="text-sm text-slate-500 mb-2">Sản phẩm: <strong>Combo CCB Mart</strong></p>
-              <p className="text-2xl font-bold text-emerald-600">{formatVND(2000000)}</p>
+              <p className="text-2xl font-bold text-emerald-600">
+                {comboPrice == null ? <span className="inline-block h-7 w-32 bg-slate-200 animate-pulse rounded" /> : formatVND(comboPrice)}
+              </p>
             </div>
             <Button onClick={() => setStep(2)} disabled={!customerName || !VN_PHONE_RE.test(customerPhone)} className="w-full">
               Tiếp tục

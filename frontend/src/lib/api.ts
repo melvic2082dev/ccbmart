@@ -53,6 +53,8 @@ export const api = {
     fetchAPI('/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) }),
   me: () => fetchAPI('/auth/me'),
 
+  appConfig: (): Promise<{ comboPrice: number }> => fetchAPI('/config'),
+
   // CTV
   ctvDashboard: () => fetchAPI('/ctv/dashboard'),
   ctvTree: () => fetchAPI('/ctv/tree'),
