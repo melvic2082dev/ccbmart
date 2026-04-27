@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react'
 import { api, formatVND } from '@/lib/api'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
 import {
   Table,
   TableBody,
@@ -18,7 +17,6 @@ interface Product {
   name: string
   price: number
   unit: string
-  cogsPercent: number
   category: string
 }
 
@@ -32,12 +30,6 @@ const CATEGORY_LABELS: Record<string, string> = {
 }
 
 const CATEGORY_ORDER = ['NS', 'TPCN', 'FMCG', 'GiaVi', 'CheBien', 'TienLoi']
-
-function cogsBadgeVariant(pct: number): 'default' | 'secondary' | 'destructive' | 'outline' {
-  if (pct >= 80) return 'destructive'
-  if (pct >= 60) return 'default'
-  return 'secondary'
-}
 
 export default function CtvProductsPage() {
   const [grouped, setGrouped] = useState<Record<string, Product[]>>({})
@@ -91,25 +83,17 @@ export default function CtvProductsPage() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Tên sản phẩm</TableHead>
-                        <TableHead>Giá bán</TableHead>
-                        <TableHead>Đơn vị</TableHead>
-                        <TableHead>COGS%</TableHead>
+                        <TableHead className="w-[55%]">Tên sản phẩm</TableHead>
+                        <TableHead className="text-right">Giá bán</TableHead>
+                        <TableHead className="text-right pr-6">Đơn vị</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {grouped[cat].map((product) => (
                         <TableRow key={product.id}>
                           <TableCell className="font-medium">{product.name}</TableCell>
-                          <TableCell>{formatVND(product.price)}</TableCell>
-                          <TableCell>{product.unit}</TableCell>
-                          <TableCell>
-                            <Badge variant={cogsBadgeVariant(product.cogsPercent)}>
-                              {product.cogsPercent != null
-                                ? `${product.cogsPercent.toFixed(1)}%`
-                                : '—'}
-                            </Badge>
-                          </TableCell>
+                          <TableCell className="text-right">{formatVND(product.price)}</TableCell>
+                          <TableCell className="text-right pr-6 text-muted-foreground">{product.unit}</TableCell>
                         </TableRow>
                       ))}
                     </TableBody>

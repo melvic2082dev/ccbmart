@@ -267,10 +267,13 @@ router.get('/breakaway-fees', validate(schemas.monthQuery, 'query'), async (req,
   }
 });
 
-// Products
+// Products — never expose cogsPct (business-secret; admin-only).
 router.get('/products', async (req, res) => {
   try {
-    const products = await prisma.product.findMany({ orderBy: { category: 'asc' } });
+    const products = await prisma.product.findMany({
+      select: { id: true, name: true, category: true, price: true, unit: true },
+      orderBy: { category: 'asc' },
+    });
     res.json(products);
   } catch (err) {
     console.error('[ctv]', err); res.status(500).json({ error: 'Internal server error' });
