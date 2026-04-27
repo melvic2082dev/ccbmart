@@ -37,31 +37,50 @@ interface DashboardData {
 }
 
 interface TreeMember {
+  id?: number
   name: string
   rank: string
-  transactions: number
+  selfCombos?: number
+  teamCombos?: number
   children?: TreeMember[]
 }
 
 const TITLE_LABELS: Record<string, string> = {
-  EXPERT_LEADER: 'Chuyen gia Dan dat',
-  SENIOR_EXPERT: 'Chuyen gia Cap cao',
-  STRATEGIC_ADVISOR: 'Co van Chien luoc',
+  EXPERT_LEADER: 'Chuyên gia Dẫn dắt',
+  SENIOR_EXPERT: 'Chuyên gia Cấp cao',
+  STRATEGIC_ADVISOR: 'Cố vấn Chiến lược',
 };
 
-function TreeNode({ member, depth = 0 }: { member: TreeMember; depth?: number }) {
+function TreeNode({ member, depth = 0, defaultOpen = true }: { member: TreeMember; depth?: number; defaultOpen?: boolean }) {
+  const [open, setOpen] = useState(defaultOpen)
+  const hasChildren = !!(member.children && member.children.length > 0)
+  const self = member.selfCombos ?? 0
+  const team = member.teamCombos ?? self
   return (
-    <li className={`ml-${depth > 0 ? 4 : 0}`}>
+    <li>
       <div className="flex items-center gap-2 py-1.5 px-2 rounded-md hover:bg-emerald-50 transition-colors">
-        <span className="w-2 h-2 rounded-full bg-emerald-400 flex-shrink-0" />
+        {hasChildren ? (
+          <button
+            onClick={() => setOpen(o => !o)}
+            className="w-4 h-4 flex items-center justify-center text-emerald-600 hover:text-emerald-800"
+            aria-label={open ? 'Thu gọn' : 'Mở rộng'}
+          >
+            {open ? '▾' : '▸'}
+          </button>
+        ) : (
+          <span className="w-4 h-4 inline-flex items-center justify-center">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+          </span>
+        )}
         <span className="font-medium text-gray-800">{member.name}</span>
         <Badge className="bg-emerald-100 text-emerald-700 text-xs px-1.5 py-0">{member.rank}</Badge>
-        <span className="text-xs text-gray-500 ml-auto">{member.transactions} giao dich</span>
+        <span className="text-xs font-mono text-gray-600">{self}/({team})</span>
+        <span className="text-[10px] text-gray-400">cá nhân/nhánh</span>
       </div>
-      {member.children && member.children.length > 0 && (
-        <ul className="border-l-2 border-emerald-100 ml-3 pl-2 mt-0.5 space-y-0.5">
-          {member.children.map((child, idx) => (
-            <TreeNode key={idx} member={child} depth={depth + 1} />
+      {hasChildren && open && (
+        <ul className="border-l-2 border-emerald-100 ml-5 pl-2 mt-0.5 space-y-0.5">
+          {member.children!.map((child, idx) => (
+            <TreeNode key={child.id ?? idx} member={child} depth={depth + 1} defaultOpen={defaultOpen} />
           ))}
         </ul>
       )}
@@ -71,10 +90,12 @@ function TreeNode({ member, depth = 0 }: { member: TreeMember; depth?: number })
 
 export default function CTVDashboardPage() {
   const [data, setData] = useState<DashboardData | null>(null)
-  const [tree, setTree] = useState<TreeMember[]>([])
+  const [treeRoot, setTreeRoot] = useState<TreeMember | null>(null)
   const [loading, setLoading] = useState(true)
   const [treeLoading, setTreeLoading] = useState(true)
   const [updatedAt, setUpdatedAt] = useState<Date | null>(null)
+  const [treeKey, setTreeKey] = useState(0)
+  const [defaultOpen, setDefaultOpen] = useState(true)
 
   useEffect(() => {
     async function fetchData() {
@@ -92,8 +113,7 @@ export default function CTVDashboardPage() {
     async function fetchTree() {
       try {
         const result = await api.ctvTree()
-        // API returns root node (the user themselves); show only their team
-        setTree(Array.isArray(result) ? result : (result?.children || []))
+        setTreeRoot(result && typeof result === 'object' ? result : null)
       } catch (err) {
         console.error('Failed to fetch CTV tree:', err)
       } finally {
@@ -107,11 +127,16 @@ export default function CTVDashboardPage() {
     return () => clearInterval(interval)
   }, [])
 
+  const toggleAll = (open: boolean) => {
+    setDefaultOpen(open)
+    setTreeKey(k => k + 1) // force re-mount so all TreeNode reset their open state
+  }
+
   return (
     <>
       <div className="space-y-6">
         <div className="flex items-center justify-between flex-wrap gap-2">
-          <h1 className="text-2xl font-bold text-gray-900">Dashboard CTV</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Bảng điều khiển CTV</h1>
           <div className="flex items-center gap-2">
             {updatedAt && (
               <p className="text-xs text-gray-500 flex items-center gap-1">
@@ -122,7 +147,7 @@ export default function CTVDashboardPage() {
             {data?.promotionStatus && (
               <Badge className="bg-amber-500 text-white text-sm px-3 py-1">
                 <ArrowUpCircle className="w-4 h-4 mr-1 inline" />
-                Du dieu kien bo nhiem {data.promotionStatus.targetRank}
+                Đủ điều kiện bổ nhiệm {data.promotionStatus.targetRank}
               </Badge>
             )}
             {data?.professionalTitle?.isActive && (
@@ -157,7 +182,7 @@ export default function CTVDashboardPage() {
               <CardContent className="p-4">
                 <div className="flex items-center gap-2 text-emerald-600 mb-1">
                   <Wallet className="w-4 h-4" />
-                  <span className="text-xs font-medium uppercase tracking-wide">Doanh thu thang</span>
+                  <span className="text-xs font-medium uppercase tracking-wide">Doanh thu tháng</span>
                 </div>
                 <p className="text-xl font-bold text-gray-900">{formatVND(data.currentRevenue)}</p>
               </CardContent>
@@ -167,7 +192,7 @@ export default function CTVDashboardPage() {
               <CardContent className="p-4">
                 <div className="flex items-center gap-2 text-emerald-600 mb-1">
                   <ShoppingCart className="w-4 h-4" />
-                  <span className="text-xs font-medium uppercase tracking-wide">Combo da ban</span>
+                  <span className="text-xs font-medium uppercase tracking-wide">Combo đã bán</span>
                 </div>
                 <p className="text-xl font-bold text-gray-900">{data.currentCombos}</p>
               </CardContent>
@@ -177,7 +202,7 @@ export default function CTVDashboardPage() {
               <CardContent className="p-4">
                 <div className="flex items-center gap-2 text-emerald-600 mb-1">
                   <TrendingUp className="w-4 h-4" />
-                  <span className="text-xs font-medium uppercase tracking-wide">Tang truong</span>
+                  <span className="text-xs font-medium uppercase tracking-wide">Tăng trưởng</span>
                 </div>
                 <p className="text-xl font-bold text-gray-900">
                   {data.revenueGrowth >= 0 ? '+' : ''}{data.revenueGrowth}%
@@ -189,7 +214,7 @@ export default function CTVDashboardPage() {
               <CardContent className="p-4">
                 <div className="flex items-center gap-2 text-emerald-600 mb-1">
                   <Users className="w-4 h-4" />
-                  <span className="text-xs font-medium uppercase tracking-wide">Khach hang</span>
+                  <span className="text-xs font-medium uppercase tracking-wide">Khách hàng</span>
                 </div>
                 <p className="text-xl font-bold text-gray-900">{data.totalCustomers}</p>
               </CardContent>
@@ -199,7 +224,7 @@ export default function CTVDashboardPage() {
               <CardContent className="p-4">
                 <div className="flex items-center gap-2 text-emerald-600 mb-1">
                   <Users className="w-4 h-4" />
-                  <span className="text-xs font-medium uppercase tracking-wide">Thanh vien truc tiep</span>
+                  <span className="text-xs font-medium uppercase tracking-wide">Thành viên trực tiếp</span>
                 </div>
                 <p className="text-xl font-bold text-gray-900">{data.teamSize}</p>
               </CardContent>
@@ -209,7 +234,7 @@ export default function CTVDashboardPage() {
               <CardContent className="p-4">
                 <div className="flex items-center gap-2 text-amber-600 mb-1">
                   <Gift className="w-4 h-4" />
-                  <span className="text-xs font-medium uppercase tracking-wide">Diem thuong dan dat</span>
+                  <span className="text-xs font-medium uppercase tracking-wide">Điểm thưởng dẫn dắt</span>
                 </div>
                 <p className="text-xl font-bold text-gray-900">{(data.loyaltyPoints || 0).toLocaleString('vi-VN')}</p>
               </CardContent>
@@ -220,11 +245,11 @@ export default function CTVDashboardPage() {
                 <CardContent className="p-4">
                   <div className="flex items-center gap-2 text-purple-600 mb-1">
                     <Gift className="w-4 h-4" />
-                    <span className="text-xs font-medium uppercase tracking-wide">Thuong dan dat</span>
+                    <span className="text-xs font-medium uppercase tracking-wide">Thưởng dẫn dắt</span>
                   </div>
                   <p className="text-xl font-bold text-gray-900">{formatVND(data.teamBonus.bonusAmount)}</p>
                   <Badge className={`mt-1 text-xs ${data.teamBonus.status === 'PAID' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
-                    {data.teamBonus.status === 'PAID' ? 'Da tra' : 'Cho xu ly'}
+                    {data.teamBonus.status === 'PAID' ? 'Đã trả' : 'Chờ xử lý'}
                   </Badge>
                 </CardContent>
               </Card>
@@ -235,7 +260,7 @@ export default function CTVDashboardPage() {
         {data && (
           <Card className="border-emerald-100 shadow-sm">
             <CardHeader>
-              <CardTitle className="text-gray-800">Doanh thu theo thang</CardTitle>
+              <CardTitle className="text-gray-800">Doanh thu theo tháng</CardTitle>
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={280}>
@@ -261,32 +286,32 @@ export default function CTVDashboardPage() {
         {data && (
           <Card className="border-emerald-100 shadow-sm">
             <CardHeader>
-              <CardTitle className="text-gray-800">Chi tiet hoa hong</CardTitle>
+              <CardTitle className="text-gray-800">Chi tiết hoa hồng</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                 <div className="bg-emerald-50 rounded-lg p-3">
-                  <p className="text-xs text-emerald-600 font-medium mb-1">Hoa hong ca nhan</p>
+                  <p className="text-xs text-emerald-600 font-medium mb-1">Hoa hồng cá nhân</p>
                   <p className="text-base font-bold text-gray-900">{formatVND(data.commission.selfCommission)}</p>
                 </div>
                 <div className="bg-emerald-50 rounded-lg p-3">
-                  <p className="text-xs text-emerald-600 font-medium mb-1">HH truc tiep</p>
+                  <p className="text-xs text-emerald-600 font-medium mb-1">HH trực tiếp</p>
                   <p className="text-base font-bold text-gray-900">{formatVND(data.commission.directCommission)}</p>
                 </div>
                 <div className="bg-emerald-50 rounded-lg p-3">
-                  <p className="text-xs text-emerald-600 font-medium mb-1">HH gian tiep cap 2</p>
+                  <p className="text-xs text-emerald-600 font-medium mb-1">HH gián tiếp cấp 2</p>
                   <p className="text-base font-bold text-gray-900">{formatVND(data.commission.indirect2Commission)}</p>
                 </div>
                 <div className="bg-emerald-50 rounded-lg p-3">
-                  <p className="text-xs text-emerald-600 font-medium mb-1">HH gian tiep cap 3</p>
+                  <p className="text-xs text-emerald-600 font-medium mb-1">HH gián tiếp cấp 3</p>
                   <p className="text-base font-bold text-gray-900">{formatVND(data.commission.indirect3Commission)}</p>
                 </div>
                 <div className="bg-emerald-50 rounded-lg p-3">
-                  <p className="text-xs text-emerald-600 font-medium mb-1">Luong cung</p>
+                  <p className="text-xs text-emerald-600 font-medium mb-1">Lương cứng</p>
                   <p className="text-base font-bold text-gray-900">{formatVND(data.commission.fixedSalary)}</p>
                 </div>
                 <div className="bg-emerald-600 rounded-lg p-3">
-                  <p className="text-xs text-emerald-100 font-medium mb-1">Tong thu nhap</p>
+                  <p className="text-xs text-emerald-100 font-medium mb-1">Tổng thu nhập</p>
                   <p className="text-base font-bold text-white">{formatVND(data.commission.totalIncome)}</p>
                 </div>
               </div>
@@ -295,8 +320,18 @@ export default function CTVDashboardPage() {
         )}
 
         <Card className="border-emerald-100 shadow-sm">
-          <CardHeader>
-            <CardTitle className="text-gray-800">Cay quan ly doi nhom</CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between flex-wrap gap-2">
+            <CardTitle className="text-gray-800">Cây quản lý đội nhóm</CardTitle>
+            {treeRoot && (
+              <div className="flex items-center gap-2 text-xs">
+                <button onClick={() => toggleAll(true)} className="px-2 py-1 rounded border border-emerald-200 text-emerald-700 hover:bg-emerald-50">
+                  Mở rộng tất cả
+                </button>
+                <button onClick={() => toggleAll(false)} className="px-2 py-1 rounded border border-gray-200 text-gray-600 hover:bg-gray-50">
+                  Thu gọn tất cả
+                </button>
+              </div>
+            )}
           </CardHeader>
           <CardContent>
             {treeLoading ? (
@@ -305,13 +340,11 @@ export default function CTVDashboardPage() {
                   <div key={i} className="h-8 bg-gray-100 rounded animate-pulse" />
                 ))}
               </div>
-            ) : tree.length === 0 ? (
-              <p className="text-gray-500 text-sm text-center py-6">Chua co thanh vien trong doi nhom</p>
+            ) : !treeRoot ? (
+              <p className="text-gray-500 text-sm text-center py-6">Chưa có thành viên trong đội nhóm</p>
             ) : (
-              <ul className="space-y-1">
-                {tree.map((member, idx) => (
-                  <TreeNode key={idx} member={member} />
-                ))}
+              <ul key={treeKey} className="space-y-1">
+                <TreeNode member={treeRoot} defaultOpen={defaultOpen} />
               </ul>
             )}
           </CardContent>

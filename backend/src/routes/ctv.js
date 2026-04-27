@@ -111,29 +111,33 @@ router.get('/dashboard', async (req, res) => {
   }
 });
 
-// Management tree (optimized - single query + in-memory build)
+// Each node carries selfCombos (this user's CONFIRMED ctv transactions in
+// the current month) and teamCombos (selfCombos summed over the user + all
+// descendants). Tree depth capped at 4 below the requesting user for
+// readability; the team count is computed over the full tree.
 router.get('/tree', async (req, res) => {
   try {
     const userId = req.user.id;
-    const cacheKey = `ctv:tree:${userId}`;
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const monthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    const cacheKey = `ctv:tree:${userId}:${monthKey}`;
 
     const tree = await getCachedOrCompute(cacheKey, 300, async () => {
-      // Get all CTVs and transactions in one go
-      const [allCtv, allTxnCounts] = await Promise.all([
+      const [allCtv, monthTxnCounts] = await Promise.all([
         prisma.user.findMany({
           where: { role: 'ctv', isActive: true },
           select: { id: true, name: true, rank: true, email: true, phone: true, parentId: true },
         }),
         prisma.transaction.groupBy({
           by: ['ctvId'],
-          where: { channel: 'ctv' },
+          where: { channel: 'ctv', status: 'CONFIRMED', createdAt: { gte: startOfMonth } },
           _count: { id: true },
         }),
       ]);
 
-      const txnCountMap = new Map(allTxnCounts.map(t => [t.ctvId, t._count.id]));
+      const selfCombosMap = new Map(monthTxnCounts.map(t => [t.ctvId, t._count.id]));
 
-      // Build tree in memory
       const childrenMap = new Map();
       const nodeMap = new Map();
       for (const ctv of allCtv) {
@@ -144,8 +148,17 @@ router.get('/tree', async (req, res) => {
         }
       }
 
+      const teamCombosMap = new Map();
+      function computeTeam(id) {
+        if (teamCombosMap.has(id)) return teamCombosMap.get(id);
+        let total = selfCombosMap.get(id) || 0;
+        for (const childId of (childrenMap.get(id) || [])) total += computeTeam(childId);
+        teamCombosMap.set(id, total);
+        return total;
+      }
+
       function buildSubtree(id, depth = 0) {
-        if (depth > 3) return [];
+        if (depth > 4) return [];
         const childIds = childrenMap.get(id) || [];
         return childIds.map(childId => {
           const child = nodeMap.get(childId);
@@ -155,7 +168,8 @@ router.get('/tree', async (req, res) => {
             rank: child.rank,
             email: child.email,
             phone: child.phone,
-            transactions: txnCountMap.get(child.id) || 0,
+            selfCombos: selfCombosMap.get(child.id) || 0,
+            teamCombos: computeTeam(child.id),
             children: buildSubtree(child.id, depth + 1),
           };
         });
@@ -167,6 +181,8 @@ router.get('/tree', async (req, res) => {
         name: user?.name,
         rank: user?.rank,
         email: user?.email,
+        selfCombos: selfCombosMap.get(userId) || 0,
+        teamCombos: computeTeam(userId),
         children: buildSubtree(userId),
       };
     });
