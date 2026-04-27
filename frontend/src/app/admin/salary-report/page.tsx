@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { api, formatVND } from '@/lib/api'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { AlertCircle, AlertTriangle, CheckCircle, ArrowLeft } from 'lucide-react'
 
 interface SalaryFundManager {
@@ -154,74 +155,67 @@ export default function SalaryReportPage() {
                 <CardTitle className="text-gray-800">Danh sách quản lý nhận lương cứng</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b border-emerald-100">
-                        <th className="text-left py-2 px-3 font-semibold text-gray-600">#</th>
-                        <th className="text-left py-2 px-3 font-semibold text-gray-600">Tên</th>
-                        <th className="text-left py-2 px-3 font-semibold text-gray-600">Cấp bậc</th>
-                        <th className="text-right py-2 px-3 font-semibold text-gray-600">Lương cứng</th>
-                        <th className="text-right py-2 px-3 font-semibold text-gray-600">% ngưỡng</th>
-                        <th className="text-center py-2 px-3 font-semibold text-gray-600">Trạng thái</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {sortedManagers.length === 0 ? (
-                        <tr>
-                          <td colSpan={6} className="py-6 text-center text-gray-500">
-                            Chưa có quản lý nào nhận lương cứng trong kỳ này.
-                          </td>
-                        </tr>
-                      ) : (
-                        sortedManagers.map((m, idx) => {
-                          const pct = salaryFundCap > 0 ? (m.salary / salaryFundCap) * 100 : 0
-                          const status = managerStatus(overallPct)
-                          return (
-                            <tr
-                              key={idx}
-                              className={`border-b border-gray-50 hover:bg-emerald-50 transition-colors ${
-                                idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'
-                              }`}
-                            >
-                              <td className="py-2.5 px-3 text-gray-500">{idx + 1}</td>
-                              <td className="py-2.5 px-3 font-medium text-gray-800">{m.name}</td>
-                              <td className="py-2.5 px-3">
-                                <Badge className="bg-emerald-100 text-emerald-700 text-xs px-1.5 py-0">
-                                  {RANK_LABEL[m.rank] ?? m.rank}
-                                </Badge>
-                              </td>
-                              <td className="py-2.5 px-3 text-right font-semibold text-gray-900">
-                                {formatVND(m.salary)}
-                              </td>
-                              <td className="py-2.5 px-3 text-right text-gray-700">{pct.toFixed(1)}%</td>
-                              <td className="py-2.5 px-3 text-center">
-                                <Badge className={`${status.badge} inline-flex items-center gap-1`}>
-                                  {status.icon}
-                                  {status.label}
-                                </Badge>
-                              </td>
-                            </tr>
-                          )
-                        })
-                      )}
-                      {sortedManagers.length > 0 && (
-                        <tr className="bg-emerald-50 font-semibold">
-                          <td className="py-2.5 px-3 text-emerald-800" colSpan={3}>
-                            Tổng cộng ({sortedManagers.length} người)
-                          </td>
-                          <td className="py-2.5 px-3 text-right text-emerald-800">
-                            {formatVND(totalFixedSalary)}
-                          </td>
-                          <td className="py-2.5 px-3 text-right text-emerald-700">
-                            {overallPct.toFixed(1)}%
-                          </td>
-                          <td className="py-2.5 px-3" />
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>#</TableHead>
+                      <TableHead>Tên</TableHead>
+                      <TableHead>Cấp bậc</TableHead>
+                      <TableHead className="text-right">Lương cứng</TableHead>
+                      <TableHead className="text-right">% ngưỡng</TableHead>
+                      <TableHead className="text-center">Trạng thái</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {sortedManagers.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={6} className="py-6 text-center text-gray-500">
+                          Chưa có quản lý nào nhận lương cứng trong kỳ này.
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      sortedManagers.map((m, idx) => {
+                        const pct = salaryFundCap > 0 ? (m.salary / salaryFundCap) * 100 : 0
+                        const status = managerStatus(overallPct)
+                        return (
+                          <TableRow key={idx} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}>
+                            <TableCell className="text-gray-500">{idx + 1}</TableCell>
+                            <TableCell className="font-medium text-gray-800">{m.name}</TableCell>
+                            <TableCell>
+                              <Badge className="bg-emerald-100 text-emerald-700 text-xs px-1.5 py-0">
+                                {RANK_LABEL[m.rank] ?? m.rank}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-right font-semibold text-gray-900">
+                              {formatVND(m.salary)}
+                            </TableCell>
+                            <TableCell className="text-right text-gray-700">{pct.toFixed(1)}%</TableCell>
+                            <TableCell className="text-center">
+                              <Badge className={`${status.badge} inline-flex items-center gap-1`}>
+                                {status.icon}
+                                {status.label}
+                              </Badge>
+                            </TableCell>
+                          </TableRow>
+                        )
+                      })
+                    )}
+                    {sortedManagers.length > 0 && (
+                      <TableRow className="bg-emerald-50 font-semibold">
+                        <TableCell className="text-emerald-800" colSpan={3}>
+                          Tổng cộng ({sortedManagers.length} người)
+                        </TableCell>
+                        <TableCell className="text-right text-emerald-800">
+                          {formatVND(totalFixedSalary)}
+                        </TableCell>
+                        <TableCell className="text-right text-emerald-700">
+                          {overallPct.toFixed(1)}%
+                        </TableCell>
+                        <TableCell />
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
               </CardContent>
             </Card>
           </>

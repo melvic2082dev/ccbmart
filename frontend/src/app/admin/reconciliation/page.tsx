@@ -11,6 +11,16 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Skeleton } from '@/components/ui/skeleton';
 import { ClipboardCheck, Banknote, CreditCard, CheckCircle, XCircle, Eye } from 'lucide-react';
 
+function paymentMethodLabel(method?: string) {
+  switch (method) {
+    case 'bank_transfer': return 'Chuyển khoản';
+    case 'cash': return 'Tiền mặt';
+    case 'momo': return 'Momo';
+    case 'zalopay': return 'ZaloPay';
+    default: return method || '—';
+  }
+}
+
 export default function AdminReconciliation() {
   const [tab, setTab] = useState<'pending' | 'cash'>('pending');
   const [filter, setFilter] = useState('');
@@ -77,7 +87,7 @@ export default function AdminReconciliation() {
       )}
 
       {/* Tabs */}
-      <div className="flex gap-2 mb-4">
+      <div className="flex flex-wrap gap-2 mb-4">
         <Button variant={tab === 'pending' ? 'default' : 'outline'} onClick={() => setTab('pending')}>
           <CreditCard size={16} className="mr-1" /> Giao dịch ({transactions.length})
         </Button>
@@ -88,7 +98,7 @@ export default function AdminReconciliation() {
 
       {/* Filter */}
       {tab === 'pending' && (
-        <div className="flex gap-2 mb-4">
+        <div className="flex flex-wrap gap-2 mb-4">
           <Button variant={!filter ? 'secondary' : 'outline'} size="sm" onClick={() => setFilter('')}>Tất cả</Button>
           <Button variant={filter === 'bank_transfer' ? 'secondary' : 'outline'} size="sm" onClick={() => setFilter('bank_transfer')}>Chuyển khoản</Button>
           <Button variant={filter === 'cash' ? 'secondary' : 'outline'} size="sm" onClick={() => setFilter('cash')}>Tiền mặt</Button>
@@ -100,67 +110,117 @@ export default function AdminReconciliation() {
       {loading ? (
         <div className="space-y-3">{[1, 2, 3].map(i => <Skeleton key={i} className="h-16" />)}</div>
       ) : tab === 'pending' ? (
-        /* Pending transactions table */
+        /* Pending transactions */
         transactions.length === 0 ? (
           <Card><CardContent className="py-12 text-center text-slate-500">Không có giao dịch chờ duyệt</CardContent></Card>
         ) : (
-          <Card>
-            <CardContent className="overflow-x-auto p-0">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>ID</TableHead>
-                    <TableHead>CTV</TableHead>
-                    <TableHead>Khách hàng</TableHead>
-                    <TableHead className="text-right">Số tiền</TableHead>
-                    <TableHead>Phương thức</TableHead>
-                    <TableHead>Ngân hàng</TableHead>
-                    <TableHead>Thời gian</TableHead>
-                    <TableHead>Chứng từ</TableHead>
-                    <TableHead>Hành động</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {transactions.map(tx => (
-                    <TableRow key={tx.id}>
-                      <TableCell className="font-mono">#{tx.id}</TableCell>
-                      <TableCell>{tx.ctv?.name}</TableCell>
-                      <TableCell>{tx.customer?.name || '—'}</TableCell>
-                      <TableCell className="text-right font-semibold">{formatVND(tx.totalAmount)}</TableCell>
-                      <TableCell>
-                        <Badge variant={tx.paymentMethod === 'bank_transfer' ? 'default' : 'secondary'}>
-                          {tx.paymentMethod === 'bank_transfer' ? 'Chuyển khoản'
-                            : tx.paymentMethod === 'cash' ? 'Tiền mặt'
-                            : tx.paymentMethod === 'momo' ? 'Momo'
-                            : tx.paymentMethod === 'zalopay' ? 'ZaloPay'
-                            : tx.paymentMethod || '—'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="font-mono">{tx.bankCode || '—'}</TableCell>
-                      <TableCell className="text-xs">{new Date(tx.createdAt).toLocaleString('vi-VN')}</TableCell>
-                      <TableCell>
-                        {tx.paymentProof ? (
-                          <Button variant="ghost" size="sm" title="Xem chứng từ" onClick={() => setViewProof(`http://localhost:4000${tx.paymentProof.imageUrl}`)}>
-                            <Eye size={14} />
-                          </Button>
-                        ) : '—'}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex gap-1">
-                          <Button size="sm" onClick={() => handleConfirm(tx.id)} disabled={actionLoadingId === tx.id}>
-                            <CheckCircle size={14} className="mr-1" /> Duyệt
-                          </Button>
-                          <Button size="sm" variant="destructive" title="Từ chối" onClick={() => { setRejectId(tx.id); setRejectReason(''); }}>
-                            <XCircle size={14} />
-                          </Button>
-                        </div>
-                      </TableCell>
+          <>
+            {/* Desktop table */}
+            <Card className="hidden md:block">
+              <CardContent className="overflow-x-auto p-0">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>ID</TableHead>
+                      <TableHead>CTV</TableHead>
+                      <TableHead>Khách hàng</TableHead>
+                      <TableHead className="text-right">Số tiền</TableHead>
+                      <TableHead>Phương thức</TableHead>
+                      <TableHead>Ngân hàng</TableHead>
+                      <TableHead>Thời gian</TableHead>
+                      <TableHead>Chứng từ</TableHead>
+                      <TableHead>Hành động</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
+                  </TableHeader>
+                  <TableBody>
+                    {transactions.map(tx => (
+                      <TableRow key={tx.id}>
+                        <TableCell className="font-mono">#{tx.id}</TableCell>
+                        <TableCell>{tx.ctv?.name}</TableCell>
+                        <TableCell>{tx.customer?.name || '—'}</TableCell>
+                        <TableCell className="text-right font-semibold">{formatVND(tx.totalAmount)}</TableCell>
+                        <TableCell>
+                          <Badge variant={tx.paymentMethod === 'bank_transfer' ? 'default' : 'secondary'}>
+                            {paymentMethodLabel(tx.paymentMethod)}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="font-mono">{tx.bankCode || '—'}</TableCell>
+                        <TableCell className="text-xs">{new Date(tx.createdAt).toLocaleString('vi-VN')}</TableCell>
+                        <TableCell>
+                          {tx.paymentProof ? (
+                            <Button variant="ghost" size="sm" title="Xem chứng từ" onClick={() => setViewProof(`http://localhost:4000${tx.paymentProof.imageUrl}`)}>
+                              <Eye size={14} />
+                            </Button>
+                          ) : '—'}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex gap-1">
+                            <Button size="sm" onClick={() => handleConfirm(tx.id)} disabled={actionLoadingId === tx.id}>
+                              <CheckCircle size={14} className="mr-1" /> Duyệt
+                            </Button>
+                            <Button size="sm" variant="destructive" title="Từ chối" onClick={() => { setRejectId(tx.id); setRejectReason(''); }}>
+                              <XCircle size={14} />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+
+            {/* Mobile card list */}
+            <div className="md:hidden space-y-3">
+              {transactions.map(tx => (
+                <Card key={tx.id}>
+                  <CardContent className="p-4 space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-mono font-semibold">#{tx.id}</span>
+                      <Badge variant={tx.paymentMethod === 'bank_transfer' ? 'default' : 'secondary'}>
+                        {paymentMethodLabel(tx.paymentMethod)}
+                      </Badge>
+                    </div>
+                    <div className="flex justify-between gap-2 text-sm">
+                      <span className="text-slate-500 shrink-0">CTV:</span>
+                      <span className="font-medium text-right">{tx.ctv?.name}</span>
+                    </div>
+                    <div className="flex justify-between gap-2 text-sm">
+                      <span className="text-slate-500 shrink-0">Khách hàng:</span>
+                      <span className="text-right">{tx.customer?.name || '—'}</span>
+                    </div>
+                    <div className="flex justify-between gap-2 text-sm">
+                      <span className="text-slate-500 shrink-0">Số tiền:</span>
+                      <span className="font-bold text-emerald-600 text-right">{formatVND(tx.totalAmount)}</span>
+                    </div>
+                    {tx.bankCode && (
+                      <div className="flex justify-between gap-2 text-sm">
+                        <span className="text-slate-500 shrink-0">Ngân hàng:</span>
+                        <span className="font-mono text-right">{tx.bankCode}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between gap-2 text-xs">
+                      <span className="text-slate-500 shrink-0">Thời gian:</span>
+                      <span className="text-right">{new Date(tx.createdAt).toLocaleString('vi-VN')}</span>
+                    </div>
+                    <div className="flex gap-2 pt-2 border-t">
+                      {tx.paymentProof && (
+                        <Button variant="outline" size="sm" onClick={() => setViewProof(`http://localhost:4000${tx.paymentProof.imageUrl}`)}>
+                          <Eye size={14} className="mr-1" /> Chứng từ
+                        </Button>
+                      )}
+                      <Button size="sm" className="flex-1" onClick={() => handleConfirm(tx.id)} disabled={actionLoadingId === tx.id}>
+                        <CheckCircle size={14} className="mr-1" /> Duyệt
+                      </Button>
+                      <Button size="sm" variant="destructive" onClick={() => { setRejectId(tx.id); setRejectReason(''); }}>
+                        <XCircle size={14} />
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </>
         )
       ) : (
         /* Cash deposits tab */
@@ -170,15 +230,15 @@ export default function AdminReconciliation() {
           <div className="space-y-3">
             {cashDeposits.map((dep: any) => (
               <Card key={dep.id}>
-                <CardContent className="py-4 flex items-center justify-between">
-                  <div>
+                <CardContent className="py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                  <div className="min-w-0">
                     <p className="font-semibold">Phiếu #{dep.id} · CTV: {dep.ctv?.name}</p>
                     <p className="text-sm text-slate-500">
                       {dep.transactionIds?.length || 0} giao dịch · Nộp lúc: {new Date(dep.depositedAt).toLocaleString('vi-VN')}
                     </p>
                     {dep.notes && <p className="text-xs text-slate-400">Ghi chú: {dep.notes}</p>}
                   </div>
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0">
                     <p className="text-xl font-bold text-emerald-600">{formatVND(dep.amount)}</p>
                     <Button size="sm" onClick={() => handleConfirmDeposit(dep.id)} disabled={actionLoadingId === dep.id}>
                       <CheckCircle size={14} className="mr-1" /> Xác nhận

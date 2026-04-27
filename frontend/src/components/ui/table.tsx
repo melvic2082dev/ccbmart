@@ -4,13 +4,53 @@ import * as React from "react"
 
 import { cn } from "@/lib/utils"
 
+function syncDataLabels(table: HTMLTableElement) {
+  const headers = Array.from(
+    table.querySelectorAll<HTMLTableCellElement>('thead th')
+  )
+  const labels = headers.map(h => h.textContent?.trim() ?? '')
+  const rows = table.querySelectorAll<HTMLTableRowElement>('tbody tr')
+  rows.forEach(row => {
+    const cells = Array.from(
+      row.querySelectorAll<HTMLTableCellElement>(':scope > td')
+    )
+    // Skip rows that span all columns (e.g. "no data" placeholders)
+    if (cells.length === 1 && cells[0].colSpan > 1) {
+      cells[0].setAttribute('data-fullspan', '')
+      cells[0].removeAttribute('data-label')
+      return
+    }
+    cells.forEach((cell, idx) => {
+      cell.removeAttribute('data-fullspan')
+      const label = labels[idx] ?? ''
+      if (label && cell.getAttribute('data-label') !== label) {
+        cell.setAttribute('data-label', label)
+      } else if (!label) {
+        cell.removeAttribute('data-label')
+      }
+    })
+  })
+}
+
 function Table({ className, ...props }: React.ComponentProps<"table">) {
+  const ref = React.useRef<HTMLTableElement>(null)
+
+  React.useEffect(() => {
+    const table = ref.current
+    if (!table) return
+    syncDataLabels(table)
+    const observer = new MutationObserver(() => syncDataLabels(table))
+    observer.observe(table, { childList: true, subtree: true, characterData: true })
+    return () => observer.disconnect()
+  }, [])
+
   return (
     <div
       data-slot="table-container"
       className="relative w-full overflow-x-auto"
     >
       <table
+        ref={ref}
         data-slot="table"
         className={cn("w-full caption-bottom text-sm", className)}
         {...props}

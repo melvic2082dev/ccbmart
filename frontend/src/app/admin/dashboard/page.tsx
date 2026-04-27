@@ -391,7 +391,8 @@ export default function AdminDashboardPage() {
                   <CardTitle className="text-gray-800">Lợi nhuận theo kênh (tháng hiện tại)</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="overflow-x-auto">
+                  {/* Desktop table */}
+                  <div className="hidden md:block overflow-x-auto">
                     <table className="w-full text-sm">
                       <thead>
                         <tr className="border-b border-emerald-100">
@@ -434,10 +435,63 @@ export default function AdminDashboardPage() {
                         </tr>
                       </tbody>
                     </table>
-                    <p className="text-xs text-gray-500 mt-3">
-                      * COGS 50% blended — tỷ lệ giá vốn trung bình áp dụng chung cho tất cả kênh.
-                    </p>
                   </div>
+
+                  {/* Mobile card list */}
+                  <div className="md:hidden space-y-3">
+                    {channelRows.map(r => (
+                      <div key={r.key} className="rounded-lg border border-emerald-100 bg-white p-3 space-y-1.5">
+                        <p className="font-semibold text-gray-800">{r.label}</p>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-500">Doanh thu</span>
+                          <span className="text-gray-900">{formatVND(r.revenue)}</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-500">COGS (50%)</span>
+                          <span className="text-gray-500">{formatVND(r.cogs)}</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-500">LN gộp</span>
+                          <span className={`font-semibold ${r.grossProfit < 0 ? 'text-red-600' : 'text-emerald-700'}`}>
+                            {formatVND(r.grossProfit)}
+                          </span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-500">Biên LN</span>
+                          <span className={`${r.grossProfit < 0 ? 'text-red-600' : 'text-emerald-700'}`}>
+                            {r.margin.toFixed(1)}%
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                    <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 space-y-1.5">
+                      <p className="font-bold text-emerald-800">Tổng</p>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-emerald-700">Doanh thu</span>
+                        <span className="font-semibold text-emerald-800">{formatVND(totalChannel.revenue)}</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-emerald-700">COGS (50%)</span>
+                        <span className="text-emerald-700">{formatVND(totalChannel.cogs)}</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-emerald-700">LN gộp</span>
+                        <span className={`font-semibold ${totalChannel.grossProfit < 0 ? 'text-red-600' : 'text-emerald-800'}`}>
+                          {formatVND(totalChannel.grossProfit)}
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-emerald-700">Biên LN</span>
+                        <span className={`${totalChannel.grossProfit < 0 ? 'text-red-600' : 'text-emerald-800'}`}>
+                          {totalMargin.toFixed(1)}%
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <p className="text-xs text-gray-500 mt-3">
+                    * COGS 50% blended — tỷ lệ giá vốn trung bình áp dụng chung cho tất cả kênh.
+                  </p>
                 </CardContent>
               </Card>
             </div>
@@ -570,46 +624,76 @@ export default function AdminDashboardPage() {
                 <CardTitle className="text-gray-800">Chi tiết chi phí</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b border-emerald-100">
-                        <th className="text-left py-2 px-3 font-semibold text-gray-600">Khoản chi phí</th>
-                        <th className="text-right py-2 px-3 font-semibold text-gray-600">Số tiền</th>
-                        <th className="text-right py-2 px-3 font-semibold text-gray-600">Tỷ lệ</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {Object.entries(data.costBreakdown).map(([key, value], idx) => {
-                        const total = Object.values(data.costBreakdown).reduce((a, b) => a + b, 0)
-                        const pct = total > 0 ? ((value / total) * 100).toFixed(1) : '0.0'
-                        return (
-                          <tr
-                            key={key}
-                            className={`border-b border-gray-50 hover:bg-emerald-50 transition-colors ${
-                              idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'
-                            }`}
-                          >
-                            <td className="py-2.5 px-3 text-gray-700">
-                              {COST_LABEL_MAP[key] ?? key}
-                            </td>
-                            <td className="py-2.5 px-3 text-right font-medium text-gray-900">
-                              {formatVND(value)}
-                            </td>
-                            <td className="py-2.5 px-3 text-right text-gray-500">{pct}%</td>
-                          </tr>
-                        )
-                      })}
-                      <tr className="bg-emerald-50 font-semibold">
-                        <td className="py-2.5 px-3 text-emerald-800">Tổng chi phí</td>
-                        <td className="py-2.5 px-3 text-right text-emerald-800">
-                          {formatVND(Object.values(data.costBreakdown).reduce((a, b) => a + b, 0))}
-                        </td>
-                        <td className="py-2.5 px-3 text-right text-emerald-700">100%</td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
+                {(() => {
+                  const total = Object.values(data.costBreakdown).reduce((a, b) => a + b, 0)
+                  return (
+                    <>
+                      {/* Desktop table */}
+                      <div className="hidden md:block overflow-x-auto">
+                        <table className="w-full text-sm">
+                          <thead>
+                            <tr className="border-b border-emerald-100">
+                              <th className="text-left py-2 px-3 font-semibold text-gray-600">Khoản chi phí</th>
+                              <th className="text-right py-2 px-3 font-semibold text-gray-600">Số tiền</th>
+                              <th className="text-right py-2 px-3 font-semibold text-gray-600">Tỷ lệ</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {Object.entries(data.costBreakdown).map(([key, value], idx) => {
+                              const pct = total > 0 ? ((value / total) * 100).toFixed(1) : '0.0'
+                              return (
+                                <tr
+                                  key={key}
+                                  className={`border-b border-gray-50 hover:bg-emerald-50 transition-colors ${
+                                    idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'
+                                  }`}
+                                >
+                                  <td className="py-2.5 px-3 text-gray-700">
+                                    {COST_LABEL_MAP[key] ?? key}
+                                  </td>
+                                  <td className="py-2.5 px-3 text-right font-medium text-gray-900">
+                                    {formatVND(value)}
+                                  </td>
+                                  <td className="py-2.5 px-3 text-right text-gray-500">{pct}%</td>
+                                </tr>
+                              )
+                            })}
+                            <tr className="bg-emerald-50 font-semibold">
+                              <td className="py-2.5 px-3 text-emerald-800">Tổng chi phí</td>
+                              <td className="py-2.5 px-3 text-right text-emerald-800">
+                                {formatVND(total)}
+                              </td>
+                              <td className="py-2.5 px-3 text-right text-emerald-700">100%</td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+
+                      {/* Mobile card list */}
+                      <div className="md:hidden space-y-2">
+                        {Object.entries(data.costBreakdown).map(([key, value]) => {
+                          const pct = total > 0 ? ((value / total) * 100).toFixed(1) : '0.0'
+                          return (
+                            <div key={key} className="rounded-lg border border-gray-100 bg-white p-3">
+                              <div className="flex justify-between items-start gap-2 mb-1">
+                                <span className="text-sm text-gray-700">{COST_LABEL_MAP[key] ?? key}</span>
+                                <span className="text-xs text-gray-500 shrink-0">{pct}%</span>
+                              </div>
+                              <p className="text-right font-semibold text-gray-900">{formatVND(value)}</p>
+                            </div>
+                          )
+                        })}
+                        <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3">
+                          <div className="flex justify-between items-start gap-2 mb-1">
+                            <span className="text-sm font-bold text-emerald-800">Tổng chi phí</span>
+                            <span className="text-xs text-emerald-700 shrink-0">100%</span>
+                          </div>
+                          <p className="text-right font-bold text-emerald-800">{formatVND(total)}</p>
+                        </div>
+                      </div>
+                    </>
+                  )
+                })()}
               </CardContent>
             </Card>
           </>

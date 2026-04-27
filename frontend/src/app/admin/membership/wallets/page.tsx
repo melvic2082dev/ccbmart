@@ -70,7 +70,7 @@ export default function AdminMemberWallets() {
       status: status === 'all' ? undefined : status,
     })
       .then((res) => setData(res as WalletResponse))
-      .catch((e: Error) => setError(e?.message || 'Không tải được danh sách ví thành viên'))
+      .catch((e: Error) => setError(e?.message || 'Không tải được danh sách thành viên'))
       .finally(() => setLoading(false));
   };
   // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -90,7 +90,7 @@ export default function AdminMemberWallets() {
   return (
     <>
       <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
-        <Wallet size={24} /> Quản lý ví thành viên ({data?.total ?? 0})
+        <Wallet size={24} /> Quản lý thành viên ({data?.total ?? 0})
       </h2>
 
       <div className="grid grid-cols-1 md:grid-cols-12 gap-2 mb-4">
@@ -144,7 +144,7 @@ export default function AdminMemberWallets() {
         <div className="h-48 bg-gray-200 animate-pulse rounded-xl" />
       ) : !error && (data?.wallets?.length ?? 0) === 0 ? (
         <div className="p-8 text-center text-gray-500 border border-dashed rounded-xl">
-          {filtersActive ? 'Không có ví khớp bộ lọc.' : 'Chưa có ví thành viên nào.'}
+          {filtersActive ? 'Không có thành viên khớp bộ lọc.' : 'Chưa có thành viên nào.'}
         </div>
       ) : !error ? (
         <Card>

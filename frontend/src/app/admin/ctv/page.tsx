@@ -333,7 +333,7 @@ export default function AdminCtvPage() {
                   )}
                 </CardTitle>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <Button
                   variant="outline"
                   size="sm"
@@ -404,104 +404,196 @@ export default function AdminCtvPage() {
                 ))}
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="bg-gray-50 hover:bg-gray-50">
-                      <TableHead className="w-10">
-                        <input
-                          type="checkbox"
-                          aria-label="Chọn tất cả"
-                          checked={paged.length > 0 && paged.every(c => selectedIds.has(c.id))}
-                          onChange={toggleSelectAllVisible}
-                          className="h-4 w-4 rounded border-gray-300 accent-emerald-600"
-                        />
-                      </TableHead>
-                      <TableHead className="text-gray-600 font-semibold">Tên</TableHead>
-                      <TableHead className="text-gray-600 font-semibold">Email</TableHead>
-                      <TableHead className="text-gray-600 font-semibold">Rank</TableHead>
-                      <TableHead className="text-gray-600 font-semibold">Loại TK</TableHead>
-                      <TableHead className="text-gray-600 font-semibold">Quản lý</TableHead>
-                      <TableHead className="text-gray-600 font-semibold">Đào tạo</TableHead>
-                      <TableHead className="text-gray-600 font-semibold text-right">Chi tiêu CN</TableHead>
-                      <TableHead className="text-gray-600 font-semibold text-right">F1</TableHead>
-                      <TableHead className="text-gray-600 font-semibold text-right">GD</TableHead>
-                      <TableHead className="text-gray-600 font-semibold text-right">KH</TableHead>
-                      <TableHead className="text-gray-600 font-semibold">Trạng thái</TableHead>
-                      <TableHead className="text-gray-600 font-semibold text-center">Thao tác</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {paged.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={13} className="text-center text-gray-400 py-8">
-                          Không có dữ liệu phù hợp
-                        </TableCell>
+              <>
+                {/* Desktop table */}
+                <div className="hidden md:block overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-gray-50 hover:bg-gray-50">
+                        <TableHead className="w-10">
+                          <input
+                            type="checkbox"
+                            aria-label="Chọn tất cả"
+                            checked={paged.length > 0 && paged.every(c => selectedIds.has(c.id))}
+                            onChange={toggleSelectAllVisible}
+                            className="h-4 w-4 rounded border-gray-300 accent-emerald-600"
+                          />
+                        </TableHead>
+                        <TableHead className="text-gray-600 font-semibold">Tên</TableHead>
+                        <TableHead className="text-gray-600 font-semibold">Email</TableHead>
+                        <TableHead className="text-gray-600 font-semibold">Rank</TableHead>
+                        <TableHead className="text-gray-600 font-semibold">Loại TK</TableHead>
+                        <TableHead className="text-gray-600 font-semibold">Quản lý</TableHead>
+                        <TableHead className="text-gray-600 font-semibold">Đào tạo</TableHead>
+                        <TableHead className="text-gray-600 font-semibold text-right">Chi tiêu CN</TableHead>
+                        <TableHead className="text-gray-600 font-semibold text-right">F1</TableHead>
+                        <TableHead className="text-gray-600 font-semibold text-right">GD</TableHead>
+                        <TableHead className="text-gray-600 font-semibold text-right">KH</TableHead>
+                        <TableHead className="text-gray-600 font-semibold">Trạng thái</TableHead>
+                        <TableHead className="text-gray-600 font-semibold text-center">Thao tác</TableHead>
                       </TableRow>
-                    ) : (
-                      paged.map((ctv) => (
-                        <TableRow
-                          key={ctv.id}
-                          className={`hover:bg-emerald-50 transition-colors ${selectedIds.has(ctv.id) ? 'bg-emerald-50/60' : ''}`}
-                        >
-                          <TableCell>
-                            <input
-                              type="checkbox"
-                              aria-label={`Chọn ${ctv.name}`}
-                              checked={selectedIds.has(ctv.id)}
-                              onChange={() => toggleSelect(ctv.id)}
-                              className="h-4 w-4 rounded border-gray-300 accent-emerald-600"
-                            />
-                          </TableCell>
-                          <TableCell className="font-medium text-gray-800">{ctv.name}</TableCell>
-                          <TableCell className="text-gray-600 text-sm">{ctv.email}</TableCell>
-                          <TableCell><RankBadge rank={ctv.rank} /></TableCell>
-                          <TableCell><AccountTypeBadges ctv={ctv} /></TableCell>
-                          <TableCell className="text-gray-600 text-sm">
-                            {ctv.parentName ?? <span className="text-gray-300">—</span>}
-                          </TableCell>
-                          <TableCell>
-                            <TrainingHoursCell
-                              hours={ctv.currentMonthTrainingHours ?? 0}
-                              required={ctv.requiredTrainingHours ?? 20}
-                            />
-                          </TableCell>
-                          <TableCell className="text-right text-gray-700 text-xs">
-                            {ctv.memberWallet
-                              ? <span title="Tổng chi tiêu cá nhân (qua ví Thành viên)">
-                                  {ctv.memberWallet.totalSpent.toLocaleString('vi-VN')}đ
-                                </span>
-                              : <span className="text-gray-300">—</span>}
-                          </TableCell>
-                          <TableCell className="text-right text-gray-700">{ctv.f1Count}</TableCell>
-                          <TableCell className="text-right text-gray-700">{ctv.transactionCount}</TableCell>
-                          <TableCell className="text-right text-gray-700">{ctv.customerCount}</TableCell>
-                          <TableCell><StatusBadge status={ctv.status} /></TableCell>
-                          <TableCell>
-                            <div className="flex items-center justify-center gap-1">
-                              <Button variant="ghost" size="icon-sm" title="Xem chi tiết" onClick={() => openActionFor(ctv, 'details')}>
-                                <Eye className="w-4 h-4 text-blue-600" />
-                              </Button>
-                              <Button variant="ghost" size="icon-sm" title="Đổi rank" onClick={() => openActionFor(ctv, 'rank')}>
-                                <ArrowUpDown className="w-4 h-4 text-emerald-600" />
-                              </Button>
-                              <Button variant="ghost" size="icon-sm" title="Chuyển quản lý" onClick={() => openActionFor(ctv, 'reassign')}>
-                                <Shuffle className="w-4 h-4 text-amber-600" />
-                              </Button>
-                              <Button variant="ghost" size="icon-sm" title={ctv.isActive ? 'Ngừng' : 'Kích hoạt'} onClick={() => openActionFor(ctv, 'toggle')}>
-                                <Power className={`w-4 h-4 ${ctv.isActive ? 'text-red-500' : 'text-emerald-600'}`} />
-                              </Button>
-                            </div>
+                    </TableHeader>
+                    <TableBody>
+                      {paged.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={13} className="text-center text-gray-400 py-8">
+                            Không có dữ liệu phù hợp
                           </TableCell>
                         </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
+                      ) : (
+                        paged.map((ctv) => (
+                          <TableRow
+                            key={ctv.id}
+                            className={`hover:bg-emerald-50 transition-colors ${selectedIds.has(ctv.id) ? 'bg-emerald-50/60' : ''}`}
+                          >
+                            <TableCell>
+                              <input
+                                type="checkbox"
+                                aria-label={`Chọn ${ctv.name}`}
+                                checked={selectedIds.has(ctv.id)}
+                                onChange={() => toggleSelect(ctv.id)}
+                                className="h-4 w-4 rounded border-gray-300 accent-emerald-600"
+                              />
+                            </TableCell>
+                            <TableCell className="font-medium text-gray-800">{ctv.name}</TableCell>
+                            <TableCell className="text-gray-600 text-sm">{ctv.email}</TableCell>
+                            <TableCell><RankBadge rank={ctv.rank} /></TableCell>
+                            <TableCell><AccountTypeBadges ctv={ctv} /></TableCell>
+                            <TableCell className="text-gray-600 text-sm">
+                              {ctv.parentName ?? <span className="text-gray-300">—</span>}
+                            </TableCell>
+                            <TableCell>
+                              <TrainingHoursCell
+                                hours={ctv.currentMonthTrainingHours ?? 0}
+                                required={ctv.requiredTrainingHours ?? 20}
+                              />
+                            </TableCell>
+                            <TableCell className="text-right text-gray-700 text-xs">
+                              {ctv.memberWallet
+                                ? <span title="Tổng chi tiêu cá nhân (qua ví Thành viên)">
+                                    {ctv.memberWallet.totalSpent.toLocaleString('vi-VN')}đ
+                                  </span>
+                                : <span className="text-gray-300">—</span>}
+                            </TableCell>
+                            <TableCell className="text-right text-gray-700">{ctv.f1Count}</TableCell>
+                            <TableCell className="text-right text-gray-700">{ctv.transactionCount}</TableCell>
+                            <TableCell className="text-right text-gray-700">{ctv.customerCount}</TableCell>
+                            <TableCell><StatusBadge status={ctv.status} /></TableCell>
+                            <TableCell>
+                              <div className="flex items-center justify-center gap-1">
+                                <Button variant="ghost" size="icon-sm" title="Xem chi tiết" onClick={() => openActionFor(ctv, 'details')}>
+                                  <Eye className="w-4 h-4 text-blue-600" />
+                                </Button>
+                                <Button variant="ghost" size="icon-sm" title="Đổi rank" onClick={() => openActionFor(ctv, 'rank')}>
+                                  <ArrowUpDown className="w-4 h-4 text-emerald-600" />
+                                </Button>
+                                <Button variant="ghost" size="icon-sm" title="Chuyển quản lý" onClick={() => openActionFor(ctv, 'reassign')}>
+                                  <Shuffle className="w-4 h-4 text-amber-600" />
+                                </Button>
+                                <Button variant="ghost" size="icon-sm" title={ctv.isActive ? 'Ngừng' : 'Kích hoạt'} onClick={() => openActionFor(ctv, 'toggle')}>
+                                  <Power className={`w-4 h-4 ${ctv.isActive ? 'text-red-500' : 'text-emerald-600'}`} />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+
+                {/* Mobile card list */}
+                <div className="md:hidden p-4 space-y-3">
+                  {paged.length === 0 ? (
+                    <p className="text-center text-gray-400 py-8">Không có dữ liệu phù hợp</p>
+                  ) : (
+                    paged.map((ctv) => (
+                      <div
+                        key={ctv.id}
+                        className={`rounded-lg border p-3 space-y-3 transition-colors ${
+                          selectedIds.has(ctv.id) ? 'border-emerald-300 bg-emerald-50/60' : 'border-gray-200 bg-white'
+                        }`}
+                      >
+                        {/* Header: checkbox + name + rank */}
+                        <div className="flex items-start gap-3">
+                          <input
+                            type="checkbox"
+                            aria-label={`Chọn ${ctv.name}`}
+                            checked={selectedIds.has(ctv.id)}
+                            onChange={() => toggleSelect(ctv.id)}
+                            className="h-4 w-4 rounded border-gray-300 accent-emerald-600 mt-1 shrink-0"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between gap-2">
+                              <p className="font-semibold text-gray-800 truncate">{ctv.name}</p>
+                              <RankBadge rank={ctv.rank} />
+                            </div>
+                            <p className="text-xs text-gray-500 truncate">{ctv.email}</p>
+                            {ctv.parentName && (
+                              <p className="text-xs text-gray-500 mt-0.5">
+                                Quản lý: <span className="text-gray-700">{ctv.parentName}</span>
+                              </p>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Badges row */}
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <AccountTypeBadges ctv={ctv} />
+                          <StatusBadge status={ctv.status} />
+                          <TrainingHoursCell
+                            hours={ctv.currentMonthTrainingHours ?? 0}
+                            required={ctv.requiredTrainingHours ?? 20}
+                          />
+                        </div>
+
+                        {/* Stats: 4 columns of label+number */}
+                        <div className="grid grid-cols-4 gap-2 pt-2 border-t text-center">
+                          <div>
+                            <p className="text-[10px] uppercase text-gray-500 tracking-wide">F1</p>
+                            <p className="text-sm font-semibold text-gray-800">{ctv.f1Count}</p>
+                          </div>
+                          <div>
+                            <p className="text-[10px] uppercase text-gray-500 tracking-wide">GD</p>
+                            <p className="text-sm font-semibold text-gray-800">{ctv.transactionCount}</p>
+                          </div>
+                          <div>
+                            <p className="text-[10px] uppercase text-gray-500 tracking-wide">KH</p>
+                            <p className="text-sm font-semibold text-gray-800">{ctv.customerCount}</p>
+                          </div>
+                          <div>
+                            <p className="text-[10px] uppercase text-gray-500 tracking-wide">Chi CN</p>
+                            <p className="text-sm font-semibold text-gray-800">
+                              {ctv.memberWallet
+                                ? `${(ctv.memberWallet.totalSpent / 1_000_000).toFixed(1)}tr`
+                                : '—'}
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Action buttons */}
+                        <div className="flex items-center justify-end gap-1 pt-2 border-t">
+                          <Button variant="ghost" size="icon-sm" title="Xem chi tiết" onClick={() => openActionFor(ctv, 'details')}>
+                            <Eye className="w-4 h-4 text-blue-600" />
+                          </Button>
+                          <Button variant="ghost" size="icon-sm" title="Đổi rank" onClick={() => openActionFor(ctv, 'rank')}>
+                            <ArrowUpDown className="w-4 h-4 text-emerald-600" />
+                          </Button>
+                          <Button variant="ghost" size="icon-sm" title="Chuyển quản lý" onClick={() => openActionFor(ctv, 'reassign')}>
+                            <Shuffle className="w-4 h-4 text-amber-600" />
+                          </Button>
+                          <Button variant="ghost" size="icon-sm" title={ctv.isActive ? 'Ngừng' : 'Kích hoạt'} onClick={() => openActionFor(ctv, 'toggle')}>
+                            <Power className={`w-4 h-4 ${ctv.isActive ? 'text-red-500' : 'text-emerald-600'}`} />
+                          </Button>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
 
                 {/* Pagination */}
                 {filtered.length > PAGE_SIZE && (
-                  <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100 text-sm">
+                  <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 border-t border-gray-100 text-sm">
                     <p className="text-gray-500">
                       Trang {page}/{totalPages} · Hiển thị {paged.length} trong {filtered.length} CTV
                     </p>
@@ -515,7 +607,7 @@ export default function AdminCtvPage() {
                     </div>
                   </div>
                 )}
-              </div>
+              </>
             )}
           </CardContent>
         </Card>

@@ -275,6 +275,80 @@
   }
 }
 
+/* Mobile (< md): force form controls to 16px minimum so native dropdown
+   options are readable and iOS doesn't auto-zoom on focus. Many pages use
+   text-xs / text-sm utilities for desktop density, but on mobile each row is
+   already stacked into a card by the rules below — bigger controls are fine. */
+@media (max-width: 767px) {
+  select,
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]),
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* Mobile (< md): auto-stack shadcn Table cells into card-style rows so users
+   never have to scroll horizontally. Column headers (from <th>) are mirrored
+   into each <td> via data-label (injected at runtime by the Table component)
+   and rendered as the left-side label. Pages that render a custom mobile
+   layout opt out by hiding the desktop table with `hidden md:block`. */
+@media (max-width: 767px) {
+  [data-slot="table-container"] {
+    overflow-x: visible;
+  }
+  [data-slot="table"],
+  [data-slot="table-body"] {
+    display: block;
+  }
+  [data-slot="table-header"] {
+    display: none;
+  }
+  [data-slot="table-row"] {
+    display: block;
+    border: 1px solid var(--border);
+    border-radius: 0.5rem;
+    margin-bottom: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    background: var(--card);
+  }
+  [data-slot="table-row"]:last-child {
+    margin-bottom: 0;
+  }
+  [data-slot="table-cell"] {
+    display: block;
+    padding: 0.3rem 0;
+    border: none;
+    white-space: normal;
+    text-align: left;
+  }
+  /* Cells with a data-label (auto-injected from <th>) render the column
+     header above the value as a small uppercase label, then the value
+     fills the row width — long Vietnamese names no longer wrap awkwardly. */
+  [data-slot="table-cell"][data-label]:not([data-label=""]) {
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--border);
+  }
+  [data-slot="table-cell"][data-label]:not([data-label=""]):last-child {
+    border-bottom: none;
+  }
+  [data-slot="table-cell"][data-label]:not([data-label=""])::before {
+    content: attr(data-label);
+    display: block;
+    font-weight: 500;
+    color: var(--muted-foreground);
+    font-size: 0.6875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    margin-bottom: 0.2rem;
+  }
+  /* Full-span placeholder cells (e.g. "no data") fill the row */
+  [data-slot="table-cell"][data-fullspan] {
+    display: block;
+    text-align: center;
+    padding: 1rem 0;
+  }
+}
+
 @layer base {
   * {
     @apply border-border;

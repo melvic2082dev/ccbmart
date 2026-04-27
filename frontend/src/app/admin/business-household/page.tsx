@@ -1,13 +1,19 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { api } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Building2, Eye, Download } from 'lucide-react';
+import { Building2, Eye, Download, Search } from 'lucide-react';
 import { HkdDetailModal, HkdWarningBadges, type HouseholdRow } from './modals';
+
+const RANK_LABEL: Record<string, string> = {
+  PP: 'PP', TP: 'TP', GDV: 'GĐV', GDKD: 'GĐKD',
+};
+const RANK_ORDER = ['GDKD', 'GDV', 'TP', 'PP'];
 
 const STATUS_COLORS: Record<string, string> = {
   active: 'bg-green-100 text-green-700',
@@ -37,6 +43,11 @@ export default function BusinessHouseholdPage() {
   const [detailId, setDetailId] = useState<number | null>(null);
   const [openDetail, setOpenDetail] = useState(false);
 
+  // Filters
+  const [search, setSearch] = useState('');
+  const [rankFilter, setRankFilter] = useState<string>('ALL');
+  const [statusFilter, setStatusFilter] = useState<string>('ALL');
+
   const fetchData = () => {
     setLoading(true);
     api.adminBusinessHouseholds()
@@ -47,6 +58,24 @@ export default function BusinessHouseholdPage() {
 
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { fetchData(); }, []);
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return households.filter((h) => {
+      if (q) {
+        const hay = [
+          h.businessName,
+          h.user.name,
+          h.taxCode ?? '',
+          h.businessLicense ?? '',
+        ].join(' ').toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      if (rankFilter !== 'ALL' && h.user.rank !== rankFilter) return false;
+      if (statusFilter !== 'ALL' && h.status !== statusFilter) return false;
+      return true;
+    });
+  }, [households, search, rankFilter, statusFilter]);
 
   const handleAction = async (userId: number, action: string) => {
     try {
@@ -73,10 +102,43 @@ export default function BusinessHouseholdPage() {
       ) : (
         <Card>
           <CardHeader>
-            <CardTitle>Danh sách HKD ({households.length})</CardTitle>
+            <CardTitle>
+              Danh sách HKD <span className="text-sm font-normal text-gray-500">({filtered.length}/{households.length})</span>
+            </CardTitle>
             <p className="text-sm text-slate-500">
               CTV đạt cấp PP trở lên đăng ký HKD để ký HĐ Đại lý bán lẻ + HĐ Dịch vụ đào tạo
             </p>
+
+            {/* Toolbar */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mt-3">
+              <div className="relative">
+                <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Tìm theo tên HKD / CTV / MST / GPKD…"
+                  className="pl-8"
+                />
+              </div>
+              <select
+                value={rankFilter}
+                onChange={(e) => setRankFilter(e.target.value)}
+                className="rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              >
+                <option value="ALL">Tất cả rank</option>
+                {RANK_ORDER.map(r => <option key={r} value={r}>{RANK_LABEL[r]}</option>)}
+              </select>
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              >
+                <option value="ALL">Mọi trạng thái</option>
+                <option value="active">Hoạt động</option>
+                <option value="suspended">Tạm ngưng</option>
+                <option value="terminated">Chấm dứt</option>
+              </select>
+            </div>
           </CardHeader>
           <CardContent className="p-0">
             <div className="overflow-x-auto">
@@ -95,7 +157,7 @@ export default function BusinessHouseholdPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {households.map((h) => (
+                  {filtered.map((h) => (
                     <TableRow key={h.id} className="hover:bg-emerald-50/60 cursor-pointer" onClick={(e) => {
                       const target = e.target as HTMLElement;
                       if (target.closest('button, a')) return;
@@ -173,10 +235,10 @@ export default function BusinessHouseholdPage() {
                       </TableCell>
                     </TableRow>
                   ))}
-                  {households.length === 0 && (
+                  {filtered.length === 0 && (
                     <TableRow>
                       <TableCell colSpan={9} className="text-center py-8 text-slate-500">
-                        Chưa có HKD nào
+                        {households.length === 0 ? 'Chưa có HKD nào' : 'Không có HKD phù hợp'}
                       </TableCell>
                     </TableRow>
                   )}

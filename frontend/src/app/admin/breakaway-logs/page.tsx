@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { api, formatVND } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Network, Play, Timer, AlertTriangle } from 'lucide-react';
 
 interface BreakawayLog {
@@ -160,56 +161,54 @@ export default function AdminBreakawayLogsPage() {
               {logs.length === 0 ? (
                 <p className="text-sm text-slate-500">Chưa có nhánh vượt cấp</p>
               ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead className="text-left border-b bg-gray-50">
-                      <tr>
-                        <th className="py-2 px-2">Người vượt cấp</th>
-                        <th className="py-2 px-2">Người dẫn dắt cấp 1 cũ</th>
-                        <th className="py-2 px-2">Người dẫn dắt cấp 2 cũ (→ parent mới)</th>
-                        <th className="py-2 px-2">Ngày vượt cấp</th>
-                        <th className="py-2 px-2 min-w-[180px]">
-                          <span className="flex items-center gap-1"><Timer size={14} /> Tiến trình 12 tháng</span>
-                        </th>
-                        <th className="py-2 px-2">Còn lại</th>
-                        <th className="py-2 px-2">Cảnh báo</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {logs.map((l) => {
-                        const p = progressOf(l.breakawayAt, l.expireAt);
-                        const pct = Math.round(p * 100);
-                        const barColor = l.status !== 'ACTIVE' ? 'bg-gray-300'
-                          : p >= 0.9 ? 'bg-red-500'
-                          : p >= 0.75 ? 'bg-amber-500'
-                          : 'bg-emerald-500';
-                        const isExpiring = l.status === 'ACTIVE' && l.monthsRemaining <= 1;
-                        return (
-                          <tr key={l.id} className="border-b last:border-0 hover:bg-gray-50/60">
-                            <td className="py-2 px-2">{l.user.name} <span className="text-slate-500">({l.user.rank})</span></td>
-                            <td className="py-2 px-2">{l.oldParent.name}</td>
-                            <td className="py-2 px-2">{l.newParent.name}</td>
-                            <td className="py-2 px-2 text-xs text-slate-500">{new Date(l.breakawayAt).toLocaleDateString('vi-VN')}</td>
-                            <td className="py-2 px-2">
-                              <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
-                                <div className={`h-2 ${barColor} transition-all`} style={{ width: `${pct}%` }} />
-                              </div>
-                              <div className="text-[10px] text-gray-500 mt-0.5">{pct}% · Hết hạn: {new Date(l.expireAt).toLocaleDateString('vi-VN')}</div>
-                            </td>
-                            <td className="py-2 px-2">{monthsLeftBadge(l)}</td>
-                            <td className="py-2 px-2">
-                              {isExpiring ? (
-                                <Badge className="bg-red-100 text-red-700 border border-red-300 text-xs">
-                                  <AlertTriangle className="w-3 h-3 inline mr-1" /> Sắp hết 12 tháng
-                                </Badge>
-                              ) : <span className="text-gray-300 text-xs">—</span>}
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Người vượt cấp</TableHead>
+                      <TableHead>Người dẫn dắt cấp 1 cũ</TableHead>
+                      <TableHead>Người dẫn dắt cấp 2 cũ (→ parent mới)</TableHead>
+                      <TableHead>Ngày vượt cấp</TableHead>
+                      <TableHead className="min-w-[180px]">
+                        <span className="flex items-center gap-1"><Timer size={14} /> Tiến trình 12 tháng</span>
+                      </TableHead>
+                      <TableHead>Còn lại</TableHead>
+                      <TableHead>Cảnh báo</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {logs.map((l) => {
+                      const p = progressOf(l.breakawayAt, l.expireAt);
+                      const pct = Math.round(p * 100);
+                      const barColor = l.status !== 'ACTIVE' ? 'bg-gray-300'
+                        : p >= 0.9 ? 'bg-red-500'
+                        : p >= 0.75 ? 'bg-amber-500'
+                        : 'bg-emerald-500';
+                      const isExpiring = l.status === 'ACTIVE' && l.monthsRemaining <= 1;
+                      return (
+                        <TableRow key={l.id}>
+                          <TableCell>{l.user.name} <span className="text-slate-500">({l.user.rank})</span></TableCell>
+                          <TableCell>{l.oldParent.name}</TableCell>
+                          <TableCell>{l.newParent.name}</TableCell>
+                          <TableCell className="text-xs text-slate-500">{new Date(l.breakawayAt).toLocaleDateString('vi-VN')}</TableCell>
+                          <TableCell>
+                            <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+                              <div className={`h-2 ${barColor} transition-all`} style={{ width: `${pct}%` }} />
+                            </div>
+                            <div className="text-[10px] text-gray-500 mt-0.5">{pct}% · Hết hạn: {new Date(l.expireAt).toLocaleDateString('vi-VN')}</div>
+                          </TableCell>
+                          <TableCell>{monthsLeftBadge(l)}</TableCell>
+                          <TableCell>
+                            {isExpiring ? (
+                              <Badge className="bg-red-100 text-red-700 border border-red-300 text-xs">
+                                <AlertTriangle className="w-3 h-3 inline mr-1" /> Sắp hết 12 tháng
+                              </Badge>
+                            ) : <span className="text-gray-300 text-xs">—</span>}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
               )}
             </CardContent>
           </Card>
@@ -220,63 +219,61 @@ export default function AdminBreakawayLogsPage() {
                 <CardTitle>Phí quản lý sau vượt cấp · tháng {month} ({fees.records?.length ?? 0} dòng)</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead className="text-left border-b bg-gray-50">
-                      <tr>
-                        <th className="py-2 px-2">Level</th>
-                        <th className="py-2 px-2">Người vượt cấp</th>
-                        <th className="py-2 px-2">Người nhận</th>
-                        <th className="py-2 px-2 text-right">Phí</th>
-                        <th className="py-2 px-2">Trạng thái</th>
-                        <th className="py-2 px-2" />
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {fees.records?.map((r) => {
-                        const label = r.level === 3
-                          ? 'L3 — Quỹ PTTT'
-                          : r.level === 2
-                            ? 'L2 — Cấp 2 cũ'
-                            : 'L1 — Cấp 1 cũ';
-                        const levelClass =
-                          r.level === 3 ? 'bg-indigo-100 text-indigo-700' :
-                          r.level === 2 ? 'bg-amber-100 text-amber-700' :
-                          'bg-orange-100 text-orange-700';
-                        return (
-                          <tr key={r.id} className="border-b last:border-0 hover:bg-gray-50/60">
-                            <td className="py-2 px-2"><Badge className={`${levelClass} text-xs`}>{label}</Badge></td>
-                            <td className="py-2 px-2">{r.fromUser.name}</td>
-                            <td className="py-2 px-2">{r.toUser.name} <span className="text-slate-500">({r.toUser.rank})</span></td>
-                            <td className="py-2 px-2 text-right font-mono font-semibold">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Level</TableHead>
+                      <TableHead>Người vượt cấp</TableHead>
+                      <TableHead>Người nhận</TableHead>
+                      <TableHead className="text-right">Phí</TableHead>
+                      <TableHead>Trạng thái</TableHead>
+                      <TableHead>Hành động</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {fees.records?.map((r) => {
+                      const label = r.level === 3
+                        ? 'L3 — Quỹ PTTT'
+                        : r.level === 2
+                          ? 'L2 — Cấp 2 cũ'
+                          : 'L1 — Cấp 1 cũ';
+                      const levelClass =
+                        r.level === 3 ? 'bg-indigo-100 text-indigo-700' :
+                        r.level === 2 ? 'bg-amber-100 text-amber-700' :
+                        'bg-orange-100 text-orange-700';
+                      return (
+                        <TableRow key={r.id}>
+                          <TableCell><Badge className={`${levelClass} text-xs`}>{label}</Badge></TableCell>
+                          <TableCell>{r.fromUser.name}</TableCell>
+                          <TableCell>{r.toUser.name} <span className="text-slate-500">({r.toUser.rank})</span></TableCell>
+                          <TableCell className="text-right font-mono font-semibold">
+                            <button
+                              type="button"
+                              className="hover:underline"
+                              onClick={() => setPaymentDetailFee(r)}
+                              title="Xem chi tiết thanh toán"
+                            >
+                              {formatVND(r.amount)}
+                            </button>
+                          </TableCell>
+                          <TableCell>
+                            <Badge className={r.status === 'PAID' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}>{r.status === 'PAID' ? 'Đã trả' : r.status === 'PENDING' ? 'Chờ trả' : r.status}</Badge>
+                          </TableCell>
+                          <TableCell>
+                            {r.status === 'PENDING' && (
                               <button
-                                type="button"
-                                className="hover:underline text-left w-full"
-                                onClick={() => setPaymentDetailFee(r)}
-                                title="Xem chi tiết thanh toán"
+                                onClick={() => handleMarkPaid(r.id)}
+                                className="px-2 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-xs"
                               >
-                                {formatVND(r.amount)}
+                                Đã trả
                               </button>
-                            </td>
-                            <td className="py-2 px-2">
-                              <Badge className={r.status === 'PAID' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}>{r.status === 'PAID' ? 'Đã trả' : r.status === 'PENDING' ? 'Chờ trả' : r.status}</Badge>
-                            </td>
-                            <td className="py-2 px-2">
-                              {r.status === 'PENDING' && (
-                                <button
-                                  onClick={() => handleMarkPaid(r.id)}
-                                  className="px-2 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-xs"
-                                >
-                                  Đã trả
-                                </button>
-                              )}
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
               </CardContent>
             </Card>
           )}

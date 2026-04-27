@@ -565,7 +565,43 @@ export function CtvDetailsModal({
     setLoading(true);
     setData(null);
     api.adminCtvDetails(ctvId)
-      .then((d) => { if (!cancelled) setData(d as CtvDetailData); })
+      .then((raw) => {
+        if (cancelled) return;
+        // Backend returns the raw user record; reshape to the structured form
+        // this modal expects. Missing fields (managementFees, memberActivity,
+        // trainingSummary, totalRevenue) fall back to empty/zero so the
+        // sub-tabs render an empty-state instead of crashing.
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const u = raw as any;
+        const reshaped: CtvDetailData = u && u.profile ? (u as CtvDetailData) : {
+          profile: {
+            id: u?.id,
+            name: u?.name ?? '',
+            email: u?.email ?? '',
+            phone: u?.phone ?? null,
+            rank: u?.rank ?? 'CTV',
+            isActive: !!u?.isActive,
+            isBusinessHousehold: !!u?.isBusinessHousehold,
+            kycStatus: u?.kycStatus ?? '—',
+            createdAt: u?.createdAt ?? new Date().toISOString(),
+            parent: u?.parent ? {
+              id: u.parent.id,
+              name: u.parent.name,
+              rank: u.parent.rank,
+              email: u.parent.email ?? '',
+            } : null,
+            f1Count: Array.isArray(u?.children) ? u.children.length : 0,
+            transactionCount: u?._count?.transactions ?? 0,
+            customerCount: u?._count?.customers ?? 0,
+            totalRevenue: 0,
+          },
+          kpiLogs: Array.isArray(u?.kpiLogs) ? u.kpiLogs : [],
+          rankHistory: Array.isArray(u?.rankHistory) ? u.rankHistory : [],
+          trainingLogs: Array.isArray(u?.traineeLogs) ? u.traineeLogs : (Array.isArray(u?.trainingLogs) ? u.trainingLogs : []),
+          managementFees: Array.isArray(u?.managementFees) ? u.managementFees : [],
+        };
+        setData(reshaped);
+      })
       .catch((err) => console.error('Failed to fetch details:', err))
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
@@ -575,9 +611,9 @@ export function CtvDetailsModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-3xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Chi tiết CTV {data ? `· ${data.profile.name}` : ''}</DialogTitle>
+          <DialogTitle className="break-words">Chi tiết CTV {data ? `· ${data.profile.name}` : ''}</DialogTitle>
           {data && (
-            <DialogDescription>
+            <DialogDescription className="break-words">
               [{RANK_LABEL[data.profile.rank] ?? data.profile.rank}] {data.profile.email} ·
               {data.profile.isActive ? ' Hoạt động' : ' Dừng'} ·
               KYC: {data.profile.kycStatus}
@@ -589,7 +625,7 @@ export function CtvDetailsModal({
           <div className="py-10 text-center text-sm text-gray-400">Đang tải…</div>
         ) : (
           <Tabs defaultValue="profile" className="mt-2">
-            <TabsList>
+            <TabsList className="flex w-full overflow-x-auto whitespace-nowrap">
               <TabsTrigger value="profile">Thông tin</TabsTrigger>
               <TabsTrigger value="kpi">KPI ({data.kpiLogs.length})</TabsTrigger>
               <TabsTrigger value="rank">Lịch sử rank ({data.rankHistory.length})</TabsTrigger>
@@ -600,7 +636,7 @@ export function CtvDetailsModal({
 
             {/* Tab 1: Profile */}
             <TabsContent value="profile" className="space-y-3 pt-4">
-              <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-sm">
                 <Field label="Họ tên" value={data.profile.name} />
                 <Field label="Email" value={data.profile.email} />
                 <Field label="SĐT" value={data.profile.phone || '—'} />
@@ -611,7 +647,7 @@ export function CtvDetailsModal({
                 <Field label="Trạng thái" value={data.profile.isActive ? 'Hoạt động' : 'Dừng'} />
               </div>
 
-              <div className="mt-4 grid grid-cols-4 gap-3">
+              <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <Stat label="F1 trực tiếp" value={data.profile.f1Count} />
                 <Stat label="Giao dịch" value={data.profile.transactionCount} />
                 <Stat label="Khách hàng" value={data.profile.customerCount} />
@@ -911,9 +947,9 @@ export function CtvDetailsModal({
 
 function Field({ label, value }: { label: string; value: React.ReactNode }) {
   return (
-    <div>
+    <div className="min-w-0">
       <p className="text-xs uppercase text-gray-400 tracking-wide">{label}</p>
-      <p className="font-medium text-gray-800">{value}</p>
+      <p className="font-medium text-gray-800 break-words">{value}</p>
     </div>
   );
 }
