@@ -83,17 +83,17 @@ export default function CtvProductsPage() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="w-[55%]">Tên sản phẩm</TableHead>
-                        <TableHead className="text-right">Giá bán</TableHead>
-                        <TableHead className="text-right pr-6">Đơn vị</TableHead>
+                        <TableHead>Tên sản phẩm</TableHead>
+                        <TableHead className="w-[160px] text-right">Giá bán</TableHead>
+                        <TableHead className="w-[100px]">Đơn vị</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {grouped[cat].map((product) => (
                         <TableRow key={product.id}>
                           <TableCell className="font-medium">{product.name}</TableCell>
-                          <TableCell className="text-right">{formatVND(product.price)}</TableCell>
-                          <TableCell className="text-right pr-6 text-muted-foreground">{product.unit}</TableCell>
+                          <TableCell className="text-right tabular-nums">{formatVND(product.price)}</TableCell>
+                          <TableCell className="text-muted-foreground">{product.unit}</TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
