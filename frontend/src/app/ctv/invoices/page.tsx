@@ -30,6 +30,13 @@ const STATUS_STYLES: Record<string, string> = {
   CANCELLED: 'bg-red-100 text-red-700',
 };
 
+const STATUS_LABEL: Record<string, string> = {
+  DRAFT: 'Nháp',
+  SENT: 'Đã gửi',
+  PAID: 'Đã thanh toán',
+  CANCELLED: 'Đã huỷ',
+};
+
 const PAYOUT_TYPE_LABEL: Record<string, string> = {
   SALES_COMMISSION: 'Hoa hồng bán lẻ',
   MAINTENANCE_FEE: 'Lương cố định',
@@ -80,7 +87,7 @@ export default function CtvInvoicesPage() {
                   <TableHead>Số HĐ</TableHead>
                   <TableHead>Ngày</TableHead>
                   <TableHead>Bên trả</TableHead>
-                  <TableHead>Loại payout</TableHead>
+                  <TableHead>Loại</TableHead>
                   <TableHead className="text-right">Số tiền</TableHead>
                   <TableHead>Trạng thái</TableHead>
                 </TableRow>
@@ -101,7 +108,7 @@ export default function CtvInvoicesPage() {
                     </TableCell>
                     <TableCell className="text-right font-mono font-semibold">{formatVND(Number(inv.amount) || 0)}</TableCell>
                     <TableCell>
-                      <Badge className={STATUS_STYLES[inv.status]}>{inv.status}</Badge>
+                      <Badge className={STATUS_STYLES[inv.status]}>{STATUS_LABEL[inv.status] ?? inv.status}</Badge>
                     </TableCell>
                   </TableRow>
                 ))}
