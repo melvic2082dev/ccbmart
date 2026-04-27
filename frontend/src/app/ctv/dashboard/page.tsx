@@ -75,7 +75,6 @@ function TreeNode({ member, depth = 0, defaultOpen = true }: { member: TreeMembe
         <span className="font-medium text-gray-800">{member.name}</span>
         <Badge className="bg-emerald-100 text-emerald-700 text-xs px-1.5 py-0">{member.rank}</Badge>
         <span className="text-xs font-mono text-gray-600">{self}/({team})</span>
-        <span className="text-[10px] text-gray-400">cá nhân/nhánh</span>
       </div>
       {hasChildren && open && (
         <ul className="border-l-2 border-emerald-100 ml-5 pl-2 mt-0.5 space-y-0.5">
@@ -139,9 +138,9 @@ export default function CTVDashboardPage() {
           <h1 className="text-2xl font-bold text-gray-900">Bảng điều khiển CTV</h1>
           <div className="flex items-center gap-2">
             {updatedAt && (
-              <p className="text-xs text-gray-500 flex items-center gap-1">
-                <Clock className="w-3 h-3" />
-                Cập nhật lần cuối: {updatedAt.toLocaleString('vi-VN')}
+              <p className="text-xs text-gray-500 flex items-center gap-1 whitespace-nowrap">
+                <Clock className="w-3 h-3 shrink-0" />
+                <span className="whitespace-nowrap">Cập nhật lần cuối: {updatedAt.toLocaleString('vi-VN')}</span>
               </p>
             )}
             {data?.promotionStatus && (
@@ -321,7 +320,10 @@ export default function CTVDashboardPage() {
 
         <Card className="border-emerald-100 shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between flex-wrap gap-2">
-            <CardTitle className="text-gray-800">Cây quản lý đội nhóm</CardTitle>
+            <div>
+              <CardTitle className="text-gray-800">Cây quản lý đội nhóm</CardTitle>
+              <p className="text-[11px] text-gray-500 mt-1">Số combo tháng này — <span className="font-mono">cá nhân/(nhánh)</span></p>
+            </div>
             {treeRoot && (
               <div className="flex items-center gap-2 text-xs">
                 <button onClick={() => toggleAll(true)} className="px-2 py-1 rounded border border-emerald-200 text-emerald-700 hover:bg-emerald-50">

@@ -261,6 +261,20 @@
   scrollbar-color: #475569 transparent;
 }
 
+/* Mobile (< md): hide horizontal scrollbars on overflow containers — touch
+   swipe still works, the bar just clutters the UI on small screens. */
+@media (max-width: 767px) {
+  .overflow-x-auto,
+  .overflow-auto {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .overflow-x-auto::-webkit-scrollbar,
+  .overflow-auto::-webkit-scrollbar {
+    display: none;
+  }
+}
+
 @layer base {
   * {
     @apply border-border;
