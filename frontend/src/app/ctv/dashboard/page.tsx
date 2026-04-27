@@ -92,7 +92,8 @@ export default function CTVDashboardPage() {
     async function fetchTree() {
       try {
         const result = await api.ctvTree()
-        setTree(result)
+        // API returns root node (the user themselves); show only their team
+        setTree(Array.isArray(result) ? result : (result?.children || []))
       } catch (err) {
         console.error('Failed to fetch CTV tree:', err)
       } finally {
