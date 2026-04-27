@@ -20,11 +20,11 @@ interface WalletRow {
 interface WalletResponse { wallets: WalletRow[]; total: number; totalPages: number; page: number }
 
 const TIER_COLOR: Record<string, string> = {
-  gray: 'bg-gray-100 text-gray-700',
-  blue: 'bg-blue-100 text-blue-700',
-  purple: 'bg-purple-100 text-purple-700',
-  amber: 'bg-amber-100 text-amber-700',
-  green: 'bg-green-100 text-green-700',
+  gray:   'bg-slate-500 text-white border-slate-600',
+  blue:   'bg-blue-600 text-white border-blue-700',
+  purple: 'bg-purple-600 text-white border-purple-700',
+  amber:  'bg-gradient-to-r from-amber-400 to-yellow-500 text-amber-950 border-amber-600 font-bold',
+  green:  'bg-emerald-500 text-white border-emerald-600',
 };
 
 type StatusFilter = 'all' | 'active' | 'locked';

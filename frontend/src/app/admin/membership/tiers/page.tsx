@@ -14,10 +14,10 @@ const TIER_LABELS: Record<string, string> = {
 };
 
 const TIER_COLORS: Record<string, string> = {
-  GREEN: 'bg-green-100 text-green-700',
-  BASIC: 'bg-slate-100 text-slate-700',
-  STANDARD: 'bg-blue-100 text-blue-700',
-  VIP_GOLD: 'bg-amber-100 text-amber-700',
+  GREEN:    'bg-emerald-500 text-white border-emerald-600',
+  BASIC:    'bg-slate-500 text-white border-slate-600',
+  STANDARD: 'bg-blue-600 text-white border-blue-700',
+  VIP_GOLD: 'bg-gradient-to-r from-amber-400 to-yellow-500 text-amber-950 border-amber-600 font-bold',
 };
 
 // Card border + accent bar per tier — gives the mobile card a distinct hue

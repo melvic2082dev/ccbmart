@@ -405,6 +405,17 @@ export function formatVND(amount: number): string {
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
 }
 
+// Compact VND format for tight mobile cards: 1.234.567.890 → "1.2tỷ", 450.000.000 → "450tr"
+export function formatVNDCompact(amount: number): string {
+  const n = Number(amount) || 0;
+  const abs = Math.abs(n);
+  const sign = n < 0 ? '-' : '';
+  if (abs >= 1_000_000_000) return `${sign}${(abs / 1_000_000_000).toFixed(abs >= 10_000_000_000 ? 0 : 1).replace(/\.0$/, '')} tỷ`;
+  if (abs >= 1_000_000)     return `${sign}${(abs / 1_000_000).toFixed(abs >= 10_000_000 ? 0 : 1).replace(/\.0$/, '')} tr`;
+  if (abs >= 1_000)         return `${sign}${(abs / 1_000).toFixed(0)}k`;
+  return `${sign}${abs} đ`;
+}
+
 export function formatNumber(n: number): string {
   return new Intl.NumberFormat('vi-VN').format(n);
 }

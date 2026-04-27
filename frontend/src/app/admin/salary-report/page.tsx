@@ -155,67 +155,91 @@ export default function SalaryReportPage() {
                 <CardTitle className="text-gray-800">Danh sách quản lý nhận lương cứng</CardTitle>
               </CardHeader>
               <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>#</TableHead>
-                      <TableHead>Tên</TableHead>
-                      <TableHead>Cấp bậc</TableHead>
-                      <TableHead className="text-right">Lương cứng</TableHead>
-                      <TableHead className="text-right">% ngưỡng</TableHead>
-                      <TableHead className="text-center">Trạng thái</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {sortedManagers.length === 0 ? (
+                {/* Desktop table */}
+                <div className="hidden md:block">
+                  <Table>
+                    <TableHeader>
                       <TableRow>
-                        <TableCell colSpan={6} className="py-6 text-center text-gray-500">
-                          Chưa có quản lý nào nhận lương cứng trong kỳ này.
-                        </TableCell>
+                        <TableHead>#</TableHead>
+                        <TableHead>Tên</TableHead>
+                        <TableHead>Cấp bậc</TableHead>
+                        <TableHead className="text-right">Lương cứng</TableHead>
+                        <TableHead className="text-right">% ngưỡng</TableHead>
+                        <TableHead className="text-center">Trạng thái</TableHead>
                       </TableRow>
-                    ) : (
-                      sortedManagers.map((m, idx) => {
-                        const pct = salaryFundCap > 0 ? (m.salary / salaryFundCap) * 100 : 0
-                        const status = managerStatus(overallPct)
-                        return (
-                          <TableRow key={idx} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}>
-                            <TableCell className="text-gray-500">{idx + 1}</TableCell>
-                            <TableCell className="font-medium text-gray-800">{m.name}</TableCell>
-                            <TableCell>
-                              <Badge className="bg-emerald-100 text-emerald-700 text-xs px-1.5 py-0">
-                                {RANK_LABEL[m.rank] ?? m.rank}
-                              </Badge>
-                            </TableCell>
-                            <TableCell className="text-right font-semibold text-gray-900">
-                              {formatVND(m.salary)}
-                            </TableCell>
-                            <TableCell className="text-right text-gray-700">{pct.toFixed(1)}%</TableCell>
-                            <TableCell className="text-center">
-                              <Badge className={`${status.badge} inline-flex items-center gap-1`}>
-                                {status.icon}
-                                {status.label}
-                              </Badge>
-                            </TableCell>
-                          </TableRow>
-                        )
-                      })
-                    )}
-                    {sortedManagers.length > 0 && (
-                      <TableRow className="bg-emerald-50 font-semibold">
-                        <TableCell className="text-emerald-800" colSpan={3}>
-                          Tổng cộng ({sortedManagers.length} người)
-                        </TableCell>
-                        <TableCell className="text-right text-emerald-800">
-                          {formatVND(totalFixedSalary)}
-                        </TableCell>
-                        <TableCell className="text-right text-emerald-700">
-                          {overallPct.toFixed(1)}%
-                        </TableCell>
-                        <TableCell />
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {sortedManagers.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={6} className="py-6 text-center text-gray-500">
+                            Chưa có quản lý nào nhận lương cứng trong kỳ này.
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        sortedManagers.map((m, idx) => {
+                          const pct = salaryFundCap > 0 ? (m.salary / salaryFundCap) * 100 : 0
+                          const status = managerStatus(overallPct)
+                          return (
+                            <TableRow key={idx} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}>
+                              <TableCell className="text-gray-500">{idx + 1}</TableCell>
+                              <TableCell className="font-medium text-gray-800">{m.name}</TableCell>
+                              <TableCell>
+                                <Badge className="bg-emerald-100 text-emerald-700 text-xs px-1.5 py-0">
+                                  {RANK_LABEL[m.rank] ?? m.rank}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-right font-semibold text-gray-900">{formatVND(m.salary)}</TableCell>
+                              <TableCell className="text-right text-gray-700">{pct.toFixed(1)}%</TableCell>
+                              <TableCell className="text-center">
+                                <Badge className={`${status.badge} inline-flex items-center gap-1`}>
+                                  {status.icon}{status.label}
+                                </Badge>
+                              </TableCell>
+                            </TableRow>
+                          )
+                        })
+                      )}
+                      {sortedManagers.length > 0 && (
+                        <TableRow className="bg-emerald-50 font-semibold">
+                          <TableCell className="text-emerald-800" colSpan={3}>Tổng cộng ({sortedManagers.length} người)</TableCell>
+                          <TableCell className="text-right text-emerald-800">{formatVND(totalFixedSalary)}</TableCell>
+                          <TableCell className="text-right text-emerald-700">{overallPct.toFixed(1)}%</TableCell>
+                          <TableCell />
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+
+                {/* Mobile compact card */}
+                <div className="md:hidden space-y-2">
+                  {sortedManagers.length === 0 ? (
+                    <p className="py-6 text-center text-gray-500">Chưa có quản lý nào nhận lương cứng trong kỳ này.</p>
+                  ) : (
+                    sortedManagers.map((m, idx) => {
+                      const pct = salaryFundCap > 0 ? (m.salary / salaryFundCap) * 100 : 0
+                      const status = managerStatus(overallPct)
+                      return (
+                        <div key={idx} className="rounded-lg border border-gray-200 bg-white px-3 py-2 flex items-center gap-2">
+                          <span className="text-xs text-gray-400 w-5 shrink-0">{idx + 1}</span>
+                          <Badge className="bg-emerald-100 text-emerald-700 text-xs px-1.5 py-0 shrink-0">
+                            {RANK_LABEL[m.rank] ?? m.rank}
+                          </Badge>
+                          <span className="text-sm font-medium text-gray-800 flex-1 min-w-0 truncate">{m.name}</span>
+                          <span className="text-sm font-semibold text-gray-900 shrink-0 tabular-nums">{formatVND(m.salary)}</span>
+                          <Badge className={`${status.badge} text-[10px] py-0 shrink-0`} title={status.label}>{status.icon}</Badge>
+                        </div>
+                      )
+                    })
+                  )}
+                  {sortedManagers.length > 0 && (
+                    <div className="rounded-lg border-2 border-emerald-200 bg-emerald-50 px-3 py-2 flex items-center gap-2">
+                      <span className="text-sm font-bold text-emerald-800 flex-1">Tổng ({sortedManagers.length})</span>
+                      <span className="text-sm font-bold text-emerald-800 tabular-nums">{formatVND(totalFixedSalary)}</span>
+                      <span className="text-xs text-emerald-700">{overallPct.toFixed(1)}%</span>
+                    </div>
+                  )}
+                </div>
               </CardContent>
             </Card>
           </>

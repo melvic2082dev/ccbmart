@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { api, formatVND } from '@/lib/api';
+import { api, formatVND, formatVNDCompact } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -105,28 +105,28 @@ export default function AdminTaxPage() {
         <Calculator size={24} /> Thuế TNCN 10%
       </h2>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-6">
         <Card>
-          <CardContent className="p-4">
-            <p className="text-sm text-slate-500">Tổng thu nhập chịu thuế</p>
-            <p className="text-2xl font-bold">{formatVND(totalIncome)}</p>
+          <CardContent className="p-3">
+            <p className="text-xs text-slate-500">Thu nhập chịu thuế</p>
+            <p className="text-lg sm:text-2xl font-bold tabular-nums whitespace-nowrap" title={formatVND(totalIncome)}>{formatVNDCompact(totalIncome)}</p>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="p-4">
-            <p className="text-sm text-slate-500">Tổng thuế 10%</p>
-            <p className="text-2xl font-bold text-red-600">{formatVND(totalTax)}</p>
+          <CardContent className="p-3">
+            <p className="text-xs text-slate-500">Tổng thuế 10%</p>
+            <p className="text-lg sm:text-2xl font-bold text-red-600 tabular-nums whitespace-nowrap" title={formatVND(totalTax)}>{formatVNDCompact(totalTax)}</p>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="p-4">
-            <p className="text-sm text-slate-500">Số bản ghi</p>
-            <p className="text-2xl font-bold">{records.length}</p>
+        <Card className="col-span-2 md:col-span-1">
+          <CardContent className="p-3">
+            <p className="text-xs text-slate-500">Số bản ghi</p>
+            <p className="text-lg sm:text-2xl font-bold">{records.length}</p>
           </CardContent>
         </Card>
       </div>
 
-      <div className="flex items-center gap-2 mb-4">
+      <div className="flex flex-wrap items-center gap-2 mb-4">
         <input
           type="month"
           value={month}
@@ -140,8 +140,8 @@ export default function AdminTaxPage() {
         >
           <Play size={16} /> {processing ? 'Đang tính…' : 'Tính thuế tháng'}
         </button>
-        <Button variant="outline" size="sm" onClick={exportTaxReport} className="ml-auto">
-          <FileText className="w-4 h-4 mr-1" /> Xuất báo cáo thuế tháng (XML)
+        <Button variant="outline" size="sm" onClick={exportTaxReport}>
+          <FileText className="w-4 h-4 mr-1" /> Xuất báo cáo XML
         </Button>
       </div>
 

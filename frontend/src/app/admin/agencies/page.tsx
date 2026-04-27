@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { api, formatVND } from '@/lib/api';
+import { api, formatVND, formatVNDCompact } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -158,8 +158,8 @@ export default function AdminAgencies() {
           {/* Top stat cards */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             <StatCard icon={<Building2 className="text-emerald-600" size={20} />} label="Tổng đại lý" value={agencies.length.toString()} color="emerald" />
-            <StatCard icon={<Wallet className="text-blue-600" size={20} />} label="Tổng đặt cọc" value={formatVND(totalDeposit)} color="blue" />
-            <StatCard icon={<TrendingUp className="text-amber-600" size={20} />} label="Tổng doanh thu" value={formatVND(totalRevenue)} color="amber" />
+            <StatCard icon={<Wallet className="text-blue-600" size={20} />} label="Tổng đặt cọc" value={formatVNDCompact(totalDeposit)} fullValue={formatVND(totalDeposit)} color="blue" />
+            <StatCard icon={<TrendingUp className="text-amber-600" size={20} />} label="Tổng doanh thu" value={formatVNDCompact(totalRevenue)} fullValue={formatVND(totalRevenue)} color="amber" />
             <StatCard icon={<AlertTriangle className="text-red-600" size={20} />} label="Cảnh báo tồn kho" value={totalWarnings.toString()} color="red" />
           </div>
 
@@ -359,8 +359,8 @@ export default function AdminAgencies() {
 }
 
 function StatCard({
-  icon, label, value, color,
-}: { icon: React.ReactNode; label: string; value: string; color: string }) {
+  icon, label, value, fullValue, color,
+}: { icon: React.ReactNode; label: string; value: string; fullValue?: string; color: string }) {
   const bg: Record<string, string> = {
     emerald: 'bg-emerald-100',
     blue: 'bg-blue-100',
@@ -373,8 +373,8 @@ function StatCard({
         <div className="flex items-center gap-3">
           <div className={`p-2 rounded-lg shrink-0 ${bg[color] ?? 'bg-gray-100'}`}>{icon}</div>
           <div className="min-w-0 flex-1">
-            <p className="text-sm text-slate-500">{label}</p>
-            <p className="text-base sm:text-xl font-bold break-words leading-tight">{value}</p>
+            <p className="text-sm text-slate-500 truncate">{label}</p>
+            <p className="text-lg sm:text-xl font-bold tabular-nums whitespace-nowrap" title={fullValue}>{value}</p>
           </div>
         </div>
       </CardContent>

@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Building2, Eye, Download, Search } from 'lucide-react';
+import { Building2, Eye, Download, Search, Copy, Check } from 'lucide-react';
 import { HkdDetailModal, HkdWarningBadges, type HouseholdRow } from './modals';
 
 const RANK_LABEL: Record<string, string> = {
@@ -20,6 +20,26 @@ const STATUS_COLORS: Record<string, string> = {
   suspended: 'bg-yellow-100 text-yellow-700',
   terminated: 'bg-red-100 text-red-700',
 };
+
+function CopyButton({ value, title = 'Sao chép' }: { value: string; title?: string }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <button
+      type="button"
+      onClick={(e) => {
+        e.stopPropagation();
+        navigator.clipboard.writeText(value).then(() => {
+          setCopied(true);
+          setTimeout(() => setCopied(false), 1500);
+        });
+      }}
+      title={title}
+      className="inline-flex items-center text-emerald-600 hover:text-emerald-700"
+    >
+      {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+    </button>
+  );
+}
 
 function daysLeft(date?: string | null): number | null {
   if (!date) return null;
@@ -141,7 +161,8 @@ export default function BusinessHouseholdPage() {
             </div>
           </CardHeader>
           <CardContent className="p-0">
-            <div className="overflow-x-auto">
+            {/* Desktop table */}
+            <div className="hidden md:block overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -244,6 +265,119 @@ export default function BusinessHouseholdPage() {
                   )}
                 </TableBody>
               </Table>
+            </div>
+
+            {/* Mobile compact card */}
+            <div className="md:hidden p-3 space-y-3">
+              {filtered.length === 0 ? (
+                <p className="text-center py-8 text-slate-500">
+                  {households.length === 0 ? 'Chưa có HKD nào' : 'Không có HKD phù hợp'}
+                </p>
+              ) : filtered.map((h) => (
+                <div key={h.id} className="rounded-lg border border-gray-200 bg-white p-3 space-y-2" onClick={() => openRowDetail(h.id)}>
+                  {/* Row 1: HKD name + download HĐ */}
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="font-semibold text-gray-800 truncate">{h.businessName}</p>
+                    {h.dealerPdfUrl && (
+                      <a
+                        href={h.dealerPdfUrl}
+                        target="_blank" rel="noopener"
+                        className="text-blue-600 shrink-0"
+                        title="Tải HĐ Đại lý"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <Download className="w-4 h-4" />
+                      </a>
+                    )}
+                  </div>
+
+                  {/* Row 2: Rank + Status (same row, per user request) */}
+                  <div className="flex items-center justify-between gap-2 text-sm">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <Badge variant="outline" className="text-xs shrink-0">{h.user.rank}</Badge>
+                      <span className="text-gray-700 truncate">{h.user.name}</span>
+                    </div>
+                    <Badge className={STATUS_COLORS[h.status] || 'bg-gray-100 text-gray-700'}>
+                      {h.status === 'active' ? 'Hoạt động' : h.status === 'suspended' ? 'Tạm ngưng' : 'Chấm dứt'}
+                    </Badge>
+                  </div>
+
+                  {/* MST · GPKD */}
+                  <div className="text-xs space-y-0.5 pt-2 border-t">
+                    <div className="flex justify-between gap-2">
+                      <span className="text-gray-500">MST:</span>
+                      <span className="font-mono">{h.taxCode || '—'}</span>
+                    </div>
+                    <div className="flex justify-between gap-2">
+                      <span className="text-gray-500">GPKD:</span>
+                      <span className="font-mono">{h.businessLicense || '—'}</span>
+                    </div>
+                  </div>
+
+                  {/* Bank with copy button */}
+                  <div className="text-xs pt-2 border-t">
+                    <p className="text-gray-500 mb-0.5">TK Ngân hàng:</p>
+                    {h.bankAccountNo ? (
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="min-w-0">
+                          <span className="font-medium">{h.bankName}</span>
+                          {' · '}
+                          <span className="font-mono text-gray-700">{h.bankAccountNo}</span>
+                        </div>
+                        <CopyButton value={h.bankAccountNo} title="Sao chép số TK" />
+                      </div>
+                    ) : (
+                      <span className="text-amber-600">⚠️ Chưa có</span>
+                    )}
+                  </div>
+
+                  {/* Contracts */}
+                  <div className="grid grid-cols-2 gap-2 pt-2 border-t text-xs">
+                    <div>
+                      <p className="text-gray-500">HĐ Đại lý</p>
+                      <p className="font-mono text-gray-700">{h.dealerContractNo || '—'}</p>
+                      {h.dealerSignedAt && <p className="text-gray-500">Ký: {new Date(h.dealerSignedAt).toLocaleDateString('vi-VN')}</p>}
+                      <ExpiryCell date={h.dealerExpiredAt} />
+                    </div>
+                    <div>
+                      <p className="text-gray-500">HĐ DV đào tạo</p>
+                      <p className="font-mono text-gray-700">{h.trainingContractNo || '—'}</p>
+                      {h.trainingSignedAt && <p className="text-gray-500">Ký: {new Date(h.trainingSignedAt).toLocaleDateString('vi-VN')}</p>}
+                      <ExpiryCell date={h.trainingExpiredAt} />
+                    </div>
+                  </div>
+
+                  {/* Cảnh báo (warnings) — directly above action buttons per user request */}
+                  {h.warnings && h.warnings.length > 0 && (
+                    <div className="pt-2 border-t">
+                      <p className="text-xs text-gray-500 mb-1">Cảnh báo:</p>
+                      <HkdWarningBadges warnings={h.warnings} />
+                    </div>
+                  )}
+
+                  {/* Thao tác */}
+                  <div className="flex items-center gap-2 pt-2 border-t">
+                    <Button variant="ghost" size="icon-sm" title="Chi tiết" onClick={(e) => { e.stopPropagation(); openRowDetail(h.id); }}>
+                      <Eye className="w-4 h-4 text-blue-600" />
+                    </Button>
+                    {h.status === 'active' && (
+                      <Button variant="outline" size="sm" className="flex-1 text-xs text-yellow-700" onClick={(e) => { e.stopPropagation(); handleAction(h.userId, 'suspend'); }}>
+                        Tạm ngưng
+                      </Button>
+                    )}
+                    {h.status === 'suspended' && (
+                      <Button variant="outline" size="sm" className="flex-1 text-xs text-green-700" onClick={(e) => { e.stopPropagation(); handleAction(h.userId, 'activate'); }}>
+                        Kích hoạt
+                      </Button>
+                    )}
+                    {h.status !== 'terminated' && (
+                      <Button variant="outline" size="sm" className="flex-1 text-xs text-red-700" onClick={(e) => { e.stopPropagation(); handleAction(h.userId, 'terminate'); }}>
+                        Chấm dứt
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              ))}
             </div>
           </CardContent>
         </Card>
