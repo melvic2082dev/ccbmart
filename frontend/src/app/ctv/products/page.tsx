@@ -3,14 +3,6 @@
 import { useEffect, useState } from 'react'
 import { api, formatVND } from '@/lib/api'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
 
 interface Product {
   id: string | number
@@ -79,25 +71,21 @@ export default function CtvProductsPage() {
                     </span>
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Tên sản phẩm</TableHead>
-                        <TableHead className="w-[160px] text-right">Giá bán</TableHead>
-                        <TableHead className="w-[100px]">Đơn vị</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {grouped[cat].map((product) => (
-                        <TableRow key={product.id}>
-                          <TableCell className="font-medium">{product.name}</TableCell>
-                          <TableCell className="text-right tabular-nums">{formatVND(product.price)}</TableCell>
-                          <TableCell className="text-muted-foreground">{product.unit}</TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                <CardContent className="p-0">
+                  <ul className="divide-y">
+                    {grouped[cat].map((product, idx) => (
+                      <li
+                        key={product.id}
+                        className={`px-4 py-3 flex items-center justify-between gap-3 ${idx % 2 === 0 ? 'bg-slate-50/40 dark:bg-slate-50/40' : ''}`}
+                      >
+                        <p className="font-medium min-w-0 truncate">{product.name}</p>
+                        <p className="shrink-0 text-right tabular-nums">
+                          <span className="font-semibold">{formatVND(product.price)}</span>
+                          <span className="text-muted-foreground ml-1">/ {product.unit}</span>
+                        </p>
+                      </li>
+                    ))}
+                  </ul>
                 </CardContent>
               </Card>
             ))}

@@ -109,38 +109,32 @@ export default function CtvBreakawayFeesPage() {
               {data.records.length === 0 ? (
                 <p className="text-sm text-slate-500">Chưa có phí sau thoát ly trong tháng</p>
               ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead className="text-left border-b">
-                      <tr>
-                        <th className="py-2 px-2">Level</th>
-                        <th className="py-2 px-2">Nhánh thoát</th>
-                        <th className="py-2 px-2">Thoát ly từ</th>
-                        <th className="py-2 px-2 text-right">Phí</th>
-                        <th className="py-2 px-2">Trạng thái</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {data.records.map((r) => (
-                        <tr key={r.id} className="border-b last:border-0">
-                          <td className="py-2 px-2">
+                <ul className="divide-y">
+                  {data.records.map((r, idx) => (
+                    <li
+                      key={r.id}
+                      className={`px-3 py-3 ${idx % 2 === 0 ? 'bg-slate-50/40 dark:bg-slate-50/40' : ''}`}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0 flex-1 space-y-1">
+                          <div className="flex items-center gap-2 flex-wrap">
                             <Badge className={LEVEL_COLOR[r.level]}>{LEVEL_LABEL[r.level]}</Badge>
-                          </td>
-                          <td className="py-2 px-2">{r.fromUser.name}</td>
-                          <td className="py-2 px-2 text-slate-500">
-                            {r.breakawayLog ? new Date(r.breakawayLog.breakawayAt).toLocaleDateString('vi-VN') : '-'}
-                          </td>
-                          <td className="py-2 px-2 text-right font-mono font-semibold">{formatVND(r.amount)}</td>
-                          <td className="py-2 px-2">
-                            <Badge className={r.status === 'PAID' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}>
-                              {r.status === 'PAID' ? 'Đã trả' : r.status === 'PENDING' ? 'Chờ trả' : r.status === 'CANCELLED' ? 'Đã huỷ' : 'Khác'}
-                            </Badge>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                            <span className="font-medium truncate">{r.fromUser.name}</span>
+                          </div>
+                          <p className="text-xs text-slate-500">
+                            Thoát ly: {r.breakawayLog ? new Date(r.breakawayLog.breakawayAt).toLocaleDateString('vi-VN') : '-'}
+                          </p>
+                        </div>
+                        <div className="text-right shrink-0 space-y-1">
+                          <p className="font-mono font-semibold tabular-nums">{formatVND(r.amount)}</p>
+                          <Badge className={r.status === 'PAID' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}>
+                            {r.status === 'PAID' ? 'Đã trả' : r.status === 'PENDING' ? 'Chờ trả' : r.status === 'CANCELLED' ? 'Đã huỷ' : 'Khác'}
+                          </Badge>
+                        </div>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
               )}
             </CardContent>
           </Card>

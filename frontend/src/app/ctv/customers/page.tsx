@@ -3,14 +3,6 @@
 import { useEffect, useState } from 'react'
 import { api, formatVND } from '@/lib/api'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
 
 interface Customer {
   id: string | number
@@ -40,52 +32,47 @@ export default function CtvCustomersPage() {
   }, [])
 
   return (
-    <>
-      <div className="p-6">
-        <h1 className="text-2xl font-bold mb-6">Khách hàng của tôi</h1>
-        <Card>
-          <CardHeader>
-            <CardTitle>Danh sách khách hàng</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {loading ? (
-              <p className="text-muted-foreground text-sm">Đang tải...</p>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Tên</TableHead>
-                    <TableHead>SĐT</TableHead>
-                    <TableHead>Tổng chi tiêu</TableHead>
-                    <TableHead>Mua lần đầu</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {customers.map((customer) => (
-                    <TableRow key={customer.id}>
-                      <TableCell className="font-medium">{customer.name}</TableCell>
-                      <TableCell>{customer.phone}</TableCell>
-                      <TableCell>{formatVND(customer.totalSpent)}</TableCell>
-                      <TableCell>
-                        {customer.firstPurchaseDate
-                          ? new Date(customer.firstPurchaseDate).toLocaleDateString('vi-VN')
+    <div className="p-6">
+      <h1 className="text-2xl font-bold mb-6">Khách hàng của tôi</h1>
+      <Card>
+        <CardHeader>
+          <CardTitle>Danh sách khách hàng ({customers.length})</CardTitle>
+        </CardHeader>
+        <CardContent className="p-0">
+          {loading ? (
+            <p className="text-muted-foreground text-sm p-6">Đang tải...</p>
+          ) : customers.length === 0 ? (
+            <p className="text-muted-foreground text-sm p-6">Chưa có khách hàng nào</p>
+          ) : (
+            <ul className="divide-y">
+              {customers.map((c, idx) => (
+                <li
+                  key={c.id}
+                  className={`px-4 py-3 ${idx % 2 === 0 ? 'bg-slate-50/40 dark:bg-slate-50/40' : ''}`}
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium truncate">{c.name}</p>
+                      <p className="text-xs text-muted-foreground font-mono">{c.phone}</p>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <p className="font-semibold tabular-nums text-emerald-700 dark:text-emerald-400">
+                        {formatVND(c.totalSpent)}
+                      </p>
+                      <p className="text-[11px] text-muted-foreground">
+                        Mua lần đầu:{' '}
+                        {c.firstPurchaseDate
+                          ? new Date(c.firstPurchaseDate).toLocaleDateString('vi-VN')
                           : '—'}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                  {customers.length === 0 && (
-                    <TableRow>
-                      <TableCell colSpan={4} className="text-center text-muted-foreground">
-                        Chưa có khách hàng nào
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-    </>
+                      </p>
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </CardContent>
+      </Card>
+    </div>
   )
 }

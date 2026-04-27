@@ -68,10 +68,10 @@ export default function CtvTransactions() {
                   <TableHead>ID</TableHead>
                   <TableHead>Khách hàng</TableHead>
                   <TableHead className="text-right">Số tiền</TableHead>
-                  <TableHead>PT thanh toán</TableHead>
+                  <TableHead className="hidden sm:table-cell">PT</TableHead>
                   <TableHead>Trạng thái</TableHead>
-                  <TableHead>Ngày tạo</TableHead>
-                  <TableHead>Ghi chú</TableHead>
+                  <TableHead className="hidden md:table-cell">Ngày tạo</TableHead>
+                  <TableHead className="hidden lg:table-cell">Ghi chú</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -81,8 +81,8 @@ export default function CtvTransactions() {
                     <TableRow key={tx.id}>
                       <TableCell className="font-mono">#{tx.id}</TableCell>
                       <TableCell>{tx.customer?.name || '-'}</TableCell>
-                      <TableCell className="text-right font-semibold">{formatVND(tx.totalAmount)}</TableCell>
-                      <TableCell>
+                      <TableCell className="text-right font-semibold tabular-nums">{formatVND(tx.totalAmount)}</TableCell>
+                      <TableCell className="hidden sm:table-cell">
                         {tx.paymentMethod === 'bank_transfer' ? (
                           <Badge variant="outline">CK {tx.bankCode ? `(${tx.bankCode})` : ''}</Badge>
                         ) : tx.paymentMethod === 'cash' ? (
@@ -92,8 +92,8 @@ export default function CtvTransactions() {
                       <TableCell>
                         <Badge className={sc.color} variant="outline">{sc.label}</Badge>
                       </TableCell>
-                      <TableCell className="text-xs">{new Date(tx.createdAt).toLocaleString('vi-VN')}</TableCell>
-                      <TableCell className="text-xs text-slate-500 max-w-[150px] truncate">
+                      <TableCell className="hidden md:table-cell text-xs">{new Date(tx.createdAt).toLocaleString('vi-VN')}</TableCell>
+                      <TableCell className="hidden lg:table-cell text-xs text-slate-500 max-w-[150px] truncate">
                         {tx.rejectedReason || (tx.paymentProof ? 'Có bằng chứng' : '')}
                       </TableCell>
                     </TableRow>
