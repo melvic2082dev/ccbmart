@@ -1,5 +1,10 @@
 const rateLimit = require('express-rate-limit');
 
+// Disable strict per-IP throttling in non-production so a single dev box
+// (which often retries logins, hot-reloads, runs tests) doesn't lock itself
+// out. Production keeps the real limits.
+const isProd = process.env.NODE_ENV === 'production';
+
 // Global rate limiter: 1000 requests per 15 minutes per IP
 const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -7,12 +12,13 @@ const globalLimiter = rateLimit({
   message: { error: 'Too many requests, please try again later' },
   standardHeaders: true,
   legacyHeaders: false,
+  skip: () => !isProd,
 });
 
-// Login rate limiter: 5 attempts per 15 minutes
+// Login rate limiter: 5 attempts per 15 minutes (prod) — relaxed in dev
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 5,
+  max: isProd ? 5 : 200,
   message: { error: 'Too many login attempts, please try again later' },
   standardHeaders: true,
   legacyHeaders: false,

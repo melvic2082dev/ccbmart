@@ -27,7 +27,7 @@ const prisma = require('../lib/prisma');
 
 // Combo unit price (VND) — kept in sync with COMBO_PRICE env. Used to convert
 // breakaway-team revenue to combo count for fixed-amount fee tiers.
-const COMBO_PRICE = parseInt(process.env.COMBO_PRICE || '2000000', 10);
+const COMBO_PRICE = parseInt(process.env.COMBO_PRICE || '1800000', 10);
 
 // Breakaway fee per combo, by level. Math: 60K/40K/20K = 3%/2%/1% × 2M.
 const BREAKAWAY_FEE_PER_COMBO = { L1: 60_000, L2: 40_000, L3: 20_000 };

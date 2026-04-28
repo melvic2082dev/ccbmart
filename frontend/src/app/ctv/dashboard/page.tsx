@@ -5,7 +5,7 @@ import { api, formatVND } from '@/lib/api'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
-import { TrendingUp, Users, ShoppingCart, Wallet, Gift, Star, ArrowUpCircle, Clock, Target, Trophy, LayoutDashboard } from 'lucide-react'
+import { TrendingUp, Users, ShoppingCart, Wallet, Gift, ArrowUpCircle, Clock, Target, Trophy, LayoutDashboard } from 'lucide-react'
 import { ACCENT_CLASSES } from '@/lib/page-accent'
 
 const ACCENT = ACCENT_CLASSES.emerald
@@ -58,12 +58,6 @@ interface TreeMember {
   teamCombos?: number
   children?: TreeMember[]
 }
-
-const TITLE_LABELS: Record<string, string> = {
-  EXPERT_LEADER: 'Chuyên gia Dẫn dắt',
-  SENIOR_EXPERT: 'Chuyên gia Cấp cao',
-  STRATEGIC_ADVISOR: 'Cố vấn Chiến lược',
-};
 
 // Layer N = N hops down the management chain. Per V13.4 spec, each rank
 // only "owns" up to a certain depth — beyond that the names blur, so we
@@ -178,12 +172,6 @@ export default function CTVDashboardPage() {
             <p className="text-sm text-muted-foreground mt-2">{monthLabel}</p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
-            {data?.professionalTitle?.isActive && (
-              <Badge className="bg-purple-500 text-white text-xs px-2 py-1">
-                <Star className="w-3 h-3 mr-1 inline" />
-                {TITLE_LABELS[data.professionalTitle.title] || data.professionalTitle.title}
-              </Badge>
-            )}
             {data?.promotionStatus && (
               <Badge className="bg-amber-500 text-white text-xs px-2 py-1">
                 <ArrowUpCircle className="w-3 h-3 mr-1 inline" />

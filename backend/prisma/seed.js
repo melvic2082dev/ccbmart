@@ -291,7 +291,7 @@ async function main() {
 
   // 6. Products
   const products = await Promise.all([
-    prisma.product.create({ data: { name: 'Combo Suc khoe Vang (TPCN)', category: 'TPCN', price: 2000000, cogsPct: 0.35, unit: 'combo' } }),
+    prisma.product.create({ data: { name: 'Combo Suc khoe Vang (TPCN)', category: 'TPCN', price: parseInt(process.env.COMBO_PRICE || '1800000', 10), cogsPct: 0.35, unit: 'combo' } }),
     prisma.product.create({ data: { name: 'Kardi Q10 - Ho tro tim mach', category: 'TPCN', price: 698000, cogsPct: 0.26, unit: 'hop' } }),
     prisma.product.create({ data: { name: 'Canxi Nano K2 - Xuong khop', category: 'TPCN', price: 450000, cogsPct: 0.30, unit: 'hop' } }),
     prisma.product.create({ data: { name: 'Tra Sam Han Quoc', category: 'TPCN', price: 380000, cogsPct: 0.32, unit: 'hop' } }),

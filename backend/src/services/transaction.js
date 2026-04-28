@@ -11,7 +11,7 @@ const BANK_ACCOUNT = {
   accountName: process.env.BANK_ACCOUNT_NAME || 'CONG TY TNHH CCB MART',
 };
 
-const COMBO_PRICE = parseInt(process.env.COMBO_PRICE || '2000000', 10);
+const COMBO_PRICE = parseInt(process.env.COMBO_PRICE || '1800000', 10);
 const COMBO_COGS_PCT = parseFloat(process.env.COMBO_COGS_PCT || '0.50');
 
 /**

@@ -142,9 +142,9 @@ export default function CtvInvoicesPage() {
 
       <Card className={`mb-6 border ${ACCENT.border}`}>
         <CardContent className="p-4">
-          <p className="text-sm text-muted-foreground">{hasFilter ? 'Tổng đã lọc' : 'Tổng đã nhận từ CCB Mart'}</p>
+          <p className="text-sm text-gray-700 dark:text-gray-300">{hasFilter ? 'Tổng đã lọc' : 'Tổng đã nhận từ CCB Mart'}</p>
           <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-400 tabular-nums">{formatVND(totalReceived)}</p>
-          <p className="text-xs text-slate-500 mt-1">{filteredInvoices.length} hóa đơn</p>
+          <p className="text-xs text-gray-700 dark:text-gray-300 mt-1">{filteredInvoices.length} hóa đơn</p>
         </CardContent>
       </Card>
 
@@ -152,11 +152,11 @@ export default function CtvInvoicesPage() {
         <div className="h-64 bg-slate-200 animate-pulse rounded-xl" />
       ) : invoices.length === 0 ? (
         <Card>
-          <CardContent className="py-8 text-center text-slate-500">Chưa có hóa đơn</CardContent>
+          <CardContent className="py-8 text-center text-gray-700 dark:text-gray-300">Chưa có hóa đơn</CardContent>
         </Card>
       ) : filteredInvoices.length === 0 ? (
         <Card>
-          <CardContent className="py-8 text-center text-slate-500">Không có hóa đơn phù hợp với bộ lọc</CardContent>
+          <CardContent className="py-8 text-center text-gray-700 dark:text-gray-300">Không có hóa đơn phù hợp với bộ lọc</CardContent>
         </Card>
       ) : (
         <div className="flex flex-col gap-4">
@@ -168,7 +168,7 @@ export default function CtvInvoicesPage() {
                   <CardTitle className="text-base flex items-center justify-between gap-2 flex-wrap">
                     <span>
                       {monthLabel(monthKey)}{' '}
-                      <span className="text-sm font-normal text-muted-foreground">({items.length} hóa đơn)</span>
+                      <span className="text-sm font-normal text-gray-700 dark:text-gray-300">({items.length} hóa đơn)</span>
                     </span>
                     <span className="text-sm font-semibold tabular-nums text-emerald-700 dark:text-emerald-400">
                       {formatVND(monthTotal)}
@@ -180,20 +180,20 @@ export default function CtvInvoicesPage() {
                     {items.map((inv, idx) => (
                       <li
                         key={inv.id}
-                        className={`px-4 py-3 ${idx % 2 === 0 ? 'bg-slate-50/40 dark:bg-slate-50/40' : ''}`}
+                        className={`px-4 py-3 ${idx % 2 === 0 ? 'bg-white dark:bg-slate-900/40' : 'bg-gray-50 dark:bg-slate-800/40'}`}
                       >
                         <div className="flex items-start justify-between gap-3">
                           <div className="min-w-0 flex-1 space-y-1">
-                            <p className="font-mono text-xs text-muted-foreground">{inv.invoiceNumber}</p>
-                            <Badge className="bg-purple-100 text-purple-700">
+                            <p className="font-mono text-xs text-gray-700 dark:text-gray-300">{inv.invoiceNumber}</p>
+                            <Badge className="bg-slate-100 text-slate-800 dark:bg-slate-700 dark:text-slate-100 border border-slate-200 dark:border-slate-600">
                               {PAYOUT_TYPE_LABEL[inv.payoutType ?? ''] ?? inv.payoutType ?? inv.feeTier}
                             </Badge>
-                            <p className="text-xs text-muted-foreground">
+                            <p className="text-xs text-gray-700 dark:text-gray-300">
                               {new Date(inv.issuedAt).toLocaleDateString('vi-VN')} · {inv.fromParty || 'CCB Mart'}
                             </p>
                           </div>
                           <div className="text-right shrink-0 space-y-1">
-                            <p className="font-semibold tabular-nums">{formatVND(Number(inv.amount) || 0)}</p>
+                            <p className="font-semibold text-gray-900 dark:text-gray-100 tabular-nums">{formatVND(Number(inv.amount) || 0)}</p>
                             <Badge className={STATUS_STYLES[inv.status]}>{STATUS_LABEL[inv.status] ?? inv.status}</Badge>
                           </div>
                         </div>

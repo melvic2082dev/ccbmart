@@ -13,7 +13,7 @@ router.use(authenticate);
 
 router.get('/', (req, res) => {
   res.json({
-    comboPrice: parseInt(process.env.COMBO_PRICE || '2000000', 10),
+    comboPrice: parseInt(process.env.COMBO_PRICE || '1800000', 10),
   });
 });
 

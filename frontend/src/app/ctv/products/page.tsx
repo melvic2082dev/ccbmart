@@ -85,16 +85,20 @@ export default function CtvProductsPage() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="p-0">
-                    <ul className="divide-y">
+                    <ul className="divide-y divide-gray-100 dark:divide-slate-700">
                       {grouped[cat].map((product, idx) => (
                         <li
                           key={product.id}
-                          className={`px-4 py-3 flex items-center justify-between gap-3 ${idx % 2 === 0 ? 'bg-slate-50/40 dark:bg-slate-50/40' : ''}`}
+                          className={`px-4 py-3 flex items-center justify-between gap-3 transition-colors ${
+                            idx % 2 === 0
+                              ? 'bg-white dark:bg-slate-900/40 hover:bg-gray-50 dark:hover:bg-slate-800/60'
+                              : 'bg-gray-50 dark:bg-slate-800/40 hover:bg-gray-100 dark:hover:bg-slate-800/60'
+                          }`}
                         >
-                          <p className="font-medium min-w-0 truncate">{product.name}</p>
+                          <p className="font-medium text-gray-900 dark:text-gray-100 min-w-0 truncate">{product.name}</p>
                           <p className="shrink-0 text-right tabular-nums">
-                            <span className="font-semibold">{formatVND(product.price)}</span>
-                            <span className="text-muted-foreground ml-1">/ {product.unit}</span>
+                            <span className="font-semibold text-gray-900 dark:text-gray-100">{formatVND(product.price)}</span>
+                            <span className="text-gray-500 dark:text-gray-400 ml-1">/ {product.unit}</span>
                           </p>
                         </li>
                       ))}
