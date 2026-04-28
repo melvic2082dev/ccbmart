@@ -70,6 +70,8 @@ export const MENU_ROLE_ACCESS: Record<string, AdminRole[]> = {
   '/admin/reports':              [OPS_ADMIN, FINANCE_ADMIN],
   '/admin/notifications':        [OPS_ADMIN],
   '/admin/users':                [], // super_admin only
+  // Settings — every admin sub-role can access their own preferences
+  '/admin/settings':             [OPS_ADMIN, PARTNER_ADMIN, MEMBER_ADMIN, TRAINING_ADMIN, FINANCE_ADMIN],
 };
 
 export function canAccessMenu(role: string, href: string): boolean {

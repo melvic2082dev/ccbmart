@@ -101,6 +101,7 @@ const adminGroups: NavGroup[] = [
     title: 'Quản trị hệ thống',
     items: [
       { label: 'Người dùng', href: '/admin/users', icon: <UserCog size={20} />, accent: 'fuchsia' },
+      { label: 'Cài đặt',    href: '/admin/settings', icon: <Settings size={20} />, accent: 'sky' },
     ],
   },
 ];
@@ -124,11 +125,13 @@ const navByRole: Record<string, NavItem[]> = {
     { label: 'Phí quản lý',    href: '/ctv/management-fees',  icon: <Coins size={20} />,          accent: 'purple'  },
     { label: 'Phí thoát ly',   href: '/ctv/breakaway-fees',   icon: <Network size={20} />,        accent: 'orange'  },
     { label: 'Báo cáo tháng',  href: '/ctv/monthly-report',   icon: <FileBarChart size={20} />,   accent: 'rose'    },
+    { label: 'Cài đặt',        href: '/ctv/settings',         icon: <Settings size={20} />,       accent: 'fuchsia' },
   ],
   agency: [
     { label: 'Dashboard', href: '/agency/dashboard',    icon: <LayoutDashboard size={20} />, accent: 'emerald' },
     { label: 'Tồn kho',   href: '/agency/inventory',    icon: <Warehouse size={20} />,       accent: 'amber'   },
     { label: 'Giao dịch', href: '/agency/transactions', icon: <ShoppingCart size={20} />,    accent: 'indigo'  },
+    { label: 'Cài đặt',   href: '/agency/settings',     icon: <Settings size={20} />,        accent: 'fuchsia' },
   ],
   // Admin is handled via adminGroups (grouped)
   admin: [],
@@ -137,6 +140,7 @@ const navByRole: Record<string, NavItem[]> = {
     { label: 'Nạp tiền',    href: '/member/topup',        icon: <Banknote size={20} />,        accent: 'amber'   },
     { label: 'Lịch sử',     href: '/member/transactions', icon: <ShoppingCart size={20} />,    accent: 'indigo'  },
     { label: 'Giới thiệu',  href: '/member/referral',     icon: <Users size={20} />,           accent: 'sky'     },
+    { label: 'Cài đặt',     href: '/member/settings',     icon: <Settings size={20} />,        accent: 'fuchsia' },
   ],
 };
 
