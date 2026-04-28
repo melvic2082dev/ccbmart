@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { ShoppingCart } from 'lucide-react';
 import { Badge, formatVnd, ProductArt, SectionHead, Star } from './primitives';
 
@@ -6,6 +7,7 @@ type BadgeVariant = 'red' | 'olive' | 'gold' | 'soft' | 'oliveSoft';
 
 export type Product = {
   id: string;
+  slug?: string;
   name: string;
   art: string;
   tone: Tone;
@@ -23,16 +25,20 @@ export function ProductGrid({
   title,
   eyebrow,
   products,
+  link = 'Xem thêm',
+  linkHref,
 }: {
   id?: string;
   title: string;
   eyebrow?: string;
   products: Product[];
+  link?: string;
+  linkHref?: string;
 }) {
   return (
     <section id={id} style={{ background: 'var(--paper-0)', padding: '48px 0', borderBottom: '1px solid var(--line)' }}>
       <div style={{ maxWidth: 1600, margin: '0 auto', padding: '0 24px' }}>
-        <SectionHead eyebrow={eyebrow} title={title} link="Xem thêm" />
+        <SectionHead eyebrow={eyebrow} title={title} link={link} linkHref={linkHref} />
         <div style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
@@ -45,14 +51,16 @@ export function ProductGrid({
   );
 }
 
-function ProductCard({ product }: { product: Product }) {
-  const { name, art, tone, price, was, rating, sold, region, badges = [], verified } = product;
+export function ProductCard({ product }: { product: Product }) {
+  const { slug, name, art, tone, price, was, rating, sold, region, badges = [], verified } = product;
+  const href = slug ? `/product/${slug}` : '#';
   return (
-    <div style={{
+    <Link href={href} style={{
       background: '#FFFFFF', border: '1px solid var(--line)',
       borderRadius: 8, overflow: 'hidden',
       boxShadow: 'var(--shadow-sm)',
       display: 'flex', flexDirection: 'column',
+      color: 'inherit',
     }}>
       <div style={{ position: 'relative', height: 170 }}>
         <ProductArt label={art} tone={tone} />
@@ -89,19 +97,18 @@ function ProductCard({ product }: { product: Product }) {
           </span>
           {was && <span style={{ fontSize: 12, color: 'var(--ink-4)', textDecoration: 'line-through' }}>{formatVnd(was)}</span>}
         </div>
-        <button type="button" style={{
+        <span style={{
           marginTop: 12,
           background: 'transparent', color: 'var(--ccb-red)',
           border: '1px solid var(--ccb-red)',
           borderRadius: 4, padding: '8px 12px',
           fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 13,
-          cursor: 'pointer',
           display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6,
         }}>
           <ShoppingCart size={14} />
-          Thêm vào giỏ
-        </button>
+          Xem chi tiết
+        </span>
       </div>
-    </div>
+    </Link>
   );
 }

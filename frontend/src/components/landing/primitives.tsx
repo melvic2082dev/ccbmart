@@ -42,7 +42,7 @@ export function formatVnd(n: number): string {
   return n.toLocaleString('vi-VN').replace(/,/g, '.') + ' ₫';
 }
 
-export function SectionHead({ eyebrow, title, link }: { eyebrow?: string; title: string; link?: string }) {
+export function SectionHead({ eyebrow, title, link, linkHref }: { eyebrow?: string; title: string; link?: string; linkHref?: string }) {
   return (
     <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 16 }}>
       <div>
@@ -59,7 +59,7 @@ export function SectionHead({ eyebrow, title, link }: { eyebrow?: string; title:
         }}>{title}</h2>
       </div>
       {link && (
-        <a href="#" style={{
+        <a href={linkHref ?? '#'} style={{
           fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 14,
           color: 'var(--ccb-red)', whiteSpace: 'nowrap',
         }}>{link} →</a>

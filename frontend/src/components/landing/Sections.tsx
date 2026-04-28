@@ -1,9 +1,12 @@
 import Link from 'next/link';
 import {
-  Coffee, Gift, HandHeart, Home, MapPin, Mountain, Palmtree,
-  RefreshCcw, ShieldCheck, Soup, Sun, Truck, Wheat,
+  Coffee, Compass, Gift, HandHeart, Home, MapPin, Mountain, Palmtree,
+  RefreshCcw, ShieldCheck, Soup, Sun, Tag, Truck, Wheat,
 } from 'lucide-react';
 import { SectionHead, Star } from './primitives';
+import { CATEGORIES } from './categories';
+
+const ICONS = { wheat: Wheat, soup: Soup, coffee: Coffee, mountain: Mountain, sun: Sun, palmtree: Palmtree, home: Home, gift: Gift, tag: Tag, compass: Compass } as const;
 
 export function TrustBar() {
   const items = [
@@ -45,16 +48,8 @@ const tones: Record<Tone, { bg: string; fg: string }> = {
 };
 
 export function CategoryStrip() {
-  const cats: { name: string; icon: React.ReactNode; tone: Tone }[] = [
-    { name: 'Gạo & Lương thực',   icon: <Wheat size={28} />,    tone: 'gold' },
-    { name: 'Mắm & Gia vị',        icon: <Soup size={28} />,     tone: 'red' },
-    { name: 'Trà & Cà phê',        icon: <Coffee size={28} />,   tone: 'olive' },
-    { name: 'Đặc sản miền Bắc',    icon: <Mountain size={28} />, tone: 'olive' },
-    { name: 'Đặc sản miền Trung',  icon: <Sun size={28} />,      tone: 'gold' },
-    { name: 'Đặc sản miền Nam',    icon: <Palmtree size={28} />, tone: 'red' },
-    { name: 'Đồ gia dụng',         icon: <Home size={28} />,     tone: 'paper' },
-    { name: 'Quà tặng CCB',        icon: <Gift size={28} />,     tone: 'red' },
-  ];
+  // Show 8 categories on the homepage strip — first 8 entries from the central config
+  const cats = CATEGORIES.slice(0, 8);
   return (
     <section style={{ background: 'var(--paper-0)', padding: '40px 0', borderBottom: '1px solid var(--line)' }}>
       <div style={{ maxWidth: 1600, margin: '0 auto', padding: '0 24px' }}>
@@ -66,8 +61,9 @@ export function CategoryStrip() {
         }}>
           {cats.map((c) => {
             const t = tones[c.tone];
+            const Icon = ICONS[c.icon];
             return (
-              <a key={c.name} href="#" style={{
+              <Link key={c.slug} href={`/category/${c.slug}`} style={{
                 display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
                 padding: '16px 8px',
                 border: '1px solid var(--line)', borderRadius: 8,
@@ -77,12 +73,12 @@ export function CategoryStrip() {
                   width: 56, height: 56, borderRadius: '50%',
                   background: t.bg, color: t.fg,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}>{c.icon}</div>
+                }}><Icon size={28} /></div>
                 <div style={{
                   fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 12,
                   color: 'var(--ink-1)', textAlign: 'center', lineHeight: 1.25,
                 }}>{c.name}</div>
-              </a>
+              </Link>
             );
           })}
         </div>
@@ -147,9 +143,9 @@ export function PromoBanner() {
 
 export function RegionStrip() {
   const regions = [
-    { name: 'Miền Bắc',   cities: 'Hà Nội · Hải Phòng · Hà Giang · Lào Cai', count: '18 tỉnh' },
-    { name: 'Miền Trung', cities: 'Đà Nẵng · Huế · Quảng Nam · Nghệ An',     count: '19 tỉnh' },
-    { name: 'Miền Nam',   cities: 'TP. HCM · Cần Thơ · Sóc Trăng · An Giang', count: '19 tỉnh' },
+    { name: 'Miền Bắc',   cities: 'Hà Nội · Hải Phòng · Hà Giang · Lào Cai', count: '18 tỉnh', href: '/category/dac-san-mien-bac' },
+    { name: 'Miền Trung', cities: 'Đà Nẵng · Huế · Quảng Nam · Nghệ An',     count: '19 tỉnh', href: '/category/dac-san-mien-trung' },
+    { name: 'Miền Nam',   cities: 'TP. HCM · Cần Thơ · Sóc Trăng · An Giang', count: '19 tỉnh', href: '/category/dac-san-mien-nam' },
   ];
   return (
     <section style={{ background: 'var(--paper-0)', padding: '56px 0', borderBottom: '1px solid var(--line)' }}>
@@ -157,7 +153,7 @@ export function RegionStrip() {
         <SectionHead eyebrow="Trên toàn quốc" title="Đặc sản ba miền, gửi về tận nhà" />
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 16, marginTop: 28 }}>
           {regions.map((r, i) => (
-            <a key={r.name} href="#" style={{
+            <Link key={r.name} href={r.href} style={{
               position: 'relative', overflow: 'hidden',
               border: '1px solid var(--line)', borderRadius: 8,
               background: i === 1 ? 'var(--ccb-olive)' : '#FFFFFF',
@@ -176,7 +172,7 @@ export function RegionStrip() {
                 display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                 <MapPin size={14} /> Khám phá đặc sản →
               </div>
-            </a>
+            </Link>
           ))}
         </div>
       </div>
@@ -237,11 +233,34 @@ export function CommunityVoices() {
 }
 
 export function Footer() {
-  const cols = [
-    { h: 'CCB Mart',      items: ['Về chúng tôi', 'Mạng lưới cửa hàng', 'Hội viên CCB', 'Tuyển dụng', 'Liên hệ'] },
-    { h: 'Mua sắm',        items: ['Tất cả danh mục', 'Đặc sản ba miền', 'Hàng khuyến mãi', 'Quà tặng', 'Thẻ Hội viên'] },
-    { h: 'Hỗ trợ',         items: ['Chính sách giao hàng', 'Chính sách đổi trả', 'Phương thức thanh toán', 'Câu hỏi thường gặp', 'Tra cứu đơn hàng'] },
-    { h: 'Nhà cung cấp',   items: ['Trở thành đối tác', 'Quy chuẩn sản phẩm', 'Hỗ trợ Cựu Chiến Binh khởi nghiệp', 'Đăng ký gian hàng'] },
+  const cols: { h: string; items: { label: string; href: string }[] }[] = [
+    { h: 'CCB Mart',     items: [
+      { label: 'Về chúng tôi', href: '/about' },
+      { label: 'Mạng lưới cửa hàng', href: '/stores' },
+      { label: 'Hội viên CCB', href: '/about' },
+      { label: 'Tuyển dụng', href: '#' },
+      { label: 'Liên hệ', href: '/about' },
+    ] },
+    { h: 'Mua sắm',      items: [
+      { label: 'Tất cả danh mục', href: '/category/gao-luong-thuc' },
+      { label: 'Đặc sản ba miền', href: '/category/dac-san-vung-mien' },
+      { label: 'Hàng khuyến mãi', href: '/category/hang-khuyen-mai' },
+      { label: 'Quà tặng', href: '/category/qua-tang-ccb' },
+      { label: 'Thẻ Hội viên', href: '/login' },
+    ] },
+    { h: 'Hỗ trợ',       items: [
+      { label: 'Chính sách giao hàng', href: '#' },
+      { label: 'Chính sách đổi trả', href: '#' },
+      { label: 'Phương thức thanh toán', href: '/cart' },
+      { label: 'Câu hỏi thường gặp', href: '#' },
+      { label: 'Tra cứu đơn hàng', href: '#' },
+    ] },
+    { h: 'Nhà cung cấp', items: [
+      { label: 'Trở thành đối tác', href: '/about' },
+      { label: 'Quy chuẩn sản phẩm', href: '/about' },
+      { label: 'Hỗ trợ Cựu Chiến Binh khởi nghiệp', href: '/about' },
+      { label: 'Đăng ký gian hàng', href: '/login' },
+    ] },
   ];
   return (
     <footer style={{ background: 'var(--ccb-olive-dark)', color: '#E8E4D4' }}>
@@ -265,7 +284,7 @@ export function Footer() {
               }}>{c.h}</div>
               <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {c.items.map((it) => (
-                  <li key={it}><a href="#" style={{ color: '#D4CFBE', fontSize: 13, fontFamily: 'var(--font-body)' }}>{it}</a></li>
+                  <li key={it.label}><Link href={it.href} style={{ color: '#D4CFBE', fontSize: 13, fontFamily: 'var(--font-body)' }}>{it.label}</Link></li>
                 ))}
               </ul>
             </div>

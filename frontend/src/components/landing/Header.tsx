@@ -3,10 +3,13 @@
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { LayoutGrid, LayoutDashboard, MapPin, Phone, Search, ShoppingCart, Truck, UserRound } from 'lucide-react';
+import { usePathname } from 'next/navigation';
+import { LayoutDashboard, LayoutGrid, MapPin, Phone, Search, ShoppingCart, Truck, UserRound } from 'lucide-react';
 import { getDashboardHref } from '@/lib/permissions';
+import { CATEGORIES } from './categories';
 
 export function Header({ cartCount = 0 }: { cartCount?: number }) {
+  const pathname = usePathname();
   const [scrolled, setScrolled] = useState(false);
   const [dashboardHref, setDashboardHref] = useState<string | null>(null);
 
@@ -27,6 +30,15 @@ export function Header({ cartCount = 0 }: { cartCount?: number }) {
     } catch { /* ignore */ }
   }, []);
 
+  const isActive = (href: string) => {
+    if (!pathname) return false;
+    if (href === '/') return pathname === '/';
+    return pathname === href || pathname.startsWith(href + '/');
+  };
+
+  // Top 7 categories shown inline; full list still reachable via "Danh mục" button
+  const navCats = CATEGORIES.slice(0, 7);
+
   return (
     <>
       {/* Top utility bar */}
@@ -42,8 +54,8 @@ export function Header({ cartCount = 0 }: { cartCount?: number }) {
             </span>
           </div>
           <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
-            <a href="#" style={{ color: 'inherit' }}>Hệ thống cửa hàng</a>
-            <a href="#" style={{ color: 'inherit' }}>Hợp tác với CCB Mart</a>
+            <Link href="/stores" style={{ color: 'inherit' }}>Hệ thống cửa hàng</Link>
+            <Link href="/about" style={{ color: 'inherit' }}>Về CCB Mart</Link>
             <a href="#" style={{ color: 'inherit' }}>Hỗ trợ</a>
           </div>
         </div>
@@ -93,9 +105,8 @@ export function Header({ cartCount = 0 }: { cartCount?: number }) {
 
           {/* Right-side nav */}
           <nav style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 'none' }}>
-            <IconLink icon={<MapPin size={20} />} label="Cửa hàng" />
-            <IconLink icon={<ShoppingCart size={20} />} label="Giỏ hàng" badge={cartCount} />
-            {/* Primary CTA — Đăng nhập / Đăng ký, hoặc Vào hệ thống nếu đã đăng nhập */}
+            <IconNavLink href="/stores" icon={<MapPin size={20} />} label="Cửa hàng" active={isActive('/stores')} />
+            <IconNavLink href="/cart" icon={<ShoppingCart size={20} />} label="Giỏ hàng" badge={cartCount} active={isActive('/cart')} />
             <Link
               href={dashboardHref ?? '/login'}
               style={{
@@ -127,12 +138,23 @@ export function Header({ cartCount = 0 }: { cartCount?: number }) {
               <LayoutGrid size={16} />
               Danh mục
             </button>
-            {['Gạo & Lương thực', 'Mắm & Gia vị', 'Trà & Cà phê', 'Đặc sản vùng miền', 'Đồ gia dụng', 'Quà tặng CCB', 'Hàng khuyến mãi'].map((c) => (
-              <a key={c} href="#" style={{
-                fontFamily: 'var(--font-body)', fontSize: 13, fontWeight: 500,
-                color: 'var(--ink-2)', padding: '8px 12px', borderRadius: 4,
-              }}>{c}</a>
-            ))}
+            {navCats.map((c) => {
+              const href = `/category/${c.slug}`;
+              const active = isActive(href);
+              return (
+                <Link
+                  key={c.slug}
+                  href={href}
+                  style={{
+                    fontFamily: 'var(--font-body)', fontSize: 13,
+                    fontWeight: active ? 700 : 500,
+                    color: active ? 'var(--ccb-red)' : 'var(--ink-2)',
+                    background: active ? 'var(--ccb-red-tint)' : 'transparent',
+                    padding: '8px 12px', borderRadius: 4,
+                  }}
+                >{c.name}</Link>
+              );
+            })}
           </div>
         </div>
       </header>
@@ -140,13 +162,17 @@ export function Header({ cartCount = 0 }: { cartCount?: number }) {
   );
 }
 
-function IconLink({ icon, label, badge = 0 }: { icon: React.ReactNode; label: string; badge?: number }) {
+function IconNavLink({ href, icon, label, badge = 0, active = false }: {
+  href: string; icon: React.ReactNode; label: string; badge?: number; active?: boolean;
+}) {
   return (
-    <button type="button" style={{
+    <Link href={href} style={{
       display: 'inline-flex', alignItems: 'center', gap: 8,
-      padding: '8px 12px', background: 'transparent', border: 'none', cursor: 'pointer',
-      fontFamily: 'var(--font-body)', fontSize: 13, fontWeight: 500,
-      color: 'var(--ink-1)', borderRadius: 4, position: 'relative',
+      padding: '8px 12px', borderRadius: 4, position: 'relative',
+      background: active ? 'var(--ccb-red-tint)' : 'transparent',
+      color: active ? 'var(--ccb-red)' : 'var(--ink-1)',
+      fontFamily: 'var(--font-body)', fontSize: 13,
+      fontWeight: active ? 700 : 500,
     }}>
       <span style={{ position: 'relative', display: 'inline-flex' }}>
         {icon}
@@ -161,6 +187,6 @@ function IconLink({ icon, label, badge = 0 }: { icon: React.ReactNode; label: st
         )}
       </span>
       <span>{label}</span>
-    </button>
+    </Link>
   );
 }
