@@ -50,9 +50,17 @@ function monthLabel(monthKey: string) {
   return `Tháng ${parseInt(m, 10)}/${y}`;
 }
 
+function monthKeyOf(inv: Invoice) {
+  if (inv.month) return inv.month;
+  const d = new Date(inv.issuedAt);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+}
+
 export default function CtvInvoicesPage() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
+  const [monthFilter, setMonthFilter] = useState<string>('ALL');
+  const [typeFilter, setTypeFilter] = useState<string>('ALL');
 
   useEffect(() => {
     api.ctvInvoices()
@@ -61,20 +69,39 @@ export default function CtvInvoicesPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  const totalReceived = invoices.reduce((s, i) => s + Number(i.amount || 0), 0);
+  const monthOptions = useMemo(() => {
+    const set = new Set<string>();
+    for (const inv of invoices) set.add(monthKeyOf(inv));
+    return Array.from(set).sort((a, b) => (a < b ? 1 : -1));
+  }, [invoices]);
 
-  // Group by month, latest first. Fall back to YYYY-MM derived from issuedAt
-  // for invoices that don't have an explicit `month`.
+  const typeOptions = useMemo(() => {
+    const set = new Set<string>();
+    for (const inv of invoices) if (inv.payoutType) set.add(inv.payoutType);
+    return Array.from(set).sort();
+  }, [invoices]);
+
+  const filteredInvoices = useMemo(() => {
+    return invoices.filter((inv) => {
+      if (monthFilter !== 'ALL' && monthKeyOf(inv) !== monthFilter) return false;
+      if (typeFilter !== 'ALL' && (inv.payoutType ?? '') !== typeFilter) return false;
+      return true;
+    });
+  }, [invoices, monthFilter, typeFilter]);
+
+  const totalReceived = filteredInvoices.reduce((s, i) => s + Number(i.amount || 0), 0);
+  const hasFilter = monthFilter !== 'ALL' || typeFilter !== 'ALL';
+
+  // Group by month, latest first.
   const grouped = useMemo(() => {
     const buckets = new Map<string, Invoice[]>();
-    for (const inv of invoices) {
-      const d = new Date(inv.issuedAt);
-      const key = inv.month || `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    for (const inv of filteredInvoices) {
+      const key = monthKeyOf(inv);
       if (!buckets.has(key)) buckets.set(key, []);
       buckets.get(key)!.push(inv);
     }
     return Array.from(buckets.entries()).sort(([a], [b]) => (a < b ? 1 : -1));
-  }, [invoices]);
+  }, [filteredInvoices]);
 
   return (
     <>
@@ -82,11 +109,36 @@ export default function CtvInvoicesPage() {
         <FileText size={24} /> Hóa đơn của tôi
       </h2>
 
+      <div className="flex flex-col sm:flex-row gap-2 mb-4">
+        <select
+          value={monthFilter}
+          onChange={(e) => setMonthFilter(e.target.value)}
+          className="rounded-md border border-input bg-background px-3 py-2 text-sm flex-1"
+          aria-label="Lọc theo tháng"
+        >
+          <option value="ALL">Mọi tháng</option>
+          {monthOptions.map((m) => (
+            <option key={m} value={m}>{monthLabel(m)}</option>
+          ))}
+        </select>
+        <select
+          value={typeFilter}
+          onChange={(e) => setTypeFilter(e.target.value)}
+          className="rounded-md border border-input bg-background px-3 py-2 text-sm flex-1"
+          aria-label="Lọc theo loại"
+        >
+          <option value="ALL">Mọi loại</option>
+          {typeOptions.map((t) => (
+            <option key={t} value={t}>{PAYOUT_TYPE_LABEL[t] ?? t}</option>
+          ))}
+        </select>
+      </div>
+
       <Card className="mb-6">
         <CardContent className="p-4">
-          <p className="text-sm text-slate-500">Tổng đã nhận từ CCB Mart</p>
+          <p className="text-sm text-slate-500">{hasFilter ? 'Tổng đã lọc' : 'Tổng đã nhận từ CCB Mart'}</p>
           <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-400 tabular-nums">{formatVND(totalReceived)}</p>
-          <p className="text-xs text-slate-500 mt-1">{invoices.length} hóa đơn</p>
+          <p className="text-xs text-slate-500 mt-1">{filteredInvoices.length} hóa đơn</p>
         </CardContent>
       </Card>
 
@@ -95,6 +147,10 @@ export default function CtvInvoicesPage() {
       ) : invoices.length === 0 ? (
         <Card>
           <CardContent className="py-8 text-center text-slate-500">Chưa có hóa đơn</CardContent>
+        </Card>
+      ) : filteredInvoices.length === 0 ? (
+        <Card>
+          <CardContent className="py-8 text-center text-slate-500">Không có hóa đơn phù hợp với bộ lọc</CardContent>
         </Card>
       ) : (
         <div className="flex flex-col gap-4">
