@@ -1,0 +1,68 @@
+/* CCB Mart landing-page tokens — scoped under .ccb-landing so they
+   don't leak into the dashboard / admin shell, which uses its own theme. */
+
+@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&family=Bitter:ital,wght@0,400;0,600;0,700;0,800;1,400&display=swap');
+
+.ccb-landing {
+  --ccb-red:        #A91E24;
+  --ccb-red-dark:   #821418;
+  --ccb-red-deep:   #5E0F12;
+  --ccb-red-tint:   #FBE9EA;
+
+  --ccb-olive:      #445626;
+  --ccb-olive-dark: #2F3D1A;
+  --ccb-olive-mid:  #5E7435;
+  --ccb-olive-tint: #ECEFE0;
+
+  --ccb-gold:       #C9A24B;
+  --ccb-gold-dark:  #9F7D33;
+
+  --paper-0:  #FBF7EE;
+  --paper-1:  #F4EEDF;
+  --paper-2:  #E8DFC9;
+  --ink-1:    #1C1A14;
+  --ink-2:    #403B2F;
+  --ink-3:    #6B6350;
+  --ink-4:    #9A927D;
+  --line:     #D9CFB7;
+  --line-strong: #B8AB8A;
+
+  --font-display: "Bitter", Georgia, "Times New Roman", serif;
+  --font-body:    "Be Vietnam Pro", -apple-system, system-ui, sans-serif;
+
+  --shadow-sm: 0 1px 2px rgba(44, 34, 12, 0.08);
+  --shadow-md: 0 2px 6px rgba(44, 34, 12, 0.10), 0 1px 2px rgba(44, 34, 12, 0.06);
+  --shadow-lg: 0 8px 24px rgba(44, 34, 12, 0.12), 0 2px 6px rgba(44, 34, 12, 0.06);
+
+  font-family: var(--font-body);
+  color: var(--ink-1);
+  background: var(--paper-0);
+}
+
+.ccb-landing *,
+.ccb-landing *::before,
+.ccb-landing *::after {
+  box-sizing: border-box;
+}
+
+.ccb-landing a { text-decoration: none; }
+
+.ccb-landing input[type="search"] {
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--ink-1);
+  outline: none;
+}
+.ccb-landing input[type="search"]:focus {
+  border-color: var(--ccb-red);
+}
+
+.ccb-stripe {
+  height: 3px;
+  background: linear-gradient(
+    to right,
+    var(--ccb-red) 0 33%,
+    var(--ccb-gold) 33% 66%,
+    var(--ccb-olive) 66% 100%
+  );
+}
