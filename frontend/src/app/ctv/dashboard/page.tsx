@@ -5,7 +5,7 @@ import { api, formatVND } from '@/lib/api'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
-import { TrendingUp, Users, ShoppingCart, Wallet, Award, Gift, Star, ArrowUpCircle, Clock } from 'lucide-react'
+import { TrendingUp, Users, ShoppingCart, Wallet, Award, Gift, Star, ArrowUpCircle, Clock, Target, Trophy } from 'lucide-react'
 
 interface Commission {
   selfCommission: number
@@ -21,6 +21,13 @@ interface ChartData {
   revenue: number
 }
 
+interface KpiRequirement {
+  label: string
+  current: number
+  target: number
+  isMoney?: boolean
+}
+
 interface DashboardData {
   currentRevenue: number
   currentCombos: number
@@ -34,6 +41,10 @@ interface DashboardData {
   professionalTitle: { title: string; isActive: boolean } | null
   promotionStatus: { targetRank: string; status: string } | null
   teamBonus: { bonusAmount: number; status: string } | null
+  kpi: {
+    fixedSalary: { trainedMinutes: number; requiredMinutes: number; eligible: boolean }
+    promotion: { targetRank: string; requirements: KpiRequirement[] } | null
+  }
 }
 
 interface TreeMember {
@@ -87,6 +98,36 @@ function TreeNode({ member, depth = 0, defaultOpen = true }: { member: TreeMembe
   )
 }
 
+function ProgressBar({ pct, color = 'emerald' }: { pct: number; color?: 'emerald' | 'amber' | 'purple' }) {
+  const cls: Record<string, string> = {
+    emerald: 'bg-emerald-500',
+    amber: 'bg-amber-500',
+    purple: 'bg-purple-500',
+  }
+  return (
+    <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+      <div className={`h-full ${cls[color]} transition-all`} style={{ width: `${Math.min(100, Math.max(0, pct))}%` }} />
+    </div>
+  )
+}
+
+function KpiRow({ label, current, target, unit, isMoney, color }: { label: string; current: number; target: number; unit?: string; isMoney?: boolean; color?: 'emerald' | 'amber' | 'purple' }) {
+  const pct = target > 0 ? (current / target) * 100 : 0
+  const fmt = (n: number) => isMoney ? formatVND(n) : `${n.toLocaleString('vi-VN')}${unit ? ` ${unit}` : ''}`
+  const done = current >= target
+  return (
+    <div className="space-y-1.5">
+      <div className="flex justify-between items-baseline text-sm">
+        <span className="text-gray-700">{label}</span>
+        <span className={`font-mono ${done ? 'text-emerald-700 font-semibold' : 'text-gray-600'}`}>
+          {fmt(current)} / <span className="text-gray-500">{fmt(target)}</span>
+        </span>
+      </div>
+      <ProgressBar pct={pct} color={done ? 'emerald' : color} />
+    </div>
+  )
+}
+
 export default function CTVDashboardPage() {
   const [data, setData] = useState<DashboardData | null>(null)
   const [treeRoot, setTreeRoot] = useState<TreeMember | null>(null)
@@ -95,6 +136,17 @@ export default function CTVDashboardPage() {
   const [updatedAt, setUpdatedAt] = useState<Date | null>(null)
   const [treeKey, setTreeKey] = useState(0)
   const [defaultOpen, setDefaultOpen] = useState(true)
+  const [userName, setUserName] = useState<string>('')
+
+  useEffect(() => {
+    try {
+      const u = localStorage.getItem('user')
+      if (u) setUserName(JSON.parse(u).name || '')
+    } catch { /* ignore */ }
+  }, [])
+
+  const now = new Date()
+  const monthLabel = `Tháng ${now.getMonth() + 1}/${now.getFullYear()}`
 
   useEffect(() => {
     async function fetchData() {
@@ -134,39 +186,85 @@ export default function CTVDashboardPage() {
   return (
     <>
       <div className="space-y-6">
-        <div className="flex items-center justify-between flex-wrap gap-2">
-          <h1 className="text-2xl font-bold text-gray-900">Bảng điều khiển CTV</h1>
-          <div className="flex flex-wrap items-center gap-2">
-            {updatedAt && (
-              <p className="text-xs text-gray-500 flex items-center gap-1 whitespace-nowrap">
-                <Clock className="w-3 h-3 shrink-0" />
-                <span className="whitespace-nowrap">Cập nhật lần cuối: {updatedAt.toLocaleString('vi-VN')}</span>
-              </p>
-            )}
-            {data?.promotionStatus && (
-              <Badge className="bg-amber-500 text-white text-sm px-3 py-1">
-                <ArrowUpCircle className="w-4 h-4 mr-1 inline" />
-                Đủ điều kiện bổ nhiệm {data.promotionStatus.targetRank}
-              </Badge>
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">
+            {userName ? `Chào, ${userName}` : 'Trang chủ'}
+          </h1>
+          <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-gray-500">
+            <span>{monthLabel}</span>
+            {data && (
+              <>
+                <span>·</span>
+                <Badge className="bg-emerald-500 text-white text-xs px-2 py-0.5">
+                  <Award className="w-3 h-3 mr-1 inline" />
+                  {data.rank}
+                </Badge>
+              </>
             )}
             {data?.professionalTitle?.isActive && (
-              <Badge className="bg-purple-500 text-white text-sm px-3 py-1">
-                <Star className="w-4 h-4 mr-1 inline" />
+              <Badge className="bg-purple-500 text-white text-xs px-2 py-0.5">
+                <Star className="w-3 h-3 mr-1 inline" />
                 {TITLE_LABELS[data.professionalTitle.title] || data.professionalTitle.title}
               </Badge>
             )}
-            {data && (
-              <Badge className="bg-emerald-500 text-white text-sm px-3 py-1">
-                <Award className="w-4 h-4 mr-1 inline" />
-                {data.rank}
+            {data?.promotionStatus && (
+              <Badge className="bg-amber-500 text-white text-xs px-2 py-0.5">
+                <ArrowUpCircle className="w-3 h-3 mr-1 inline" />
+                Đủ điều kiện {data.promotionStatus.targetRank}
               </Badge>
+            )}
+            {updatedAt && (
+              <span className="ml-auto flex items-center gap-1 text-xs">
+                <Clock className="w-3 h-3 shrink-0" />
+                {updatedAt.toLocaleString('vi-VN')}
+              </span>
             )}
           </div>
         </div>
 
+        {data?.kpi && (
+          <Card className="border-emerald-200 shadow-sm">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-gray-800 flex items-center gap-2">
+                <Target className="w-5 h-5 text-emerald-600" /> Chỉ tiêu tháng này
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-5">
+              <div>
+                <p className="text-xs uppercase tracking-wide text-gray-500 mb-2">Duy trì lương cứng</p>
+                <KpiRow
+                  label="Đào tạo (giờ đã xác nhận)"
+                  current={Math.round(data.kpi.fixedSalary.trainedMinutes / 60 * 10) / 10}
+                  target={data.kpi.fixedSalary.requiredMinutes / 60}
+                  unit="giờ"
+                  color="amber"
+                />
+              </div>
+              {data.kpi.promotion ? (
+                <div>
+                  <p className="text-xs uppercase tracking-wide text-gray-500 mb-2 flex items-center gap-1">
+                    <Trophy className="w-3.5 h-3.5 text-amber-500" />
+                    Lên cấp {data.kpi.promotion.targetRank}
+                  </p>
+                  <div className="space-y-3">
+                    {data.kpi.promotion.requirements.map((r, i) => (
+                      <KpiRow key={i} label={r.label} current={r.current} target={r.target} isMoney={r.isMoney} color="amber" />
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="text-sm text-gray-600 flex items-center gap-2">
+                  <Trophy className="w-4 h-4 text-amber-500" />
+                  Bạn đã ở cấp cao nhất — tiếp tục dẫn dắt đội nhóm.
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
         {loading ? (
-          <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-            {Array.from({ length: 7 }).map((_, i) => (
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+            {Array.from({ length: 6 }).map((_, i) => (
               <Card key={i} className="animate-pulse">
                 <CardContent className="p-4">
                   <div className="h-4 bg-gray-200 rounded w-3/4 mb-2" />
@@ -176,84 +274,95 @@ export default function CTVDashboardPage() {
             ))}
           </div>
         ) : data ? (
-          <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-4">
-            <Card className="border-emerald-100 shadow-sm">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-2 text-emerald-600 mb-1">
-                  <Wallet className="w-4 h-4" />
-                  <span className="text-xs font-medium uppercase tracking-wide">Doanh thu tháng</span>
-                </div>
-                <p className="text-xl font-bold text-gray-900">{formatVND(data.currentRevenue)}</p>
-              </CardContent>
-            </Card>
+          <>
+            <section>
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-2">Bán hàng</h3>
+              <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
+                <Card className="border-emerald-100 shadow-sm">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-2 text-emerald-600 mb-1">
+                      <Wallet className="w-4 h-4" />
+                      <span className="text-xs font-medium uppercase tracking-wide">Doanh thu</span>
+                    </div>
+                    <p className="text-xl font-bold text-gray-900 tabular-nums">{formatVND(data.currentRevenue)}</p>
+                  </CardContent>
+                </Card>
+                <Card className="border-emerald-100 shadow-sm">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-2 text-emerald-600 mb-1">
+                      <ShoppingCart className="w-4 h-4" />
+                      <span className="text-xs font-medium uppercase tracking-wide">Combo đã bán</span>
+                    </div>
+                    <p className="text-xl font-bold text-gray-900 tabular-nums">{data.currentCombos}</p>
+                  </CardContent>
+                </Card>
+                <Card className="border-emerald-100 shadow-sm">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-2 text-emerald-600 mb-1">
+                      <TrendingUp className="w-4 h-4" />
+                      <span className="text-xs font-medium uppercase tracking-wide">Tăng trưởng</span>
+                    </div>
+                    <p className="text-xl font-bold text-gray-900 tabular-nums">
+                      {data.revenueGrowth >= 0 ? '+' : ''}{data.revenueGrowth}%
+                    </p>
+                  </CardContent>
+                </Card>
+              </div>
+            </section>
 
-            <Card className="border-emerald-100 shadow-sm">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-2 text-emerald-600 mb-1">
-                  <ShoppingCart className="w-4 h-4" />
-                  <span className="text-xs font-medium uppercase tracking-wide">Combo đã bán</span>
-                </div>
-                <p className="text-xl font-bold text-gray-900">{data.currentCombos}</p>
-              </CardContent>
-            </Card>
+            <section>
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-2">Khách & đội ngũ</h3>
+              <div className="grid grid-cols-2 gap-3">
+                <Card className="border-emerald-100 shadow-sm">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-2 text-emerald-600 mb-1">
+                      <Users className="w-4 h-4" />
+                      <span className="text-xs font-medium uppercase tracking-wide">Khách hàng</span>
+                    </div>
+                    <p className="text-xl font-bold text-gray-900 tabular-nums">{data.totalCustomers}</p>
+                  </CardContent>
+                </Card>
+                <Card className="border-emerald-100 shadow-sm">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-2 text-emerald-600 mb-1">
+                      <Users className="w-4 h-4" />
+                      <span className="text-xs font-medium uppercase tracking-wide">Trực tiếp</span>
+                    </div>
+                    <p className="text-xl font-bold text-gray-900 tabular-nums">{data.teamSize}</p>
+                  </CardContent>
+                </Card>
+              </div>
+            </section>
 
-            <Card className="border-emerald-100 shadow-sm">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-2 text-emerald-600 mb-1">
-                  <TrendingUp className="w-4 h-4" />
-                  <span className="text-xs font-medium uppercase tracking-wide">Tăng trưởng</span>
-                </div>
-                <p className="text-xl font-bold text-gray-900">
-                  {data.revenueGrowth >= 0 ? '+' : ''}{data.revenueGrowth}%
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="border-emerald-100 shadow-sm">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-2 text-emerald-600 mb-1">
-                  <Users className="w-4 h-4" />
-                  <span className="text-xs font-medium uppercase tracking-wide">Khách hàng</span>
-                </div>
-                <p className="text-xl font-bold text-gray-900">{data.totalCustomers}</p>
-              </CardContent>
-            </Card>
-
-            <Card className="border-emerald-100 shadow-sm">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-2 text-emerald-600 mb-1">
-                  <Users className="w-4 h-4" />
-                  <span className="text-xs font-medium uppercase tracking-wide">Thành viên trực tiếp</span>
-                </div>
-                <p className="text-xl font-bold text-gray-900">{data.teamSize}</p>
-              </CardContent>
-            </Card>
-
-            <Card className="border-amber-100 shadow-sm">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-2 text-amber-600 mb-1">
-                  <Gift className="w-4 h-4" />
-                  <span className="text-xs font-medium uppercase tracking-wide">Điểm thưởng dẫn dắt</span>
-                </div>
-                <p className="text-xl font-bold text-gray-900">{(data.loyaltyPoints || 0).toLocaleString('vi-VN')}</p>
-              </CardContent>
-            </Card>
-
-            {data.teamBonus && (
-              <Card className="border-purple-100 shadow-sm">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-2 text-purple-600 mb-1">
-                    <Gift className="w-4 h-4" />
-                    <span className="text-xs font-medium uppercase tracking-wide">Thưởng dẫn dắt</span>
-                  </div>
-                  <p className="text-xl font-bold text-gray-900">{formatVND(data.teamBonus.bonusAmount)}</p>
-                  <Badge className={`mt-1 text-xs ${data.teamBonus.status === 'PAID' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
-                    {data.teamBonus.status === 'PAID' ? 'Đã trả' : 'Chờ xử lý'}
-                  </Badge>
-                </CardContent>
-              </Card>
-            )}
-          </div>
+            <section>
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-2">Thưởng</h3>
+              <div className="grid grid-cols-2 gap-3">
+                <Card className="border-amber-100 shadow-sm">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-2 text-amber-600 mb-1">
+                      <Gift className="w-4 h-4" />
+                      <span className="text-xs font-medium uppercase tracking-wide">Điểm dẫn dắt</span>
+                    </div>
+                    <p className="text-xl font-bold text-gray-900 tabular-nums">{(data.loyaltyPoints || 0).toLocaleString('vi-VN')}</p>
+                  </CardContent>
+                </Card>
+                {data.teamBonus && (
+                  <Card className="border-purple-100 shadow-sm">
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-2 text-purple-600 mb-1">
+                        <Gift className="w-4 h-4" />
+                        <span className="text-xs font-medium uppercase tracking-wide">Thưởng dẫn dắt</span>
+                      </div>
+                      <p className="text-xl font-bold text-gray-900 tabular-nums">{formatVND(data.teamBonus.bonusAmount)}</p>
+                      <Badge className={`mt-1 text-xs ${data.teamBonus.status === 'PAID' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
+                        {data.teamBonus.status === 'PAID' ? 'Đã trả' : 'Chờ xử lý'}
+                      </Badge>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+            </section>
+          </>
         ) : null}
 
         {data && (

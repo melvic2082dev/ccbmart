@@ -2,7 +2,7 @@ const express = require('express');
 const { authenticate, authorize } = require('../middleware/auth');
 const { calculateCtvCommission } = require('../services/commission');
 const { getCachedOrCompute } = require('../services/cache');
-const { getReceivedManagementFeesSummary } = require('../services/managementFee');
+const { getReceivedManagementFeesSummary, getTrainerMinutes, MIN_TRAINING_MINUTES_PER_MONTH } = require('../services/managementFee');
 const { getReceivedBreakawayFeesSummary } = require('../services/breakaway');
 const { validate, schemas } = require('../middleware/validate');
 
@@ -71,6 +71,9 @@ router.get('/dashboard', async (req, res) => {
         where: { ctvId: userId, month: monthStr },
       });
 
+      // KPI — monthly targets the CTV can act on.
+      const kpi = await computeKpi(userId, monthStr, req.user.rank || 'CTV');
+
       // Monthly chart (6 months)
       const chartData = [];
       for (let i = 5; i >= 0; i--) {
@@ -102,6 +105,7 @@ router.get('/dashboard', async (req, res) => {
         professionalTitle: professionalTitle ? { title: professionalTitle.title, isActive: professionalTitle.isActive } : null,
         promotionStatus: promotionStatus ? { targetRank: promotionStatus.targetRank, status: promotionStatus.status } : null,
         teamBonus: teamBonus ? { bonusAmount: teamBonus.bonusAmount, status: teamBonus.status } : null,
+        kpi,
       };
     });
 
@@ -110,6 +114,110 @@ router.get('/dashboard', async (req, res) => {
     console.error('[ctv]', err); res.status(500).json({ error: 'Internal server error' });
   }
 });
+
+async function computeKpi(userId, monthStr, rank) {
+  // Maintenance: keep the fixed salary requires ≥20h verified training/month.
+  const trainedMinutes = await getTrainerMinutes(userId, monthStr);
+
+  // Promotion: requirements depend on current rank.
+  // Rules mirror backend/src/services/promotion.js:checkEligibility.
+  const startDate = new Date(`${monthStr}-01`);
+  const endDate = new Date(startDate);
+  endDate.setMonth(endDate.getMonth() + 1);
+
+  const directMembers = await prisma.user.findMany({
+    where: { parentId: userId, role: 'ctv', isActive: true },
+    select: { id: true, rank: true },
+  });
+
+  let promotion = null;
+  if (rank === 'CTV') {
+    const directIds = directMembers.map(m => m.id);
+    const counts = directIds.length
+      ? await prisma.transaction.groupBy({
+        by: ['ctvId'],
+        where: { ctvId: { in: directIds }, channel: 'ctv', status: 'CONFIRMED', createdAt: { gte: startDate, lt: endDate } },
+        _count: { id: true },
+      })
+      : [];
+    const cm = new Map(counts.map(c => [c.ctvId, c._count.id]));
+    const qualified = directMembers.filter(m => (cm.get(m.id) || 0) >= 10).length;
+    promotion = {
+      targetRank: 'PP',
+      requirements: [
+        { label: 'Thành viên trực tiếp đạt ≥10 combo', current: qualified, target: 5 },
+      ],
+    };
+  } else if (rank === 'PP' || rank === 'TP' || rank === 'GDV') {
+    const allDescendantIds = await getAllDescendantIds(userId);
+    const teamRev = await prisma.transaction.aggregate({
+      where: {
+        ctvId: { in: [...allDescendantIds, userId] },
+        channel: 'ctv',
+        status: 'CONFIRMED',
+        createdAt: { gte: startDate, lt: endDate },
+      },
+      _sum: { totalAmount: true },
+    });
+    const teamRevenue = Number(teamRev._sum.totalAmount || 0);
+
+    if (rank === 'PP') {
+      const ppCount = directMembers.filter(m => m.rank === 'PP').length;
+      promotion = {
+        targetRank: 'TP',
+        requirements: [
+          { label: 'PP trực tiếp', current: ppCount, target: 3 },
+          { label: 'Doanh số nhánh', current: teamRevenue, target: 500_000_000, isMoney: true },
+        ],
+      };
+    } else if (rank === 'TP') {
+      const tpCount = directMembers.filter(m => m.rank === 'TP').length;
+      promotion = {
+        targetRank: 'GDV',
+        requirements: [
+          { label: 'TP trực tiếp', current: tpCount, target: 5 },
+          { label: 'Doanh số nhánh', current: teamRevenue, target: 2_000_000_000, isMoney: true },
+        ],
+      };
+    } else {
+      const gdvCount = directMembers.filter(m => m.rank === 'GDV').length;
+      promotion = {
+        targetRank: 'GDKD',
+        requirements: [
+          { label: 'GDV trực tiếp', current: gdvCount, target: 3 },
+          { label: 'Doanh số nhánh', current: teamRevenue, target: 5_000_000_000, isMoney: true },
+        ],
+      };
+    }
+  }
+  // GDKD: top rank — no promotion target.
+
+  return {
+    fixedSalary: {
+      trainedMinutes,
+      requiredMinutes: MIN_TRAINING_MINUTES_PER_MONTH,
+      eligible: trainedMinutes >= MIN_TRAINING_MINUTES_PER_MONTH,
+    },
+    promotion,
+  };
+}
+
+async function getAllDescendantIds(rootId) {
+  const ids = [];
+  const queue = [rootId];
+  while (queue.length) {
+    const batch = queue.splice(0, queue.length);
+    const children = await prisma.user.findMany({
+      where: { parentId: { in: batch }, role: 'ctv', isActive: true },
+      select: { id: true },
+    });
+    for (const c of children) {
+      ids.push(c.id);
+      queue.push(c.id);
+    }
+  }
+  return ids;
+}
 
 // Each node carries selfCombos (this user's CONFIRMED ctv transactions in
 // the current month) and teamCombos (selfCombos summed over the user + all
