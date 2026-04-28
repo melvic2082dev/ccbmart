@@ -1,12 +1,11 @@
 'use client'
 
 import { useEffect, useState, useMemo } from 'react'
-import Link from 'next/link'
 import { api, formatVND } from '@/lib/api'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { AlertCircle, AlertTriangle, CheckCircle, ArrowLeft } from 'lucide-react'
+import { AlertCircle, AlertTriangle, CheckCircle } from 'lucide-react'
 
 interface SalaryFundManager {
   name: string
@@ -96,13 +95,6 @@ export default function SalaryReportPage() {
       <div className="space-y-6">
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
-            <Link
-              href="/admin/dashboard"
-              className="inline-flex items-center gap-1 text-sm text-emerald-700 hover:text-emerald-800 mb-2"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Quay lại Dashboard
-            </Link>
             <h1 className="text-2xl font-bold text-gray-900">Báo cáo lương cứng</h1>
             <p className="text-sm text-gray-500 mt-0.5">
               Danh sách quản lý nhận lương cứng và trạng thái quỹ lương theo ngưỡng 5% doanh thu kênh CTV.

@@ -1,17 +1,37 @@
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
+import Link from 'next/link';
+import { ArrowLeft } from 'lucide-react';
 import Sidebar from './Sidebar';
 import { getRoleGroup, getDashboardHref } from '@/lib/permissions';
 
+// Smart parent: derive a sensible back target from the URL.
+// Rules:
+//  - /[role]/dashboard or shorter → no back (we're at the role's home)
+//  - /[role]/[section] → back to /[role]/dashboard
+//  - /[role]/[section]/[...rest] → back to /[role]/[section] (strip last seg)
+function computeBackHref(pathname: string | null): string | null {
+  if (!pathname) return null;
+  const segs = pathname.split('/').filter(Boolean);
+  if (segs.length === 0) return null;
+  if (segs.length === 1) return null;
+  if (segs.length === 2 && segs[1] === 'dashboard') return null;
+  if (segs.length === 2) return `/${segs[0]}/dashboard`;
+  return '/' + segs.slice(0, -1).join('/');
+}
+
 export default function DashboardLayout({ role, children }: { role: string; children: React.ReactNode }) {
   const router = useRouter();
+  const pathname = usePathname();
   const checkedRef = useRef(false);
 
   const [mounted, setMounted] = useState(false);
   const [user, setUser] = useState<{ name: string; role: string; rank?: string } | null>(null);
   const [sidebarExpanded, setSidebarExpanded] = useState(false);
+
+  const backHref = computeBackHref(pathname);
 
   useEffect(() => {
     try {
@@ -52,10 +72,26 @@ export default function DashboardLayout({ role, children }: { role: string; chil
         className="min-h-screen p-4 sm:p-6 pt-14 lg:pt-6 lg:ml-[var(--sidebar-w)]"
         style={{ ['--sidebar-w' as string]: sidebarExpanded ? '14rem' : '4rem' }}
       >
+        {/* Smart back button — visible on every page except the role's
+            dashboard root. Sits left of the user badge on mobile, top-left
+            on desktop. Uses computeBackHref so refresh-then-back still works
+            (no reliance on browser history). */}
+        {backHref && (
+          <Link
+            href={backHref}
+            aria-label="Quay lại"
+            title="Quay lại"
+            className="absolute top-3 left-16 lg:top-4 lg:left-6 inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium text-foreground bg-background/80 backdrop-blur border border-border hover:bg-muted active:scale-95 transition-all"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" />
+            Quay lại
+          </Link>
+        )}
+
         {/* Compact user badge in top-right corner — saves vertical space.
             On mobile (lg:hidden), padded to clear the hamburger button. */}
         <div className="absolute top-3 right-4 lg:top-4 lg:right-6 flex items-center gap-1.5 text-xs text-muted-foreground">
-          <span className="font-semibold text-foreground truncate max-w-[60vw] lg:max-w-none">{user.name}</span>
+          <span className="font-semibold text-foreground truncate max-w-[40vw] lg:max-w-none">{user.name}</span>
           {user.rank && <span className="text-[10px] uppercase tracking-wide bg-muted px-1.5 py-0.5 rounded">{user.rank}</span>}
         </div>
         {children}
