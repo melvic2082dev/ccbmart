@@ -58,7 +58,7 @@ async function main() {
   await prisma.product.deleteMany();
 
   const passwordHash = await bcrypt.hash('admin123', 10);
-  const ctvHash = await bcrypt.hash('ctv123', 10);
+  const ctvHash = await bcrypt.hash('ctv12345', 10);
   const agencyHash = await bcrypt.hash('agency123', 10);
 
   // 1. Admin users (V13.4+: super_admin + 5 sub-role demo accounts)

@@ -52,10 +52,12 @@ router.get('/ctv/monthly-report', authorize('ctv'), validate(schemas.monthlyRepo
     const level2Ids = directIds.flatMap(id => childrenMap.get(id) || []);
     const allRelevantIds = [userId, ...directIds, ...level2Ids];
 
-    // Single batch query for all team transactions.
-    // Invoice model is one-way (CCB Mart -> user): there is no fromUserId,
-    // only toUserId. We expose all invoices issued to the user; "feePaid"
-    // remains 0 because partners do not invoice each other.
+    // Invoices issued to user in the month — used for the "linked invoices"
+    // list at the bottom of the report. Their amounts are NOT summed into
+    // totalIncome: the per-payout-type rows (selfCommission, fixedSalary,
+    // managementFee, breakawayFee) already cover every income source, and
+    // those payouts are themselves invoiced — adding the invoice total
+    // would double-count.
     const [allTeamTxns, feeReceivedInvoices] = await Promise.all([
       prisma.transaction.findMany({
         where: {
@@ -70,7 +72,6 @@ router.get('/ctv/monthly-report', authorize('ctv'), validate(schemas.monthlyRepo
         where: { toUserId: userId, issuedAt: { gte: startDate, lt: endDate } },
       }),
     ]);
-    const feePaidInvoices = [];
 
     const revenueMap = new Map();
     for (const txn of allTeamTxns) {
@@ -80,17 +81,10 @@ router.get('/ctv/monthly-report', authorize('ctv'), validate(schemas.monthlyRepo
     const personalRevenue = revenueMap.get(userId) || 0;
     const teamRevenue = allRelevantIds.reduce((sum, id) => sum + (revenueMap.get(id) || 0), 0);
 
-    const trainingFeeReceived = feeReceivedInvoices.reduce((sum, i) => sum + Number(i.amount), 0);
-    const feePaid = feePaidInvoices.reduce((sum, i) => sum + Number(i.amount), 0);
-
     // Commission
     const commission = await calculateCtvCommission(userId, month);
     const selfCommission = commission?.selfCommission || 0;
     const fixedSalary = commission?.fixedSalary || 0;
-    // TODO: integrate when team bonus table is calculated (not in commission service yet)
-    const teamBonus = 0;
-    // TODO: integrate when market fund table is calculated (not in commission service yet)
-    const marketFundReceived = 0;
 
     // C12.4: Management fees received (F1/F2/F3)
     const mgmtSummary = await getReceivedManagementFeesSummary(userId, month);
@@ -114,12 +108,8 @@ router.get('/ctv/monthly-report', authorize('ctv'), validate(schemas.monthlyRepo
     const totalIncome =
       selfCommission +
       fixedSalary +
-      teamBonus +
       managementFeeReceived.total +
-      breakawayFeeReceived.total +
-      marketFundReceived +
-      trainingFeeReceived -
-      feePaid;
+      breakawayFeeReceived.total;
 
     const taxResult = await calculateTax(userId, month);
     const tax = taxResult.taxAmount;
@@ -134,30 +124,17 @@ router.get('/ctv/monthly-report', authorize('ctv'), validate(schemas.monthlyRepo
       fixedSalary,
       managementFeeReceived,
       breakawayFeeReceived,
-      marketFundReceived,
-      trainingFeeReceived,
-      teamBonus,
-      feePaid,
       totalIncome,
       tax,
       netIncome,
       taxableIncome: taxResult.taxableIncome,
-      invoiceLinks: [
-        ...feeReceivedInvoices.map((i) => ({
-          id: i.id,
-          invoiceNumber: i.invoiceNumber,
-          amount: i.amount,
-          type: 'received',
-          pdfUrl: i.pdfUrl,
-        })),
-        ...feePaidInvoices.map((i) => ({
-          id: i.id,
-          invoiceNumber: i.invoiceNumber,
-          amount: i.amount,
-          type: 'paid',
-          pdfUrl: i.pdfUrl,
-        })),
-      ],
+      invoiceLinks: feeReceivedInvoices.map((i) => ({
+        id: i.id,
+        invoiceNumber: i.invoiceNumber,
+        amount: i.amount,
+        type: 'received',
+        pdfUrl: i.pdfUrl,
+      })),
     });
   } catch (err) {
     console.error('[monthlyReport]', err);

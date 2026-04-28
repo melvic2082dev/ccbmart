@@ -5,6 +5,9 @@ import { api, formatVND } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Network } from 'lucide-react';
+import { ACCENT_CLASSES } from '@/lib/page-accent';
+
+const ACCENT = ACCENT_CLASSES.orange;
 
 interface BreakFeeRecord {
   id: number;
@@ -18,6 +21,7 @@ interface BreakFeeRecord {
 
 interface BreakFeeResponse {
   month: string;
+  eligible: boolean;
   summary: { level1: number; level2: number; level3: number; total: number };
   records: BreakFeeRecord[];
 }
@@ -51,12 +55,32 @@ export default function CtvBreakawayFeesPage() {
       .finally(() => setLoading(false));
   }, [month]);
 
+  const Header = (
+    <div className="mb-6">
+      <h2 className="text-2xl font-bold flex items-center gap-2">
+        <Network size={24} className={ACCENT.icon} /> Phí sau thoát ly
+      </h2>
+      <div className={`mt-2 w-12 h-1 ${ACCENT.bar} rounded-full`} />
+    </div>
+  );
+
+  if (!loading && data && !data.eligible) {
+    return (
+      <>
+        {Header}
+        <Card>
+          <CardContent className="p-4 text-sm text-muted-foreground">
+            Đây là phí dành cho CTV cấp trên của CTV đã vượt cấp bậc quản lý.
+          </CardContent>
+        </Card>
+      </>
+    );
+  }
+
   return (
     <>
-      <h2 className="text-2xl font-bold mb-2 flex items-center gap-2">
-        <Network size={24} /> Phí sau thoát ly
-      </h2>
-      <p className="text-sm text-slate-500 mb-6">
+      {Header}
+      <p className="text-sm text-muted-foreground -mt-4 mb-6">
         Trong 12 tháng sau khi mentee thoát ly: F1 cũ nhận 3%, F2 cũ nhận 2%, GĐKD nhận 1% (nếu không phải F1/F2 cũ).
         Tính trên toàn doanh số nhánh thoát — CCB Mart chi trả.
       </p>

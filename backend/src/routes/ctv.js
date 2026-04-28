@@ -2,7 +2,7 @@ const express = require('express');
 const { authenticate, authorize } = require('../middleware/auth');
 const { calculateCtvCommission } = require('../services/commission');
 const { getCachedOrCompute } = require('../services/cache');
-const { getReceivedManagementFeesSummary } = require('../services/managementFee');
+const { getReceivedManagementFeesSummary, getTrainerMinutes, MIN_TRAINING_MINUTES_PER_MONTH } = require('../services/managementFee');
 const { getReceivedBreakawayFeesSummary } = require('../services/breakaway');
 const { validate, schemas } = require('../middleware/validate');
 
@@ -71,6 +71,9 @@ router.get('/dashboard', async (req, res) => {
         where: { ctvId: userId, month: monthStr },
       });
 
+      // KPI — monthly targets the CTV can act on.
+      const kpi = await computeKpi(userId, monthStr, req.user.rank || 'CTV');
+
       // Monthly chart (6 months)
       const chartData = [];
       for (let i = 5; i >= 0; i--) {
@@ -102,6 +105,7 @@ router.get('/dashboard', async (req, res) => {
         professionalTitle: professionalTitle ? { title: professionalTitle.title, isActive: professionalTitle.isActive } : null,
         promotionStatus: promotionStatus ? { targetRank: promotionStatus.targetRank, status: promotionStatus.status } : null,
         teamBonus: teamBonus ? { bonusAmount: teamBonus.bonusAmount, status: teamBonus.status } : null,
+        kpi,
       };
     });
 
@@ -110,6 +114,118 @@ router.get('/dashboard', async (req, res) => {
     console.error('[ctv]', err); res.status(500).json({ error: 'Internal server error' });
   }
 });
+
+async function computeKpi(userId, monthStr, rank) {
+  // V13.4 spec — Chuong 7: combo-based thresholds.
+  const startDate = new Date(`${monthStr}-01`);
+  const endDate = new Date(startDate);
+  endDate.setMonth(endDate.getMonth() + 1);
+
+  const [directMembers, personalCombos, allDescendantIds, trainedMinutes] = await Promise.all([
+    prisma.user.findMany({
+      where: { parentId: userId, role: 'ctv', isActive: true },
+      select: { id: true, rank: true },
+    }),
+    prisma.transaction.count({
+      where: { ctvId: userId, channel: 'ctv', status: 'CONFIRMED', createdAt: { gte: startDate, lt: endDate } },
+    }),
+    getAllDescendantIds(userId),
+    getTrainerMinutes(userId, monthStr),
+  ]);
+
+  const branchCombos = await prisma.transaction.count({
+    where: {
+      ctvId: { in: [...allDescendantIds, userId] },
+      channel: 'ctv',
+      status: 'CONFIRMED',
+      createdAt: { gte: startDate, lt: endDate },
+    },
+  });
+
+  // Maintenance — what user must hit this month to keep current rank/payouts.
+  // CTV has no monthly minimum (only "đã mua 1 combo" to activate, not tracked here).
+  const maintenance = { rank, requirements: [] };
+  if (rank !== 'CTV') {
+    maintenance.requirements.push({ label: 'Combo cá nhân', current: personalCombos, target: 50 });
+  }
+  if (rank === 'TP') {
+    maintenance.requirements.push({ label: 'Combo nhóm', current: branchCombos, target: 150 });
+  } else if (rank === 'GDV') {
+    maintenance.requirements.push({ label: 'Combo nhóm', current: branchCombos, target: 550 });
+  } else if (rank === 'GDKD') {
+    maintenance.requirements.push({ label: 'Combo nhóm', current: branchCombos, target: 2000 });
+  }
+  if (rank !== 'CTV') {
+    maintenance.requirements.push({
+      label: 'Đào tạo (giờ)',
+      current: Math.round(trainedMinutes / 60 * 10) / 10,
+      target: MIN_TRAINING_MINUTES_PER_MONTH / 60,
+    });
+  }
+
+  // Promotion — what user needs to LEVEL UP to next rank this month.
+  let promotion = null;
+  if (rank === 'CTV') {
+    promotion = {
+      targetRank: 'PP',
+      requirements: [
+        { label: 'Combo cá nhân', current: personalCombos, target: 50 },
+      ],
+    };
+  } else if (rank === 'PP') {
+    const directCtv = directMembers.filter(m => (m.rank || 'CTV') === 'CTV').length;
+    promotion = {
+      targetRank: 'TP',
+      requirements: [
+        { label: 'Combo cá nhân', current: personalCombos, target: 50 },
+        { label: 'CTV trực tiếp', current: directCtv, target: 10 },
+        { label: 'Combo nhóm', current: branchCombos, target: 150 },
+      ],
+    };
+  } else if (rank === 'TP') {
+    const directPpTp = directMembers.filter(m => m.rank === 'PP' || m.rank === 'TP').length;
+    promotion = {
+      targetRank: 'GDV',
+      requirements: [
+        { label: 'Combo cá nhân', current: personalCombos, target: 50 },
+        { label: 'PP/TP trực tiếp', current: directPpTp, target: 10 },
+        { label: 'Combo nhóm', current: branchCombos, target: 550 },
+      ],
+      note: 'Cần duy trì 3 tháng liên tiếp',
+    };
+  } else if (rank === 'GDV') {
+    const directTpGdv = directMembers.filter(m => m.rank === 'TP' || m.rank === 'GDV').length;
+    promotion = {
+      targetRank: 'GDKD',
+      requirements: [
+        { label: 'Combo cá nhân', current: personalCombos, target: 50 },
+        { label: 'TP/GĐV trực tiếp', current: directTpGdv, target: 10 },
+        { label: 'Combo nhóm', current: branchCombos, target: 2000 },
+      ],
+      note: 'Cần duy trì 3 tháng liên tiếp + chuyển HĐLĐ sau 3 tháng',
+    };
+  }
+  // GDKD: top rank — no promotion target.
+
+  return { maintenance, promotion };
+}
+
+async function getAllDescendantIds(rootId) {
+  const ids = [];
+  const queue = [rootId];
+  while (queue.length) {
+    const batch = queue.splice(0, queue.length);
+    const children = await prisma.user.findMany({
+      where: { parentId: { in: batch }, role: 'ctv', isActive: true },
+      select: { id: true },
+    });
+    for (const c of children) {
+      ids.push(c.id);
+      queue.push(c.id);
+    }
+  }
+  return ids;
+}
 
 // Each node carries selfCombos (this user's CONFIRMED ctv transactions in
 // the current month) and teamCombos (selfCombos summed over the user + all
@@ -257,6 +373,20 @@ router.get('/breakaway-fees', validate(schemas.monthQuery, 'query'), async (req,
   try {
     const now = new Date();
     const month = req.query.month || `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+
+    // Eligible = user has ever appeared as a recipient of a breakaway fee (any month, any status).
+    const everReceived = await prisma.breakawayFee.count({ where: { toUserId: req.user.id } });
+    const eligible = everReceived > 0;
+
+    if (!eligible) {
+      return res.json({
+        month,
+        eligible: false,
+        summary: { level1: 0, level2: 0, level3: 0, total: 0 },
+        records: [],
+      });
+    }
+
     const summary = await getReceivedBreakawayFeesSummary(req.user.id, month);
 
     const detailed = await prisma.breakawayFee.findMany({
@@ -270,6 +400,7 @@ router.get('/breakaway-fees', validate(schemas.monthQuery, 'query'), async (req,
 
     res.json({
       month,
+      eligible: true,
       summary: {
         level1: summary.level1,
         level2: summary.level2,

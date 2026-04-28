@@ -7,7 +7,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { ShoppingCart, QrCode, Upload, CheckCircle, Banknote, CreditCard } from 'lucide-react';
+import { ShoppingCart, QrCode, Upload, CheckCircle, Banknote, CreditCard, PlusCircle } from 'lucide-react';
+import { ACCENT_CLASSES } from '@/lib/page-accent';
+
+const ACCENT = ACCENT_CLASSES.green;
 
 const VN_PHONE_RE = /^0\d{9}$/;
 
@@ -82,9 +85,12 @@ export default function CtvCreateSale() {
 
   return (
     <>
-      <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
-        <ShoppingCart size={24} /> Tạo đơn bán hàng
-      </h2>
+      <div className="mb-6">
+        <h2 className="text-2xl font-bold flex items-center gap-2">
+          <PlusCircle size={24} className={ACCENT.icon} /> Tạo đơn bán hàng
+        </h2>
+        <div className={`mt-2 w-12 h-1 ${ACCENT.bar} rounded-full`} />
+      </div>
 
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4">

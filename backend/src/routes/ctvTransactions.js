@@ -82,19 +82,34 @@ router.get('/pending', async (req, res) => {
   }
 });
 
-// GET /history - Full transaction history with status filter
+// GET /history - Full transaction history with status / search / sort filters
 router.get('/history', async (req, res) => {
   try {
-    const { page = 1, limit = 20, status } = req.query;
+    const { page = 1, limit = 20, status, search, paymentMethod, sortBy, sortDir } = req.query;
     const skip = (parseInt(page) - 1) * parseInt(limit);
     const where = { ctvId: req.user.id, channel: 'ctv' };
     if (status) where.status = status;
+    if (paymentMethod) where.paymentMethod = paymentMethod;
+
+    if (search && String(search).trim()) {
+      const s = String(search).trim();
+      const idMatch = /^#?(\d+)$/.exec(s);
+      const orClauses = [
+        { customer: { name: { contains: s, mode: 'insensitive' } } },
+        { customer: { phone: { contains: s } } },
+      ];
+      if (idMatch) orClauses.push({ id: parseInt(idMatch[1], 10) });
+      where.OR = orClauses;
+    }
+
+    const sortField = ['totalAmount', 'createdAt'].includes(sortBy) ? sortBy : 'createdAt';
+    const sortOrder = sortDir === 'asc' ? 'asc' : 'desc';
 
     const [transactions, total] = await Promise.all([
       prisma.transaction.findMany({
         where,
         include: { customer: true, paymentProof: true },
-        orderBy: { createdAt: 'desc' },
+        orderBy: { [sortField]: sortOrder },
         skip,
         take: parseInt(limit),
       }),
