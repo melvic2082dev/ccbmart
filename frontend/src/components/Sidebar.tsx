@@ -228,6 +228,7 @@ export default function Sidebar({ role }: { role: string }) {
     const showLabel = isMobile || expanded;
     return (
       <Link
+        key="bell"
         href={`/${role}/notifications`}
         onClick={() => isMobile && setMobileOpen(false)}
         className={`${showLabel ? 'px-3 py-2.5 flex items-center gap-3' : 'w-12 h-12 flex items-center justify-center'} rounded-xl text-sm font-medium relative`}

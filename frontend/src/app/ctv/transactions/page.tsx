@@ -60,49 +60,84 @@ export default function CtvTransactions() {
       ) : transactions.length === 0 ? (
         <Card><CardContent className="py-12 text-center text-slate-500">Không có giao dịch</CardContent></Card>
       ) : (
-        <Card>
-          <CardContent className="overflow-x-auto p-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>ID</TableHead>
-                  <TableHead>Khách hàng</TableHead>
-                  <TableHead className="text-right">Số tiền</TableHead>
-                  <TableHead className="hidden sm:table-cell">PT</TableHead>
-                  <TableHead>Trạng thái</TableHead>
-                  <TableHead className="hidden md:table-cell">Ngày tạo</TableHead>
-                  <TableHead className="hidden lg:table-cell">Ghi chú</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {transactions.map((tx: any) => {
-                  const sc = statusConfig[tx.status] || statusConfig.PENDING;
-                  return (
-                    <TableRow key={tx.id}>
-                      <TableCell className="font-mono">#{tx.id}</TableCell>
-                      <TableCell>{tx.customer?.name || '-'}</TableCell>
-                      <TableCell className="text-right font-semibold tabular-nums">{formatVND(tx.totalAmount)}</TableCell>
-                      <TableCell className="hidden sm:table-cell">
-                        {tx.paymentMethod === 'bank_transfer' ? (
-                          <Badge variant="outline">CK {tx.bankCode ? `(${tx.bankCode})` : ''}</Badge>
-                        ) : tx.paymentMethod === 'cash' ? (
-                          <Badge variant="secondary">Tiền mặt</Badge>
-                        ) : '-'}
-                      </TableCell>
-                      <TableCell>
+        <>
+          {/* Mobile: compact 2-line cards */}
+          <div className="md:hidden flex flex-col gap-2">
+            {transactions.map((tx: any) => {
+              const sc = statusConfig[tx.status] || statusConfig.PENDING;
+              const pt = tx.paymentMethod === 'bank_transfer'
+                ? `CK${tx.bankCode ? ` ${tx.bankCode}` : ''}`
+                : tx.paymentMethod === 'cash' ? 'Tiền mặt' : '';
+              const note = tx.rejectedReason || (tx.paymentProof ? 'Có bằng chứng' : '');
+              return (
+                <Card key={tx.id}>
+                  <CardContent className="p-3 space-y-1">
+                    <div className="flex items-baseline justify-between gap-2">
+                      <div className="min-w-0 flex items-baseline gap-2">
+                        <span className="font-mono text-xs text-muted-foreground shrink-0">#{tx.id}</span>
+                        <span className="font-medium truncate">{tx.customer?.name || '-'}</span>
+                      </div>
+                      <span className="font-semibold tabular-nums shrink-0">{formatVND(tx.totalAmount)}</span>
+                    </div>
+                    <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
+                      <div className="flex items-center gap-2 min-w-0">
                         <Badge className={sc.color} variant="outline">{sc.label}</Badge>
-                      </TableCell>
-                      <TableCell className="hidden md:table-cell text-xs">{new Date(tx.createdAt).toLocaleString('vi-VN')}</TableCell>
-                      <TableCell className="hidden lg:table-cell text-xs text-slate-500 max-w-[150px] truncate">
-                        {tx.rejectedReason || (tx.paymentProof ? 'Có bằng chứng' : '')}
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+                        {pt && <span className="truncate">{pt}</span>}
+                      </div>
+                      <span className="shrink-0 tabular-nums">{new Date(tx.createdAt).toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' })}</span>
+                    </div>
+                    {note && <p className="text-xs text-muted-foreground truncate">{note}</p>}
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+
+          {/* Desktop: full table */}
+          <Card className="hidden md:block">
+            <CardContent className="overflow-x-auto p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>ID</TableHead>
+                    <TableHead>Khách hàng</TableHead>
+                    <TableHead className="text-right">Số tiền</TableHead>
+                    <TableHead>PT</TableHead>
+                    <TableHead>Trạng thái</TableHead>
+                    <TableHead>Ngày tạo</TableHead>
+                    <TableHead className="hidden lg:table-cell">Ghi chú</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {transactions.map((tx: any) => {
+                    const sc = statusConfig[tx.status] || statusConfig.PENDING;
+                    return (
+                      <TableRow key={tx.id}>
+                        <TableCell className="font-mono">#{tx.id}</TableCell>
+                        <TableCell>{tx.customer?.name || '-'}</TableCell>
+                        <TableCell className="text-right font-semibold tabular-nums">{formatVND(tx.totalAmount)}</TableCell>
+                        <TableCell>
+                          {tx.paymentMethod === 'bank_transfer' ? (
+                            <Badge variant="outline">CK {tx.bankCode ? `(${tx.bankCode})` : ''}</Badge>
+                          ) : tx.paymentMethod === 'cash' ? (
+                            <Badge variant="secondary">Tiền mặt</Badge>
+                          ) : '-'}
+                        </TableCell>
+                        <TableCell>
+                          <Badge className={sc.color} variant="outline">{sc.label}</Badge>
+                        </TableCell>
+                        <TableCell className="text-xs">{new Date(tx.createdAt).toLocaleString('vi-VN')}</TableCell>
+                        <TableCell className="hidden lg:table-cell text-xs text-slate-500 max-w-[150px] truncate">
+                          {tx.rejectedReason || (tx.paymentProof ? 'Có bằng chứng' : '')}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </>
       )}
 
       {totalPages > 1 && (
