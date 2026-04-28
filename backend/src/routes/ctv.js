@@ -257,6 +257,20 @@ router.get('/breakaway-fees', validate(schemas.monthQuery, 'query'), async (req,
   try {
     const now = new Date();
     const month = req.query.month || `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+
+    // Eligible = user has ever appeared as a recipient of a breakaway fee (any month, any status).
+    const everReceived = await prisma.breakawayFee.count({ where: { toUserId: req.user.id } });
+    const eligible = everReceived > 0;
+
+    if (!eligible) {
+      return res.json({
+        month,
+        eligible: false,
+        summary: { level1: 0, level2: 0, level3: 0, total: 0 },
+        records: [],
+      });
+    }
+
     const summary = await getReceivedBreakawayFeesSummary(req.user.id, month);
 
     const detailed = await prisma.breakawayFee.findMany({
@@ -270,6 +284,7 @@ router.get('/breakaway-fees', validate(schemas.monthQuery, 'query'), async (req,
 
     res.json({
       month,
+      eligible: true,
       summary: {
         level1: summary.level1,
         level2: summary.level2,
