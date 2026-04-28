@@ -62,39 +62,40 @@ const TITLE_LABELS: Record<string, string> = {
   STRATEGIC_ADVISOR: 'Cố vấn Chiến lược',
 };
 
-function TreeNode({ member, depth = 0, defaultOpen = true }: { member: TreeMember; depth?: number; defaultOpen?: boolean }) {
-  const [open, setOpen] = useState(defaultOpen)
-  const hasChildren = !!(member.children && member.children.length > 0)
-  const self = member.selfCombos ?? 0
-  const team = member.teamCombos ?? self
+// Group labels per the requesting user's rank — corporate-department metaphor
+// per V13.4 spec. Layer N corresponds to N hops down the management chain.
+// Each rank only sees the layers spec defines for it; deeper layers are dropped.
+const TEAM_GROUP_LABELS: Record<string, string[]> = {
+  CTV:  ['Trực tiếp'],
+  PP:   ['Trực tiếp'],
+  TP:   ['Trực tiếp', 'Gián tiếp cấp 1 — Chuyên viên'],
+  GDV:  ['Trực tiếp', 'Gián tiếp cấp 1 — Chuyên viên', 'Gián tiếp cấp 2 — Chuyên viên'],
+  GDKD: ['Trực tiếp', 'Gián tiếp cấp 1 — Cấp phòng', 'Gián tiếp cấp 2 — Phó phòng', 'Gián tiếp cấp 3 — Chuyên viên'],
+}
+
+function flattenByDepth(root: TreeMember | null): TreeMember[][] {
+  if (!root) return []
+  const layers: TreeMember[][] = []
+  let current = root.children || []
+  while (current.length > 0) {
+    layers.push(current)
+    current = current.flatMap(m => m.children || [])
+  }
+  return layers
+}
+
+function MemberRow({ m }: { m: TreeMember }) {
+  const self = m.selfCombos ?? 0
+  const team = m.teamCombos ?? self
   return (
-    <li>
-      <div className="flex items-center gap-2 py-1.5 px-2 rounded-md hover:bg-emerald-50 transition-colors">
-        {hasChildren ? (
-          <button
-            onClick={() => setOpen(o => !o)}
-            className="w-4 h-4 flex items-center justify-center text-emerald-600 hover:text-emerald-800"
-            aria-label={open ? 'Thu gọn' : 'Mở rộng'}
-          >
-            {open ? '▾' : '▸'}
-          </button>
-        ) : (
-          <span className="w-4 h-4 inline-flex items-center justify-center">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-          </span>
-        )}
-        <span className="font-medium text-gray-800">{member.name}</span>
-        <Badge className="bg-emerald-100 text-emerald-700 text-xs px-1.5 py-0">{member.rank}</Badge>
-        <span className="text-xs font-mono text-gray-600">{self}/({team})</span>
+    <div className="flex items-center justify-between gap-2 px-3 py-2 rounded-md bg-muted/40 border border-border">
+      <div className="flex items-center gap-2 min-w-0">
+        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+        <span className="font-medium text-foreground truncate">{m.name}</span>
+        <Badge className="bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 text-xs px-1.5 py-0 shrink-0">{m.rank}</Badge>
       </div>
-      {hasChildren && open && (
-        <ul className="border-l-2 border-emerald-100 ml-5 pl-2 mt-0.5 space-y-0.5">
-          {member.children!.map((child, idx) => (
-            <TreeNode key={child.id ?? idx} member={child} depth={depth + 1} defaultOpen={defaultOpen} />
-          ))}
-        </ul>
-      )}
-    </li>
+      <span className="text-xs font-mono tabular-nums text-muted-foreground shrink-0">{self}/({team})</span>
+    </div>
   )
 }
 
@@ -130,8 +131,6 @@ export default function CTVDashboardPage() {
   const [loading, setLoading] = useState(true)
   const [treeLoading, setTreeLoading] = useState(true)
   const [updatedAt, setUpdatedAt] = useState<Date | null>(null)
-  const [treeKey, setTreeKey] = useState(0)
-  const [defaultOpen, setDefaultOpen] = useState(true)
 
   const now = new Date()
   const monthLabel = `Tháng ${now.getMonth() + 1}/${now.getFullYear()}`
@@ -165,11 +164,6 @@ export default function CTVDashboardPage() {
     const interval = setInterval(fetchData, 60000)
     return () => clearInterval(interval)
   }, [])
-
-  const toggleAll = (open: boolean) => {
-    setDefaultOpen(open)
-    setTreeKey(k => k + 1) // force re-mount so all TreeNode reset their open state
-  }
 
   return (
     <>
@@ -411,36 +405,44 @@ export default function CTVDashboardPage() {
           </Card>
         )}
 
-        <Card className="border-emerald-100 shadow-sm">
-          <CardHeader className="flex flex-row items-center justify-between flex-wrap gap-2">
-            <div>
-              <CardTitle className="text-foreground">Cây quản lý đội nhóm</CardTitle>
-              <p className="text-[11px] text-gray-500 mt-1">Số combo tháng này — <span className="font-mono">cá nhân/(nhánh)</span></p>
-            </div>
-            {treeRoot && (
-              <div className="flex items-center gap-2 text-xs">
-                <button onClick={() => toggleAll(true)} className="px-2 py-1 rounded border border-emerald-200 text-emerald-700 hover:bg-emerald-50">
-                  Mở rộng tất cả
-                </button>
-                <button onClick={() => toggleAll(false)} className="px-2 py-1 rounded border border-gray-200 text-gray-600 hover:bg-gray-50">
-                  Thu gọn tất cả
-                </button>
-              </div>
-            )}
+        <Card className="shadow-sm">
+          <CardHeader>
+            <CardTitle className="text-foreground">Đội ngũ quản lý</CardTitle>
+            <p className="text-xs text-muted-foreground mt-1">Số combo tháng này — <span className="font-mono">cá nhân/(nhánh)</span></p>
           </CardHeader>
           <CardContent>
             {treeLoading ? (
               <div className="space-y-2">
                 {Array.from({ length: 4 }).map((_, i) => (
-                  <div key={i} className="h-8 bg-gray-100 rounded animate-pulse" />
+                  <div key={i} className="h-8 bg-muted rounded animate-pulse" />
                 ))}
               </div>
             ) : !treeRoot ? (
-              <p className="text-gray-500 text-sm text-center py-6">Chưa có thành viên trong đội nhóm</p>
+              <p className="text-muted-foreground text-sm text-center py-6">Chưa có thành viên trong đội nhóm</p>
             ) : (
-              <ul key={treeKey} className="space-y-1">
-                <TreeNode member={treeRoot} defaultOpen={defaultOpen} />
-              </ul>
+              (() => {
+                const layers = flattenByDepth(treeRoot)
+                const labels = TEAM_GROUP_LABELS[data?.rank || 'CTV'] || TEAM_GROUP_LABELS.CTV
+                const visible = labels.map((label, i) => ({ label, members: layers[i] || [] })).filter(g => g.members.length > 0)
+                if (visible.length === 0) {
+                  return <p className="text-muted-foreground text-sm text-center py-6">Chưa có thành viên trong đội nhóm</p>
+                }
+                return (
+                  <div className="space-y-5">
+                    {visible.map((group) => (
+                      <section key={group.label}>
+                        <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2 flex items-baseline justify-between">
+                          <span>{group.label}</span>
+                          <span className="text-muted-foreground font-normal normal-case tracking-normal">{group.members.length} người</span>
+                        </h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                          {group.members.map(m => <MemberRow key={m.id} m={m} />)}
+                        </div>
+                      </section>
+                    ))}
+                  </div>
+                )
+              })()
             )}
           </CardContent>
         </Card>
