@@ -116,90 +116,98 @@ router.get('/dashboard', async (req, res) => {
 });
 
 async function computeKpi(userId, monthStr, rank) {
-  // Maintenance: keep the fixed salary requires ≥20h verified training/month.
-  const trainedMinutes = await getTrainerMinutes(userId, monthStr);
-
-  // Promotion: requirements depend on current rank.
-  // Rules mirror backend/src/services/promotion.js:checkEligibility.
+  // V13.4 spec — Chuong 7: combo-based thresholds.
   const startDate = new Date(`${monthStr}-01`);
   const endDate = new Date(startDate);
   endDate.setMonth(endDate.getMonth() + 1);
 
-  const directMembers = await prisma.user.findMany({
-    where: { parentId: userId, role: 'ctv', isActive: true },
-    select: { id: true, rank: true },
+  const [directMembers, personalCombos, allDescendantIds, trainedMinutes] = await Promise.all([
+    prisma.user.findMany({
+      where: { parentId: userId, role: 'ctv', isActive: true },
+      select: { id: true, rank: true },
+    }),
+    prisma.transaction.count({
+      where: { ctvId: userId, channel: 'ctv', status: 'CONFIRMED', createdAt: { gte: startDate, lt: endDate } },
+    }),
+    getAllDescendantIds(userId),
+    getTrainerMinutes(userId, monthStr),
+  ]);
+
+  const branchCombos = await prisma.transaction.count({
+    where: {
+      ctvId: { in: [...allDescendantIds, userId] },
+      channel: 'ctv',
+      status: 'CONFIRMED',
+      createdAt: { gte: startDate, lt: endDate },
+    },
   });
 
+  // Maintenance — what user must hit this month to keep current rank/payouts.
+  // CTV has no monthly minimum (only "đã mua 1 combo" to activate, not tracked here).
+  const maintenance = { rank, requirements: [] };
+  if (rank !== 'CTV') {
+    maintenance.requirements.push({ label: 'Combo cá nhân', current: personalCombos, target: 50 });
+  }
+  if (rank === 'TP') {
+    maintenance.requirements.push({ label: 'Combo nhóm', current: branchCombos, target: 150 });
+  } else if (rank === 'GDV') {
+    maintenance.requirements.push({ label: 'Combo nhóm', current: branchCombos, target: 550 });
+  } else if (rank === 'GDKD') {
+    maintenance.requirements.push({ label: 'Combo nhóm', current: branchCombos, target: 2000 });
+  }
+  if (rank !== 'CTV') {
+    maintenance.requirements.push({
+      label: 'Đào tạo (giờ)',
+      current: Math.round(trainedMinutes / 60 * 10) / 10,
+      target: MIN_TRAINING_MINUTES_PER_MONTH / 60,
+    });
+  }
+
+  // Promotion — what user needs to LEVEL UP to next rank this month.
   let promotion = null;
   if (rank === 'CTV') {
-    const directIds = directMembers.map(m => m.id);
-    const counts = directIds.length
-      ? await prisma.transaction.groupBy({
-        by: ['ctvId'],
-        where: { ctvId: { in: directIds }, channel: 'ctv', status: 'CONFIRMED', createdAt: { gte: startDate, lt: endDate } },
-        _count: { id: true },
-      })
-      : [];
-    const cm = new Map(counts.map(c => [c.ctvId, c._count.id]));
-    const qualified = directMembers.filter(m => (cm.get(m.id) || 0) >= 10).length;
     promotion = {
       targetRank: 'PP',
       requirements: [
-        { label: 'Thành viên trực tiếp đạt ≥10 combo', current: qualified, target: 5 },
+        { label: 'Combo cá nhân', current: personalCombos, target: 50 },
       ],
     };
-  } else if (rank === 'PP' || rank === 'TP' || rank === 'GDV') {
-    const allDescendantIds = await getAllDescendantIds(userId);
-    const teamRev = await prisma.transaction.aggregate({
-      where: {
-        ctvId: { in: [...allDescendantIds, userId] },
-        channel: 'ctv',
-        status: 'CONFIRMED',
-        createdAt: { gte: startDate, lt: endDate },
-      },
-      _sum: { totalAmount: true },
-    });
-    const teamRevenue = Number(teamRev._sum.totalAmount || 0);
-
-    if (rank === 'PP') {
-      const ppCount = directMembers.filter(m => m.rank === 'PP').length;
-      promotion = {
-        targetRank: 'TP',
-        requirements: [
-          { label: 'PP trực tiếp', current: ppCount, target: 3 },
-          { label: 'Doanh số nhánh', current: teamRevenue, target: 500_000_000, isMoney: true },
-        ],
-      };
-    } else if (rank === 'TP') {
-      const tpCount = directMembers.filter(m => m.rank === 'TP').length;
-      promotion = {
-        targetRank: 'GDV',
-        requirements: [
-          { label: 'TP trực tiếp', current: tpCount, target: 5 },
-          { label: 'Doanh số nhánh', current: teamRevenue, target: 2_000_000_000, isMoney: true },
-        ],
-      };
-    } else {
-      const gdvCount = directMembers.filter(m => m.rank === 'GDV').length;
-      promotion = {
-        targetRank: 'GDKD',
-        requirements: [
-          { label: 'GDV trực tiếp', current: gdvCount, target: 3 },
-          { label: 'Doanh số nhánh', current: teamRevenue, target: 5_000_000_000, isMoney: true },
-        ],
-      };
-    }
+  } else if (rank === 'PP') {
+    const directCtv = directMembers.filter(m => (m.rank || 'CTV') === 'CTV').length;
+    promotion = {
+      targetRank: 'TP',
+      requirements: [
+        { label: 'Combo cá nhân', current: personalCombos, target: 50 },
+        { label: 'CTV trực tiếp', current: directCtv, target: 10 },
+        { label: 'Combo nhóm', current: branchCombos, target: 150 },
+      ],
+    };
+  } else if (rank === 'TP') {
+    const directPpTp = directMembers.filter(m => m.rank === 'PP' || m.rank === 'TP').length;
+    promotion = {
+      targetRank: 'GDV',
+      requirements: [
+        { label: 'Combo cá nhân', current: personalCombos, target: 50 },
+        { label: 'PP/TP trực tiếp', current: directPpTp, target: 10 },
+        { label: 'Combo nhóm', current: branchCombos, target: 550 },
+      ],
+      note: 'Cần duy trì 3 tháng liên tiếp',
+    };
+  } else if (rank === 'GDV') {
+    const directTpGdv = directMembers.filter(m => m.rank === 'TP' || m.rank === 'GDV').length;
+    promotion = {
+      targetRank: 'GDKD',
+      requirements: [
+        { label: 'Combo cá nhân', current: personalCombos, target: 50 },
+        { label: 'TP/GĐV trực tiếp', current: directTpGdv, target: 10 },
+        { label: 'Combo nhóm', current: branchCombos, target: 2000 },
+      ],
+      note: 'Cần duy trì 3 tháng liên tiếp + chuyển HĐLĐ sau 3 tháng',
+    };
   }
   // GDKD: top rank — no promotion target.
 
-  return {
-    fixedSalary: {
-      trainedMinutes,
-      requiredMinutes: MIN_TRAINING_MINUTES_PER_MONTH,
-      eligible: trainedMinutes >= MIN_TRAINING_MINUTES_PER_MONTH,
-    },
-    promotion,
-  };
+  return { maintenance, promotion };
 }
 
 async function getAllDescendantIds(rootId) {
