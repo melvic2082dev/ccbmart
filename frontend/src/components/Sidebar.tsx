@@ -14,10 +14,31 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { api } from '@/lib/api';
 import { canAccessMenu, ROLE_LABELS, getRoleGroup, isAdminRole } from '@/lib/permissions';
 
+type AccentKey = 'emerald' | 'green' | 'indigo' | 'amber' | 'sky' | 'violet' | 'cyan' | 'teal' | 'purple' | 'orange' | 'rose' | 'fuchsia' | 'lime' | 'blue';
+
+// Tailwind needs literal class names — keep this map exhaustive.
+const ACCENT_ICON: Record<AccentKey, string> = {
+  emerald: 'text-emerald-500',
+  green:   'text-green-500',
+  indigo:  'text-indigo-500',
+  amber:   'text-amber-500',
+  sky:     'text-sky-500',
+  violet:  'text-violet-500',
+  cyan:    'text-cyan-500',
+  teal:    'text-teal-500',
+  purple:  'text-purple-500',
+  orange:  'text-orange-500',
+  rose:    'text-rose-500',
+  fuchsia: 'text-fuchsia-500',
+  lime:    'text-lime-500',
+  blue:    'text-blue-500',
+};
+
 type NavItem = {
   label: string;
   href: string;
   icon: React.ReactNode;
+  accent?: AccentKey;
   /** If true, renders Bell icon with unread-count badge (used for "Thông báo") */
   isNotificationLink?: boolean;
 };
@@ -28,58 +49,58 @@ const adminGroups: NavGroup[] = [
   {
     title: 'Vận hành',
     items: [
-      { label: 'Dashboard', href: '/admin/dashboard',      icon: <LayoutDashboard size={20} /> },
-      { label: 'Đối soát',  href: '/admin/reconciliation', icon: <ClipboardCheck size={20} /> },
+      { label: 'Dashboard', href: '/admin/dashboard',      icon: <LayoutDashboard size={20} />, accent: 'emerald' },
+      { label: 'Đối soát',  href: '/admin/reconciliation', icon: <ClipboardCheck size={20} />,  accent: 'cyan'    },
     ],
   },
   {
     title: 'Nhân sự & đối tác',
     items: [
-      { label: 'CTV',      href: '/admin/ctv',                icon: <Users size={20} /> },
-      { label: 'Đại lý',   href: '/admin/agencies',           icon: <Building2 size={20} /> },
-      { label: 'HKD',      href: '/admin/business-household', icon: <Building2 size={20} /> },
-      { label: 'Team vượt cấp', href: '/admin/breakaway-logs', icon: <Network size={20} /> },
+      { label: 'CTV',      href: '/admin/ctv',                icon: <Users size={20} />,    accent: 'sky'    },
+      { label: 'Đại lý',   href: '/admin/agencies',           icon: <Building2 size={20} />, accent: 'blue'   },
+      { label: 'HKD',      href: '/admin/business-household', icon: <Building2 size={20} />, accent: 'indigo' },
+      { label: 'Team vượt cấp', href: '/admin/breakaway-logs', icon: <Network size={20} />,  accent: 'orange' },
     ],
   },
   {
     title: 'Thành viên',
     items: [
-      { label: 'Thành viên',  href: '/admin/membership/wallets',  icon: <Award size={20} /> },
-      { label: 'Nạp tiền TV', href: '/admin/membership/deposits', icon: <CreditCard size={20} /> },
-      { label: 'Hạng thẻ',    href: '/admin/membership/tiers',    icon: <Wallet size={20} /> },
+      { label: 'Thành viên',  href: '/admin/membership/wallets',  icon: <Award size={20} />,      accent: 'violet'  },
+      { label: 'Nạp tiền TV', href: '/admin/membership/deposits', icon: <CreditCard size={20} />, accent: 'fuchsia' },
+      { label: 'Hạng thẻ',    href: '/admin/membership/tiers',    icon: <Wallet size={20} />,     accent: 'purple'  },
     ],
   },
   {
     title: 'Đào tạo & phí',
     items: [
-      { label: 'Bậc K-factor', href: '/admin/fee-config',      icon: <GraduationCap size={20} /> },
-      { label: 'Log đào tạo', href: '/admin/training-logs',   icon: <BookOpen size={20} /> },
-      { label: 'Phí quản lý', href: '/admin/management-fees', icon: <Coins size={20} /> },
-      { label: 'Báo cáo lương cứng', href: '/admin/salary-report', icon: <Wallet size={20} /> },
+      { label: 'Bậc K-factor',       href: '/admin/fee-config',      icon: <GraduationCap size={20} />, accent: 'lime'    },
+      { label: 'Log đào tạo',        href: '/admin/training-logs',   icon: <BookOpen size={20} />,      accent: 'green'   },
+      { label: 'Phí quản lý',        href: '/admin/management-fees', icon: <Coins size={20} />,         accent: 'amber'   },
+      { label: 'Báo cáo lương cứng', href: '/admin/salary-report',   icon: <Wallet size={20} />,        accent: 'teal'    },
     ],
   },
   {
     title: 'Tài chính & thuế',
     items: [
-      { label: 'Hóa đơn',          href: '/admin/invoices',     icon: <Receipt size={20} /> },
-      { label: 'Nhật ký thanh toán', href: '/admin/payment-logs', icon: <Banknote size={20} /> },
-      { label: 'Thuế TNCN',        href: '/admin/tax',          icon: <Calculator size={20} /> },
+      { label: 'Hóa đơn',            href: '/admin/invoices',     icon: <Receipt size={20} />,    accent: 'teal'    },
+      { label: 'Nhật ký thanh toán', href: '/admin/payment-logs', icon: <Banknote size={20} />,   accent: 'amber'   },
+      { label: 'Thuế TNCN',          href: '/admin/tax',          icon: <Calculator size={20} />, accent: 'rose'    },
     ],
   },
   {
     title: 'Cấu hình & báo cáo',
     items: [
-      { label: 'eKYC',      href: '/admin/kyc',           icon: <ShieldCheck size={20} /> },
-      { label: 'Import',    href: '/admin/import',        icon: <FileSpreadsheet size={20} /> },
-      { label: 'Cấu hình',  href: '/admin/config',        icon: <Settings size={20} /> },
-      { label: 'Báo cáo',   href: '/admin/reports',       icon: <FileText size={20} /> },
-      { label: 'Thông báo', href: '/admin/notifications', icon: <Bell size={20} />, isNotificationLink: true },
+      { label: 'eKYC',      href: '/admin/kyc',           icon: <ShieldCheck size={20} />,      accent: 'cyan'    },
+      { label: 'Import',    href: '/admin/import',        icon: <FileSpreadsheet size={20} />,  accent: 'lime'    },
+      { label: 'Cấu hình',  href: '/admin/config',        icon: <Settings size={20} />,         accent: 'violet'  },
+      { label: 'Báo cáo',   href: '/admin/reports',       icon: <FileText size={20} />,         accent: 'rose'    },
+      { label: 'Thông báo', href: '/admin/notifications', icon: <Bell size={20} />, isNotificationLink: true, accent: 'orange' },
     ],
   },
   {
     title: 'Quản trị hệ thống',
     items: [
-      { label: 'Người dùng', href: '/admin/users', icon: <UserCog size={20} /> },
+      { label: 'Người dùng', href: '/admin/users', icon: <UserCog size={20} />, accent: 'fuchsia' },
     ],
   },
 ];
@@ -92,30 +113,30 @@ function filterAdminGroupsByRole(groups: NavGroup[], role: string): NavGroup[] {
 
 const navByRole: Record<string, NavItem[]> = {
   ctv: [
-    { label: 'Dashboard',      href: '/ctv/dashboard',        icon: <LayoutDashboard size={20} /> },
-    { label: 'Tạo đơn',        href: '/ctv/sales/create',     icon: <PlusCircle size={20} /> },
-    { label: 'Giao dịch',      href: '/ctv/transactions',     icon: <ShoppingCart size={20} /> },
-    { label: 'Nộp tiền',       href: '/ctv/cash',             icon: <Banknote size={20} /> },
-    { label: 'Khách hàng',     href: '/ctv/customers',        icon: <Users size={20} /> },
-    { label: 'Sản phẩm',       href: '/ctv/products',         icon: <Package size={20} /> },
-    { label: 'eKYC',           href: '/ctv/kyc',              icon: <ShieldCheck size={20} /> },
-    { label: 'Hóa đơn',        href: '/ctv/invoices',         icon: <Receipt size={20} /> },
-    { label: 'Phí quản lý',    href: '/ctv/management-fees',  icon: <Coins size={20} /> },
-    { label: 'Phí thoát ly',   href: '/ctv/breakaway-fees',   icon: <Network size={20} /> },
-    { label: 'Báo cáo tháng',  href: '/ctv/monthly-report',   icon: <FileBarChart size={20} /> },
+    { label: 'Dashboard',      href: '/ctv/dashboard',        icon: <LayoutDashboard size={20} />, accent: 'emerald' },
+    { label: 'Tạo đơn',        href: '/ctv/sales/create',     icon: <PlusCircle size={20} />,     accent: 'green'   },
+    { label: 'Giao dịch',      href: '/ctv/transactions',     icon: <ShoppingCart size={20} />,   accent: 'indigo'  },
+    { label: 'Nộp tiền',       href: '/ctv/cash',             icon: <Banknote size={20} />,       accent: 'amber'   },
+    { label: 'Khách hàng',     href: '/ctv/customers',        icon: <Users size={20} />,          accent: 'sky'     },
+    { label: 'Sản phẩm',       href: '/ctv/products',         icon: <Package size={20} />,        accent: 'violet'  },
+    { label: 'eKYC',           href: '/ctv/kyc',              icon: <ShieldCheck size={20} />,    accent: 'cyan'    },
+    { label: 'Hóa đơn',        href: '/ctv/invoices',         icon: <Receipt size={20} />,        accent: 'teal'    },
+    { label: 'Phí quản lý',    href: '/ctv/management-fees',  icon: <Coins size={20} />,          accent: 'purple'  },
+    { label: 'Phí thoát ly',   href: '/ctv/breakaway-fees',   icon: <Network size={20} />,        accent: 'orange'  },
+    { label: 'Báo cáo tháng',  href: '/ctv/monthly-report',   icon: <FileBarChart size={20} />,   accent: 'rose'    },
   ],
   agency: [
-    { label: 'Dashboard', href: '/agency/dashboard',    icon: <LayoutDashboard size={20} /> },
-    { label: 'Tồn kho',   href: '/agency/inventory',    icon: <Warehouse size={20} /> },
-    { label: 'Giao dịch', href: '/agency/transactions', icon: <ShoppingCart size={20} /> },
+    { label: 'Dashboard', href: '/agency/dashboard',    icon: <LayoutDashboard size={20} />, accent: 'emerald' },
+    { label: 'Tồn kho',   href: '/agency/inventory',    icon: <Warehouse size={20} />,       accent: 'amber'   },
+    { label: 'Giao dịch', href: '/agency/transactions', icon: <ShoppingCart size={20} />,    accent: 'indigo'  },
   ],
   // Admin is handled via adminGroups (grouped)
   admin: [],
   member: [
-    { label: 'Dashboard',   href: '/member/dashboard',    icon: <LayoutDashboard size={20} /> },
-    { label: 'Nạp tiền',    href: '/member/topup',        icon: <Banknote size={20} /> },
-    { label: 'Lịch sử',     href: '/member/transactions', icon: <ShoppingCart size={20} /> },
-    { label: 'Giới thiệu',  href: '/member/referral',     icon: <Users size={20} /> },
+    { label: 'Dashboard',   href: '/member/dashboard',    icon: <LayoutDashboard size={20} />, accent: 'emerald' },
+    { label: 'Nạp tiền',    href: '/member/topup',        icon: <Banknote size={20} />,        accent: 'amber'   },
+    { label: 'Lịch sử',     href: '/member/transactions', icon: <ShoppingCart size={20} />,    accent: 'indigo'  },
+    { label: 'Giới thiệu',  href: '/member/referral',     icon: <Users size={20} />,           accent: 'sky'     },
   ],
 };
 
@@ -209,7 +230,7 @@ export default function Sidebar({ role }: { role: string }) {
         onMouseLeave={(e) => { e.currentTarget.style.background = active ? 'var(--sidebar-active-bg)' : 'transparent'; }}
         title={!showLabel ? item.label : undefined}
       >
-        <span className="shrink-0 relative">
+        <span className={`shrink-0 relative ${!active && item.accent ? ACCENT_ICON[item.accent] : ''}`}>
           {item.icon}
           {item.isNotificationLink && unreadCount > 0 && (
             <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-red-500 text-white text-[9px] rounded-full flex items-center justify-center font-medium">
