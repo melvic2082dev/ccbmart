@@ -4,7 +4,10 @@ import { useEffect, useMemo, useState } from 'react';
 import { api, formatVND } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { FileText } from 'lucide-react';
+import { FileText, Receipt } from 'lucide-react';
+import { ACCENT_CLASSES } from '@/lib/page-accent';
+
+const ACCENT = ACCENT_CLASSES.teal;
 
 interface Invoice {
   id: number;
@@ -105,9 +108,12 @@ export default function CtvInvoicesPage() {
 
   return (
     <>
-      <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
-        <FileText size={24} /> Hóa đơn của tôi
-      </h2>
+      <div className="mb-6">
+        <h2 className="text-2xl font-bold flex items-center gap-2">
+          <Receipt size={24} className={ACCENT.icon} /> Hóa đơn của tôi
+        </h2>
+        <div className={`mt-2 w-12 h-1 ${ACCENT.bar} rounded-full`} />
+      </div>
 
       <div className="flex flex-col sm:flex-row gap-2 mb-4">
         <select
@@ -134,9 +140,9 @@ export default function CtvInvoicesPage() {
         </select>
       </div>
 
-      <Card className="mb-6">
+      <Card className={`mb-6 border ${ACCENT.border}`}>
         <CardContent className="p-4">
-          <p className="text-sm text-slate-500">{hasFilter ? 'Tổng đã lọc' : 'Tổng đã nhận từ CCB Mart'}</p>
+          <p className="text-sm text-muted-foreground">{hasFilter ? 'Tổng đã lọc' : 'Tổng đã nhận từ CCB Mart'}</p>
           <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-400 tabular-nums">{formatVND(totalReceived)}</p>
           <p className="text-xs text-slate-500 mt-1">{filteredInvoices.length} hóa đơn</p>
         </CardContent>

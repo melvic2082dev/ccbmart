@@ -3,6 +3,10 @@
 import { useEffect, useState } from 'react'
 import { api, formatVND } from '@/lib/api'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Users } from 'lucide-react'
+import { ACCENT_CLASSES } from '@/lib/page-accent'
+
+const ACCENT = ACCENT_CLASSES.sky
 
 interface Customer {
   id: string | number
@@ -33,7 +37,12 @@ export default function CtvCustomersPage() {
 
   return (
     <div className="p-6">
-      <h1 className="text-2xl font-bold mb-6">Khách hàng của tôi</h1>
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold flex items-center gap-2">
+          <Users size={24} className={ACCENT.icon} /> Khách hàng của tôi
+        </h1>
+        <div className={`mt-2 w-12 h-1 ${ACCENT.bar} rounded-full`} />
+      </div>
       <Card>
         <CardHeader>
           <CardTitle>Danh sách khách hàng ({customers.length})</CardTitle>

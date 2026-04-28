@@ -5,7 +5,10 @@ import { api, formatVND } from '@/lib/api'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
-import { TrendingUp, Users, ShoppingCart, Wallet, Gift, Star, ArrowUpCircle, Clock, Target, Trophy } from 'lucide-react'
+import { TrendingUp, Users, ShoppingCart, Wallet, Gift, Star, ArrowUpCircle, Clock, Target, Trophy, LayoutDashboard } from 'lucide-react'
+import { ACCENT_CLASSES } from '@/lib/page-accent'
+
+const ACCENT = ACCENT_CLASSES.emerald
 
 interface Commission {
   selfCommission: number
@@ -168,8 +171,11 @@ export default function CTVDashboardPage() {
       <div className="space-y-6">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Tổng quan</h1>
-            <p className="text-sm text-muted-foreground mt-0.5">{monthLabel}</p>
+            <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
+              <LayoutDashboard size={24} className={ACCENT.icon} /> Tổng quan
+            </h1>
+            <div className={`mt-2 w-12 h-1 ${ACCENT.bar} rounded-full`} />
+            <p className="text-sm text-muted-foreground mt-2">{monthLabel}</p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
             {data?.professionalTitle?.isActive && (
@@ -194,7 +200,7 @@ export default function CTVDashboardPage() {
         </div>
 
         {data?.kpi && (data.kpi.maintenance || data.kpi.promotion) && (
-          <Card className="shadow-sm">
+          <Card className={`shadow-sm border ${ACCENT.border}`}>
             <CardHeader className="pb-3">
               <CardTitle className="text-foreground flex items-center gap-2">
                 <Target className="w-5 h-5 text-emerald-600 dark:text-emerald-400" /> Chỉ tiêu tháng này

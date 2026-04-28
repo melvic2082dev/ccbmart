@@ -5,6 +5,9 @@ import { api } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ShieldCheck, Upload } from 'lucide-react';
+import { ACCENT_CLASSES } from '@/lib/page-accent';
+
+const ACCENT = ACCENT_CLASSES.cyan;
 
 interface KycStatus {
   id: number;
@@ -88,9 +91,12 @@ export default function CtvKycPage() {
 
   return (
     <>
-      <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
-        <ShieldCheck size={24} /> Xác minh danh tính (eKYC)
-      </h2>
+      <div className="mb-6">
+        <h2 className="text-2xl font-bold flex items-center gap-2">
+          <ShieldCheck size={24} className={ACCENT.icon} /> Xác minh danh tính (eKYC)
+        </h2>
+        <div className={`mt-2 w-12 h-1 ${ACCENT.bar} rounded-full`} />
+      </div>
 
       {loading ? (
         <div className="h-64 bg-slate-200 animate-pulse rounded-xl" />

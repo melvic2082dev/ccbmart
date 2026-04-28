@@ -5,6 +5,9 @@ import { api, formatVND } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { FileBarChart } from 'lucide-react';
+import { ACCENT_CLASSES } from '@/lib/page-accent';
+
+const ACCENT = ACCENT_CLASSES.rose;
 
 interface Report {
   month: string;
@@ -40,12 +43,15 @@ export default function CtvMonthlyReportPage() {
 
   return (
     <>
-      <h2 className="text-2xl font-bold mb-2 flex items-center gap-2">
-        <FileBarChart size={24} /> Báo cáo tháng
-      </h2>
-      <p className="text-sm text-slate-500 mb-6">
-        Tất cả các khoản thu nhập do CCB Mart chi trả từ doanh thu bán hàng.
-      </p>
+      <div className="mb-6">
+        <h2 className="text-2xl font-bold flex items-center gap-2">
+          <FileBarChart size={24} className={ACCENT.icon} /> Báo cáo tháng
+        </h2>
+        <div className={`mt-2 w-12 h-1 ${ACCENT.bar} rounded-full`} />
+        <p className="text-sm text-muted-foreground mt-2">
+          Tất cả các khoản thu nhập do CCB Mart chi trả từ doanh thu bán hàng.
+        </p>
+      </div>
 
       <div className="mb-4">
         <input
@@ -75,7 +81,7 @@ export default function CtvMonthlyReportPage() {
             </Card>
           </div>
 
-          <Card className="mb-6">
+          <Card className={`mb-6 border ${ACCENT.border}`}>
             <CardHeader>
               <CardTitle>Tổng kết thu nhập tháng {report.month}</CardTitle>
             </CardHeader>

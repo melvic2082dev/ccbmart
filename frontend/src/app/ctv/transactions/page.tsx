@@ -8,6 +8,9 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ShoppingCart, Clock, CheckCircle, XCircle, Search } from 'lucide-react';
+import { ACCENT_CLASSES } from '@/lib/page-accent';
+
+const ACCENT = ACCENT_CLASSES.indigo;
 
 const statusConfig: Record<string, { label: string; color: string }> = {
   PENDING: { label: 'Chờ duyệt', color: 'bg-yellow-100 text-yellow-700' },
@@ -63,9 +66,13 @@ export default function CtvTransactions() {
 
   return (
     <>
-      <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
-        <ShoppingCart size={24} /> Giao dịch ({total})
-      </h2>
+      <div className="mb-6">
+        <h2 className="text-2xl font-bold flex items-center gap-2">
+          <ShoppingCart size={24} className={ACCENT.icon} /> Giao dịch
+          <span className="text-base font-normal text-muted-foreground">({total})</span>
+        </h2>
+        <div className={`mt-2 w-12 h-1 ${ACCENT.bar} rounded-full`} />
+      </div>
 
       <div className="relative mb-3">
         <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />

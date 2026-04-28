@@ -5,6 +5,9 @@ import { api, formatVND } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Coins } from 'lucide-react';
+import { ACCENT_CLASSES } from '@/lib/page-accent';
+
+const ACCENT = ACCENT_CLASSES.purple;
 
 interface MgmtFeeRecord {
   id: number;
@@ -49,13 +52,16 @@ export default function CtvManagementFeesPage() {
 
   return (
     <>
-      <h2 className="text-2xl font-bold mb-2 flex items-center gap-2">
-        <Coins size={24} /> Phí quản lý trong nhóm
-      </h2>
-      <p className="text-sm text-slate-500 mb-6">
-        Phí quản lý F1/F2/F3 trên combo bán lẻ trực tiếp của cấp dưới.
-        Điều kiện: ≥ 20h đào tạo/tháng. CCB Mart chi trả từ doanh thu bán hàng.
-      </p>
+      <div className="mb-6">
+        <h2 className="text-2xl font-bold flex items-center gap-2">
+          <Coins size={24} className={ACCENT.icon} /> Phí quản lý trong nhóm
+        </h2>
+        <div className={`mt-2 w-12 h-1 ${ACCENT.bar} rounded-full`} />
+        <p className="text-sm text-muted-foreground mt-2">
+          Phí quản lý F1/F2/F3 trên combo bán lẻ trực tiếp của cấp dưới.
+          Điều kiện: ≥ 20h đào tạo/tháng. CCB Mart chi trả từ doanh thu bán hàng.
+        </p>
+      </div>
 
       <div className="mb-4">
         <input
