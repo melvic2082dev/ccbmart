@@ -5,7 +5,7 @@ import { api, formatVND } from '@/lib/api'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
-import { TrendingUp, Users, ShoppingCart, Wallet, Gift, ArrowUpCircle, Clock, Target, Trophy, LayoutDashboard } from 'lucide-react'
+import { TrendingUp, Users, ShoppingCart, Wallet, Gift, ArrowUpCircle, Clock, Target, Trophy, LayoutDashboard, DollarSign, ArrowUpRight, ArrowDownRight } from 'lucide-react'
 import { ACCENT_CLASSES } from '@/lib/page-accent'
 
 const ACCENT = ACCENT_CLASSES.emerald
@@ -103,6 +103,15 @@ function ProgressBar({ pct, done, color = 'amber' }: { pct: number; done: boolea
   )
 }
 
+function BreakdownRow({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="flex justify-between items-baseline gap-2">
+      <span className="text-gray-700 dark:text-gray-300 truncate">{label}</span>
+      <span className="font-semibold text-gray-900 dark:text-gray-100 tabular-nums shrink-0">{formatVND(value)}</span>
+    </div>
+  )
+}
+
 function KpiRow({ label, current, target, isMoney, color }: { label: string; current: number; target: number; isMoney?: boolean; color?: 'emerald' | 'amber' }) {
   const pct = target > 0 ? (current / target) * 100 : 0
   const fmt = (n: number) => isMoney ? formatVND(n) : n.toLocaleString('vi-VN')
@@ -187,6 +196,63 @@ export default function CTVDashboardPage() {
           </div>
         </div>
 
+        {/* HERO — Thu nhập tháng này. Số tiền thực sự nhận được là thông tin
+            quan trọng nhất với một sales rep, hơn cả doanh số gross. */}
+        {data?.commission && (
+          <Card className="shadow-md border-2 border-emerald-300 dark:border-emerald-700 bg-gradient-to-br from-emerald-50 via-white to-emerald-50 dark:from-emerald-950/40 dark:via-slate-900 dark:to-emerald-950/40">
+            <CardContent className="p-5">
+              <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-400 mb-1">
+                <DollarSign className="w-4 h-4" />
+                <span className="text-xs font-semibold uppercase tracking-wider">Thu nhập tháng này</span>
+              </div>
+              <div className="flex items-baseline justify-between gap-3 flex-wrap mb-1">
+                <p className="text-3xl sm:text-4xl font-bold text-emerald-700 dark:text-emerald-400 tabular-nums leading-none">
+                  {formatVND(data.commission.totalIncome || 0)}
+                </p>
+                {typeof data.revenueGrowth === 'number' && data.revenueGrowth !== 0 && (
+                  <span className={`inline-flex items-center gap-1 text-sm font-semibold px-2 py-1 rounded-full ${
+                    data.revenueGrowth >= 0
+                      ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-300'
+                      : 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300'
+                  }`}>
+                    {data.revenueGrowth >= 0 ? <ArrowUpRight className="w-3.5 h-3.5" /> : <ArrowDownRight className="w-3.5 h-3.5" />}
+                    {data.revenueGrowth >= 0 ? '+' : ''}{data.revenueGrowth}% doanh số
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-gray-600 dark:text-gray-400 mb-4">
+                Tổng dự kiến nhận được = Hoa hồng + Thưởng + Lương cố định (nếu có)
+              </p>
+
+              {/* Breakdown rows — only show non-zero buckets so the card stays
+                  tight for new CTVs who don't have indirect income yet. */}
+              <div className="grid grid-cols-2 gap-x-4 gap-y-2 pt-3 border-t border-emerald-200/60 dark:border-emerald-800/60 text-sm">
+                {(data.commission.selfCommission ?? 0) > 0 && (
+                  <BreakdownRow label="Hoa hồng tự bán" value={data.commission.selfCommission} />
+                )}
+                {(data.commission.directCommission ?? 0) > 0 && (
+                  <BreakdownRow label="Hoa hồng cấp 1" value={data.commission.directCommission} />
+                )}
+                {(data.commission.indirect2Commission ?? 0) > 0 && (
+                  <BreakdownRow label="Hoa hồng cấp 2" value={data.commission.indirect2Commission} />
+                )}
+                {(data.commission.indirect3Commission ?? 0) > 0 && (
+                  <BreakdownRow label="Hoa hồng cấp 3" value={data.commission.indirect3Commission} />
+                )}
+                {(data.commission.fixedSalary ?? 0) > 0 && (
+                  <BreakdownRow label="Lương cố định" value={data.commission.fixedSalary} />
+                )}
+                {data.teamBonus && data.teamBonus.bonusAmount > 0 && (
+                  <BreakdownRow
+                    label={`Thưởng dẫn dắt${data.teamBonus.status === 'PAID' ? '' : ' (chờ)'}`}
+                    value={data.teamBonus.bonusAmount}
+                  />
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {data?.kpi && (data.kpi.maintenance || data.kpi.promotion) && (
           <Card className={`shadow-sm border ${ACCENT.border}`}>
             <CardHeader className="pb-3">
@@ -246,35 +312,38 @@ export default function CTVDashboardPage() {
         ) : data ? (
           <>
             <section>
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Bán hàng</h3>
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300 mb-2">Doanh số tháng này</h3>
               <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
                 <Card className="border-emerald-100 shadow-sm">
                   <CardContent className="p-4">
-                    <div className="flex items-center gap-2 text-emerald-600 mb-1">
+                    <div className="flex items-center gap-2 text-emerald-700 mb-1">
                       <Wallet className="w-4 h-4" />
-                      <span className="text-xs font-medium uppercase tracking-wide">Doanh thu</span>
+                      <span className="text-xs font-medium uppercase tracking-wide">Doanh thu cá nhân</span>
                     </div>
                     <p className="text-xl font-bold text-foreground tabular-nums">{formatVND(data.currentRevenue)}</p>
+                    <p className="text-[11px] text-gray-600 dark:text-gray-400 mt-0.5">Gross — chưa trừ giá vốn</p>
                   </CardContent>
                 </Card>
                 <Card className="border-emerald-100 shadow-sm">
                   <CardContent className="p-4">
-                    <div className="flex items-center gap-2 text-emerald-600 mb-1">
+                    <div className="flex items-center gap-2 text-emerald-700 mb-1">
                       <ShoppingCart className="w-4 h-4" />
                       <span className="text-xs font-medium uppercase tracking-wide">Combo đã bán</span>
                     </div>
                     <p className="text-xl font-bold text-foreground tabular-nums">{data.currentCombos}</p>
+                    <p className="text-[11px] text-gray-600 dark:text-gray-400 mt-0.5">Giao dịch confirmed</p>
                   </CardContent>
                 </Card>
                 <Card className="border-emerald-100 shadow-sm">
                   <CardContent className="p-4">
-                    <div className="flex items-center gap-2 text-emerald-600 mb-1">
+                    <div className="flex items-center gap-2 text-emerald-700 mb-1">
                       <TrendingUp className="w-4 h-4" />
-                      <span className="text-xs font-medium uppercase tracking-wide">Tăng trưởng</span>
+                      <span className="text-xs font-medium uppercase tracking-wide">So với tháng trước</span>
                     </div>
-                    <p className="text-xl font-bold text-foreground tabular-nums">
+                    <p className={`text-xl font-bold tabular-nums ${data.revenueGrowth >= 0 ? 'text-emerald-700 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
                       {data.revenueGrowth >= 0 ? '+' : ''}{data.revenueGrowth}%
                     </p>
+                    <p className="text-[11px] text-gray-600 dark:text-gray-400 mt-0.5">Doanh số tăng trưởng</p>
                   </CardContent>
                 </Card>
               </div>
