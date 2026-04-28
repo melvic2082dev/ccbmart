@@ -72,28 +72,26 @@ export default function DashboardLayout({ role, children }: { role: string; chil
         className="min-h-screen p-4 sm:p-6 pt-14 lg:pt-6 lg:ml-[var(--sidebar-w)]"
         style={{ ['--sidebar-w' as string]: sidebarExpanded ? '14rem' : '4rem' }}
       >
-        {/* Smart back button — visible on every page except the role's
-            dashboard root. Sits left of the user badge on mobile, top-left
-            on desktop. Uses computeBackHref so refresh-then-back still works
-            (no reliance on browser history). */}
-        {backHref && (
-          <Link
-            href={backHref}
-            aria-label="Quay lại"
-            title="Quay lại"
-            className="absolute top-3 left-16 lg:top-4 lg:left-6 inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium text-foreground bg-background/80 backdrop-blur border border-border hover:bg-muted active:scale-95 transition-all"
-          >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            Quay lại
-          </Link>
-        )}
-
         {/* Compact user badge in top-right corner — saves vertical space.
             On mobile (lg:hidden), padded to clear the hamburger button. */}
         <div className="absolute top-3 right-4 lg:top-4 lg:right-6 flex items-center gap-1.5 text-xs text-muted-foreground">
           <span className="font-semibold text-foreground truncate max-w-[40vw] lg:max-w-none">{user.name}</span>
           {user.rank && <span className="text-[10px] uppercase tracking-wide bg-muted px-1.5 py-0.5 rounded">{user.rank}</span>}
         </div>
+
+        {/* Smart back link — inline above the page heading, scrolls with
+            content. Apple-style chevron + label, no chrome. Uses
+            computeBackHref so refresh-then-back still resolves. */}
+        {backHref && (
+          <Link
+            href={backHref}
+            className="inline-flex items-center gap-1 text-sm font-medium text-muted-foreground hover:text-foreground active:opacity-70 transition-colors mb-3"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Quay lại
+          </Link>
+        )}
+
         {children}
       </main>
     </div>
