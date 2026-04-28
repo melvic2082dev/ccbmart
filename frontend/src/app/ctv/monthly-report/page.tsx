@@ -14,10 +14,6 @@ interface Report {
   fixedSalary: number;
   managementFeeReceived: { f1: number; f2: number; f3: number; total: number };
   breakawayFeeReceived: { level1: number; level2: number; level3: number; total: number };
-  marketFundReceived: number;
-  trainingFeeReceived: number;
-  teamBonus: number;
-  feePaid: number;
   totalIncome: number;
   tax: number;
   netIncome: number;
@@ -64,7 +60,7 @@ export default function CtvMonthlyReportPage() {
         <div className="h-64 bg-slate-200 animate-pulse rounded-xl" />
       ) : report ? (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
             <Card>
               <CardContent className="p-4">
                 <p className="text-sm text-slate-500">Doanh số cá nhân</p>
@@ -75,18 +71,6 @@ export default function CtvMonthlyReportPage() {
               <CardContent className="p-4">
                 <p className="text-sm text-slate-500">Doanh số nhánh</p>
                 <p className="text-xl font-bold text-blue-600">{formatVND(report.teamRevenue)}</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4">
-                <p className="text-sm text-slate-500">Phí quản lý F1/F2/F3</p>
-                <p className="text-xl font-bold text-emerald-700">{formatVND(report.managementFeeReceived.total)}</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4">
-                <p className="text-sm text-slate-500">Phí sau thoát ly</p>
-                <p className="text-xl font-bold text-orange-700">{formatVND(report.breakawayFeeReceived.total)}</p>
               </CardContent>
             </Card>
           </div>
@@ -101,12 +85,8 @@ export default function CtvMonthlyReportPage() {
                 <span className="font-mono">{formatVND(report.selfCommission)}</span>
               </div>
               <div className="flex justify-between">
-                <span>Lương cứng (cap 5%)</span>
+                <span>Lương cứng</span>
                 <span className="font-mono">{formatVND(report.fixedSalary)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Thưởng team bonus</span>
-                <span className="font-mono">{formatVND(report.teamBonus)}</span>
               </div>
               <div className="border-t pt-2" />
               <div className="flex justify-between text-emerald-700">
@@ -121,32 +101,23 @@ export default function CtvMonthlyReportPage() {
                 <span>+ Phí quản lý F3 (3%)</span>
                 <span className="font-mono">{formatVND(report.managementFeeReceived.f3)}</span>
               </div>
-              <div className="border-t pt-2" />
-              <div className="flex justify-between text-orange-700">
-                <span>+ Phí thoát ly Level 1 (3%)</span>
-                <span className="font-mono">{formatVND(report.breakawayFeeReceived.level1)}</span>
-              </div>
-              <div className="flex justify-between text-orange-700">
-                <span>+ Phí thoát ly Level 2 (2%)</span>
-                <span className="font-mono">{formatVND(report.breakawayFeeReceived.level2)}</span>
-              </div>
-              <div className="flex justify-between text-orange-700">
-                <span>+ Phí thoát ly Level 3 (1%)</span>
-                <span className="font-mono">{formatVND(report.breakawayFeeReceived.level3)}</span>
-              </div>
-              <div className="border-t pt-2" />
-              <div className="flex justify-between text-emerald-700">
-                <span>+ Phí đào tạo nhận (hóa đơn)</span>
-                <span className="font-mono">{formatVND(report.trainingFeeReceived)}</span>
-              </div>
-              <div className="flex justify-between text-emerald-700">
-                <span>+ Quỹ thị trường</span>
-                <span className="font-mono">{formatVND(report.marketFundReceived)}</span>
-              </div>
-              <div className="flex justify-between text-red-600">
-                <span>- Phí đào tạo trả</span>
-                <span className="font-mono">{formatVND(report.feePaid)}</span>
-              </div>
+              {report.breakawayFeeReceived.total > 0 && (
+                <>
+                  <div className="border-t pt-2" />
+                  <div className="flex justify-between text-orange-700">
+                    <span>+ Phí thoát ly L1 (60.000đ/combo)</span>
+                    <span className="font-mono">{formatVND(report.breakawayFeeReceived.level1)}</span>
+                  </div>
+                  <div className="flex justify-between text-orange-700">
+                    <span>+ Phí thoát ly L2 (40.000đ/combo)</span>
+                    <span className="font-mono">{formatVND(report.breakawayFeeReceived.level2)}</span>
+                  </div>
+                  <div className="flex justify-between text-orange-700">
+                    <span>+ Phí thoát ly L3 (20.000đ/combo)</span>
+                    <span className="font-mono">{formatVND(report.breakawayFeeReceived.level3)}</span>
+                  </div>
+                </>
+              )}
               <div className="border-t pt-2 flex justify-between font-semibold">
                 <span>Thu nhập gộp</span>
                 <span className="font-mono">{formatVND(report.totalIncome)}</span>

@@ -66,8 +66,18 @@ export const api = {
   ctvCreateTransaction: (data: { customerId?: number; customerName?: string; customerPhone?: string; paymentMethod: string; bankCode?: string }) =>
     fetchAPI('/ctv/transactions/create', { method: 'POST', body: JSON.stringify(data) }),
   ctvPendingTransactions: (page = 1) => fetchAPI(`/ctv/transactions/pending?page=${page}`),
-  ctvTransactionHistory: (page = 1, status?: string) =>
-    fetchAPI(`/ctv/transactions/history?page=${page}${status ? `&status=${status}` : ''}`),
+  ctvTransactionHistory: (
+    page = 1,
+    opts: { status?: string; search?: string; paymentMethod?: string; sortBy?: string; sortDir?: string } = {},
+  ) => {
+    const p = new URLSearchParams({ page: String(page) });
+    if (opts.status) p.set('status', opts.status);
+    if (opts.search) p.set('search', opts.search);
+    if (opts.paymentMethod) p.set('paymentMethod', opts.paymentMethod);
+    if (opts.sortBy) p.set('sortBy', opts.sortBy);
+    if (opts.sortDir) p.set('sortDir', opts.sortDir);
+    return fetchAPI(`/ctv/transactions/history?${p.toString()}`);
+  },
   ctvUploadProof: (txId: number, formData: FormData) =>
     fetchMultipart(`/ctv/transactions/${txId}/upload-proof`, formData),
   ctvPendingCash: () => fetchAPI('/ctv/transactions/pending-cash'),

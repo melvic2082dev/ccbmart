@@ -5,8 +5,9 @@ import { api, formatVND } from '@/lib/api';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { ShoppingCart, Clock, CheckCircle, XCircle } from 'lucide-react';
+import { ShoppingCart, Clock, CheckCircle, XCircle, Search } from 'lucide-react';
 
 const statusConfig: Record<string, { label: string; color: string }> = {
   PENDING: { label: 'Chờ duyệt', color: 'bg-yellow-100 text-yellow-700' },
@@ -14,18 +15,42 @@ const statusConfig: Record<string, { label: string; color: string }> = {
   REJECTED: { label: 'Từ chối', color: 'bg-red-100 text-red-700' },
 };
 
+const SORT_OPTIONS: { value: string; label: string }[] = [
+  { value: 'createdAt:desc', label: 'Mới nhất' },
+  { value: 'createdAt:asc', label: 'Cũ nhất' },
+  { value: 'totalAmount:desc', label: 'Số tiền cao → thấp' },
+  { value: 'totalAmount:asc', label: 'Số tiền thấp → cao' },
+];
+
 export default function CtvTransactions() {
   const [tab, setTab] = useState('');
+  const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState('');
+  const [sort, setSort] = useState('createdAt:desc');
   const [transactions, setTransactions] = useState<any[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
 
-  const fetchData = async (p = 1, status = tab) => {
+  // Debounce search input — wait 300ms after typing stops
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search.trim()), 300);
+    return () => clearTimeout(t);
+  }, [search]);
+
+  const fetchData = async (p = 1) => {
     setLoading(true);
     try {
-      const data = await api.ctvTransactionHistory(p, status || undefined);
+      const [sortBy, sortDir] = sort.split(':');
+      const data = await api.ctvTransactionHistory(p, {
+        status: tab || undefined,
+        search: debouncedSearch || undefined,
+        paymentMethod: paymentMethod || undefined,
+        sortBy,
+        sortDir,
+      });
       setTransactions(data.transactions || []);
       setTotal(data.total || 0);
       setTotalPages(data.totalPages || 1);
@@ -34,7 +59,7 @@ export default function CtvTransactions() {
     setLoading(false);
   };
 
-  useEffect(() => { fetchData(1, tab); }, [tab]);
+  useEffect(() => { fetchData(1); }, [tab, debouncedSearch, paymentMethod, sort]);
 
   return (
     <>
@@ -42,7 +67,17 @@ export default function CtvTransactions() {
         <ShoppingCart size={24} /> Giao dịch ({total})
       </h2>
 
-      <div className="flex gap-2 mb-4">
+      <div className="relative mb-3">
+        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Tìm theo tên KH, SĐT, hoặc #ID"
+          className="pl-9"
+        />
+      </div>
+
+      <div className="flex gap-2 mb-3 overflow-x-auto">
         <Button variant={tab === '' ? 'default' : 'outline'} size="sm" onClick={() => setTab('')}>Tất cả</Button>
         <Button variant={tab === 'PENDING' ? 'default' : 'outline'} size="sm" onClick={() => setTab('PENDING')}>
           <Clock size={14} className="mr-1" /> Chờ duyệt
@@ -53,6 +88,27 @@ export default function CtvTransactions() {
         <Button variant={tab === 'REJECTED' ? 'default' : 'outline'} size="sm" onClick={() => setTab('REJECTED')}>
           <XCircle size={14} className="mr-1" /> Từ chối
         </Button>
+      </div>
+
+      <div className="flex gap-2 mb-4">
+        <select
+          value={sort}
+          onChange={(e) => setSort(e.target.value)}
+          className="rounded-md border border-input bg-background px-3 py-2 text-sm flex-1"
+          aria-label="Sắp xếp"
+        >
+          {SORT_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+        </select>
+        <select
+          value={paymentMethod}
+          onChange={(e) => setPaymentMethod(e.target.value)}
+          className="rounded-md border border-input bg-background px-3 py-2 text-sm flex-1"
+          aria-label="Phương thức thanh toán"
+        >
+          <option value="">Tất cả PT</option>
+          <option value="bank_transfer">Chuyển khoản</option>
+          <option value="cash">Tiền mặt</option>
+        </select>
       </div>
 
       {loading ? (
