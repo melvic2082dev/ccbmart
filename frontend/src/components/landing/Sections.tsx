@@ -14,7 +14,7 @@ export function TrustBar() {
   ];
   return (
     <section style={{ background: 'var(--paper-1)', borderTop: '1px solid var(--line)', borderBottom: '1px solid var(--line)' }}>
-      <div style={{ maxWidth: 1200, margin: '0 auto', padding: 24,
+      <div style={{ maxWidth: 1600, margin: '0 auto', padding: 24,
         display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 24 }}>
         {items.map((it) => (
           <div key={it.title} style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
@@ -57,7 +57,7 @@ export function CategoryStrip() {
   ];
   return (
     <section style={{ background: 'var(--paper-0)', padding: '40px 0', borderBottom: '1px solid var(--line)' }}>
-      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px' }}>
+      <div style={{ maxWidth: 1600, margin: '0 auto', padding: '0 24px' }}>
         <SectionHead eyebrow="Danh mục nổi bật" title="Mua sắm theo nhóm hàng" link="Xem tất cả danh mục" />
         <div style={{
           display: 'grid',
@@ -95,7 +95,7 @@ export function PromoBanner() {
   return (
     <section style={{ background: 'var(--ccb-red)', color: '#FFF8E7' }}>
       <div style={{
-        maxWidth: 1200, margin: '0 auto', padding: '56px 24px',
+        maxWidth: 1600, margin: '0 auto', padding: '56px 24px',
         display: 'grid', gridTemplateColumns: '1.3fr 1fr', gap: 48, alignItems: 'center',
       }} className="ccb-promo-grid">
         <div>
@@ -153,7 +153,7 @@ export function RegionStrip() {
   ];
   return (
     <section style={{ background: 'var(--paper-0)', padding: '56px 0', borderBottom: '1px solid var(--line)' }}>
-      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px' }}>
+      <div style={{ maxWidth: 1600, margin: '0 auto', padding: '0 24px' }}>
         <SectionHead eyebrow="Trên toàn quốc" title="Đặc sản ba miền, gửi về tận nhà" />
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 16, marginTop: 28 }}>
           {regions.map((r, i) => (
@@ -204,7 +204,7 @@ export function CommunityVoices() {
   ];
   return (
     <section style={{ background: 'var(--paper-1)', padding: '64px 0', borderBottom: '1px solid var(--line)' }}>
-      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px' }}>
+      <div style={{ maxWidth: 1600, margin: '0 auto', padding: '0 24px' }}>
         <SectionHead eyebrow="Tiếng nói cộng đồng" title="Đồng đội giúp đồng đội" />
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 20, marginTop: 28 }}>
           {quotes.map((q) => (
@@ -246,7 +246,7 @@ export function Footer() {
   return (
     <footer style={{ background: 'var(--ccb-olive-dark)', color: '#E8E4D4' }}>
       <div className="ccb-stripe" />
-      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '56px 24px 32px' }}>
+      <div style={{ maxWidth: 1600, margin: '0 auto', padding: '56px 24px 32px' }}>
         <div style={{ display: 'grid', gridTemplateColumns: '1.3fr repeat(4, 1fr)', gap: 32 }} className="ccb-footer-grid">
           <div>
             <div style={{ background: 'var(--paper-0)', padding: '12px 16px', borderRadius: 6, display: 'inline-block' }}>

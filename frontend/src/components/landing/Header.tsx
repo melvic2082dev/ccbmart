@@ -31,7 +31,7 @@ export function Header({ cartCount = 0 }: { cartCount?: number }) {
     <>
       {/* Top utility bar */}
       <div style={{ background: 'var(--ccb-olive-dark)', color: '#E8E4D4', fontSize: 12 }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '8px 24px',
+        <div style={{ maxWidth: 1600, margin: '0 auto', padding: '8px 24px',
           display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
           <div style={{ display: 'flex', gap: 20, alignItems: 'center', flexWrap: 'wrap' }}>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
@@ -60,7 +60,7 @@ export function Header({ cartCount = 0 }: { cartCount?: number }) {
         borderBottom: '1px solid var(--line)',
         transition: 'background .2s ease-out',
       }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '14px 24px',
+        <div style={{ maxWidth: 1600, margin: '0 auto', padding: '14px 24px',
           display: 'flex', alignItems: 'center', gap: 24 }}>
           <Link href="/" style={{ display: 'flex', alignItems: 'center', flex: 'none' }}>
             <Image
@@ -115,7 +115,7 @@ export function Header({ cartCount = 0 }: { cartCount?: number }) {
 
         {/* Category bar */}
         <div style={{ borderTop: '1px solid var(--line)', background: 'var(--paper-0)' }}>
-          <div style={{ maxWidth: 1200, margin: '0 auto', padding: '10px 24px',
+          <div style={{ maxWidth: 1600, margin: '0 auto', padding: '10px 24px',
             display: 'flex', gap: 4, alignItems: 'center', flexWrap: 'wrap' }}>
             <button type="button" style={{
               display: 'inline-flex', alignItems: 'center', gap: 8,

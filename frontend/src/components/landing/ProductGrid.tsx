@@ -31,7 +31,7 @@ export function ProductGrid({
 }) {
   return (
     <section id={id} style={{ background: 'var(--paper-0)', padding: '48px 0', borderBottom: '1px solid var(--line)' }}>
-      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px' }}>
+      <div style={{ maxWidth: 1600, margin: '0 auto', padding: '0 24px' }}>
         <SectionHead eyebrow={eyebrow} title={title} link="Xem thêm" />
         <div style={{
           display: 'grid',

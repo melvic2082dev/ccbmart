@@ -9,7 +9,7 @@ export function Hero() {
       position: 'relative', overflow: 'hidden',
     }}>
       <div style={{
-        maxWidth: 1200, margin: '0 auto', padding: '64px 24px 72px',
+        maxWidth: 1600, margin: '0 auto', padding: '64px 24px 72px',
         display: 'grid', gridTemplateColumns: '1.1fr 1fr', gap: 48, alignItems: 'center',
       }} className="ccb-hero-grid">
         <div>
