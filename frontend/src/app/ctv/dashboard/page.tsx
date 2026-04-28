@@ -62,16 +62,14 @@ const TITLE_LABELS: Record<string, string> = {
   STRATEGIC_ADVISOR: 'Cố vấn Chiến lược',
 };
 
-// Group labels per the requesting user's rank — corporate-department metaphor
-// per V13.4 spec. Layer N corresponds to N hops down the management chain.
-// Each rank only sees the layers spec defines for it; deeper layers are dropped.
-const TEAM_GROUP_LABELS: Record<string, string[]> = {
-  CTV:  ['Trực tiếp'],
-  PP:   ['Trực tiếp'],
-  TP:   ['Trực tiếp', 'Gián tiếp cấp 1 — Chuyên viên'],
-  GDV:  ['Trực tiếp', 'Gián tiếp cấp 1 — Chuyên viên', 'Gián tiếp cấp 2 — Chuyên viên'],
-  GDKD: ['Trực tiếp', 'Gián tiếp cấp 1 — Cấp phòng', 'Gián tiếp cấp 2 — Phó phòng', 'Gián tiếp cấp 3 — Chuyên viên'],
+// Layer N = N hops down the management chain. Per V13.4 spec, each rank
+// only "owns" up to a certain depth — beyond that the names blur, so we
+// stop rendering. Members at any depth can be of any rank (GĐV/TP/PP/CTV);
+// labels stay role-agnostic — the rank badge on each member shows the role.
+const MAX_VISIBLE_DEPTH: Record<string, number> = {
+  CTV: 1, PP: 1, TP: 2, GDV: 3, GDKD: 4,
 }
+const DEPTH_LABEL = ['Trực tiếp', 'Gián tiếp cấp 1', 'Gián tiếp cấp 2', 'Gián tiếp cấp 3']
 
 function flattenByDepth(root: TreeMember | null): TreeMember[][] {
   if (!root) return []
@@ -407,7 +405,7 @@ export default function CTVDashboardPage() {
 
         <Card className="shadow-sm">
           <CardHeader>
-            <CardTitle className="text-foreground">Đội ngũ quản lý</CardTitle>
+            <CardTitle className="text-foreground">Nhân sự quản lý</CardTitle>
             <p className="text-xs text-muted-foreground mt-1">Số combo tháng này — <span className="font-mono">cá nhân/(nhánh)</span></p>
           </CardHeader>
           <CardContent>
@@ -422,8 +420,10 @@ export default function CTVDashboardPage() {
             ) : (
               (() => {
                 const layers = flattenByDepth(treeRoot)
-                const labels = TEAM_GROUP_LABELS[data?.rank || 'CTV'] || TEAM_GROUP_LABELS.CTV
-                const visible = labels.map((label, i) => ({ label, members: layers[i] || [] })).filter(g => g.members.length > 0)
+                const maxDepth = MAX_VISIBLE_DEPTH[data?.rank || 'CTV'] ?? 1
+                const visible = layers.slice(0, maxDepth)
+                  .map((members, i) => ({ label: DEPTH_LABEL[i], members }))
+                  .filter(g => g.members.length > 0)
                 if (visible.length === 0) {
                   return <p className="text-muted-foreground text-sm text-center py-6">Chưa có thành viên trong đội nhóm</p>
                 }
