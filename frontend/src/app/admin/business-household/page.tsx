@@ -277,7 +277,7 @@ export default function BusinessHouseholdPage() {
                 <div key={h.id} className="tap-card rounded-lg border border-gray-200 bg-white p-3 space-y-2" onClick={() => openRowDetail(h.id)}>
                   {/* Row 1: HKD name + download HĐ */}
                   <div className="flex items-center justify-between gap-2">
-                    <p className="font-semibold text-gray-800 truncate">{h.businessName}</p>
+                    <p className="font-semibold text-gray-800 break-words">{h.businessName}</p>
                     {h.dealerPdfUrl && (
                       <a
                         href={h.dealerPdfUrl}
@@ -295,7 +295,7 @@ export default function BusinessHouseholdPage() {
                   <div className="flex items-center justify-between gap-2 text-sm">
                     <div className="flex items-center gap-2 min-w-0">
                       <Badge variant="outline" className="text-xs shrink-0">{RANK_LABEL[h.user.rank] ?? h.user.rank}</Badge>
-                      <span className="text-gray-700 truncate">{h.user.name}</span>
+                      <span className="text-gray-700 break-words">{h.user.name}</span>
                     </div>
                     <Badge className={STATUS_COLORS[h.status] || 'bg-gray-100 text-gray-700'}>
                       {h.status === 'active' ? 'Hoạt động' : h.status === 'suspended' ? 'Tạm ngưng' : 'Chấm dứt'}

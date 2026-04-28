@@ -148,7 +148,7 @@ export default function AdminKycPage() {
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2 min-w-0">
                       <Badge variant="outline" className="text-xs shrink-0">{u.rank || '—'}</Badge>
-                      <p className="font-medium text-gray-800 truncate">{u.name}</p>
+                      <p className="font-medium text-gray-800 break-words">{u.name}</p>
                     </div>
                     <span className="text-xs text-gray-500 shrink-0">{u.kycSubmittedAt ? new Date(u.kycSubmittedAt).toLocaleDateString('vi-VN') : '—'}</span>
                   </div>

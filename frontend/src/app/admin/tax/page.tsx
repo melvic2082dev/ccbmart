@@ -225,7 +225,7 @@ export default function AdminTaxPage() {
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2 min-w-0">
                         <Badge variant="outline" className="text-xs shrink-0">{r.user.rank || '—'}</Badge>
-                        <p className="font-medium text-gray-800 truncate">{r.user.name}</p>
+                        <p className="font-medium text-gray-800 break-words">{r.user.name}</p>
                       </div>
                       <Badge className={r.status === 'PAID' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}>
                         {r.status === 'PAID' ? 'Đã nộp' : r.status === 'PENDING' ? 'Chờ nộp' : r.status}

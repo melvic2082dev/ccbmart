@@ -175,7 +175,7 @@ export default function AdminUsersPage() {
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2 min-w-0">
                       <Badge className={`${ROLE_COLOR[u.role] || 'bg-gray-100'} text-xs shrink-0`}>{ROLE_LABELS[u.role] ?? u.role}</Badge>
-                      <p className="font-medium text-gray-800 truncate">{u.name}</p>
+                      <p className="font-medium text-gray-800 break-words">{u.name}</p>
                     </div>
                     <Badge className={u.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'} variant="outline">
                       {u.isActive ? 'Active' : 'Locked'}

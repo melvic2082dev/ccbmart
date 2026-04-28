@@ -181,7 +181,7 @@ export default function AdminManagementFeesPage() {
                         <div className="flex items-center justify-between gap-2">
                           <div className="flex items-center gap-2 min-w-0">
                             <Badge className="bg-slate-100 text-slate-700 text-xs shrink-0">{p.partnerRank}</Badge>
-                            <p className="font-medium text-gray-800 truncate">{p.partnerName}</p>
+                            <p className="font-medium text-gray-800 break-words">{p.partnerName}</p>
                           </div>
                           <Badge className={`${STATUS_COLOR[p.status]} text-xs shrink-0`}>{STATUS_LABEL[p.status]}</Badge>
                         </div>

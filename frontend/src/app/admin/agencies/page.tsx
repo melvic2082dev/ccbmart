@@ -373,7 +373,7 @@ function StatCard({
         <div className="flex items-center gap-3">
           <div className={`p-2 rounded-lg shrink-0 ${bg[color] ?? 'bg-gray-100'}`}>{icon}</div>
           <div className="min-w-0 flex-1">
-            <p className="text-sm text-slate-500 truncate">{label}</p>
+            <p className="text-sm text-slate-500">{label}</p>
             <p className="text-lg sm:text-xl font-bold tabular-nums whitespace-nowrap" title={fullValue}>{value}</p>
           </div>
         </div>

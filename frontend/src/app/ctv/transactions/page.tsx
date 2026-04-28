@@ -138,7 +138,7 @@ export default function CtvTransactions() {
                     <div className="flex items-baseline justify-between gap-2">
                       <div className="min-w-0 flex items-baseline gap-2">
                         <span className="font-mono text-xs text-muted-foreground shrink-0">#{tx.id}</span>
-                        <span className="font-medium truncate">{tx.customer?.name || '-'}</span>
+                        <span className="font-medium break-words">{tx.customer?.name || '-'}</span>
                       </div>
                       <span className="font-semibold tabular-nums shrink-0">{formatVND(tx.totalAmount)}</span>
                     </div>

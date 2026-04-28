@@ -86,7 +86,7 @@ function MemberRow({ m }: { m: TreeMember }) {
     <div className="flex items-center justify-between gap-2 px-3 py-2 rounded-md bg-muted/40 border border-border">
       <div className="flex items-center gap-2 min-w-0">
         <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
-        <span className="font-medium text-foreground truncate">{m.name}</span>
+        <span className="font-medium text-foreground break-words">{m.name}</span>
         <Badge className="bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 text-xs px-1.5 py-0 shrink-0">{m.rank}</Badge>
       </div>
       <span className="text-xs font-mono tabular-nums text-muted-foreground shrink-0">{self}/({team})</span>
@@ -105,8 +105,8 @@ function ProgressBar({ pct, done, color = 'amber' }: { pct: number; done: boolea
 
 function BreakdownRow({ label, value }: { label: string; value: number }) {
   return (
-    <div className="flex justify-between items-baseline gap-2">
-      <span className="text-gray-700 dark:text-gray-300 truncate">{label}</span>
+    <div className="flex justify-between items-baseline gap-3">
+      <span className="text-gray-700 dark:text-gray-300">{label}</span>
       <span className="font-semibold text-gray-900 dark:text-gray-100 tabular-nums shrink-0">{formatVND(value)}</span>
     </div>
   )
@@ -225,8 +225,9 @@ export default function CTVDashboardPage() {
               </p>
 
               {/* Breakdown rows — only show non-zero buckets so the card stays
-                  tight for new CTVs who don't have indirect income yet. */}
-              <div className="grid grid-cols-2 gap-x-4 gap-y-2 pt-3 border-t border-emerald-200/60 dark:border-emerald-800/60 text-sm">
+                  tight for new CTVs who don't have indirect income yet.
+                  One bucket per row so long Vietnamese labels never truncate. */}
+              <div className="space-y-2 pt-3 border-t border-emerald-200/60 dark:border-emerald-800/60 text-sm">
                 {(data.commission.selfCommission ?? 0) > 0 && (
                   <BreakdownRow label="Hoa hồng tự bán" value={data.commission.selfCommission} />
                 )}

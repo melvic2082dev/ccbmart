@@ -205,7 +205,7 @@ export default function AdminMemberWallets() {
                 <div className="flex items-start gap-2 text-sm">
                   <User className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" />
                   <div className="min-w-0 flex-1">
-                    <p className="font-medium text-gray-800 truncate">{w.user?.name}</p>
+                    <p className="font-medium text-gray-800 break-words">{w.user?.name}</p>
                     <p className="text-xs text-gray-500 truncate">{w.user?.email} · {w.user?.phone}</p>
                   </div>
                 </div>

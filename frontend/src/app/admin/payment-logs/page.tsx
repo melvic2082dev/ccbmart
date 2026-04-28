@@ -171,7 +171,7 @@ export default function AdminPaymentLogsPage() {
                         <div className="flex items-center justify-between gap-2">
                           <div className="flex items-center gap-2 min-w-0">
                             <Badge variant="outline" className="text-xs shrink-0">{log.partnerRank}</Badge>
-                            <p className="font-medium text-gray-800 truncate">{log.partnerName}</p>
+                            <p className="font-medium text-gray-800 break-words">{log.partnerName}</p>
                           </div>
                           <Badge className="bg-green-100 text-green-700 text-xs shrink-0">{log.status === 'PROCESSED' ? 'Đã xử lý' : log.status}</Badge>
                         </div>
@@ -249,7 +249,7 @@ export default function AdminPaymentLogsPage() {
                         </div>
                         <div className="flex items-center justify-between gap-2">
                           <div className="min-w-0 flex-1">
-                            <p className="font-medium text-gray-800 truncate">{inv.toUser.name}</p>
+                            <p className="font-medium text-gray-800 break-words">{inv.toUser.name}</p>
                             <p className="text-xs text-gray-500">
                               <Badge variant="outline" className="text-[10px] py-0">{inv.toUser.rank}</Badge>
                               {' '}· {new Date(inv.issuedAt).toLocaleDateString('vi-VN')}

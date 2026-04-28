@@ -525,7 +525,7 @@ export default function AdminCtvPage() {
                           />
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center justify-between gap-2">
-                              <p className="font-semibold text-gray-800 truncate">{ctv.name}</p>
+                              <p className="font-semibold text-gray-800 break-words">{ctv.name}</p>
                               <RankBadge rank={ctv.rank} />
                             </div>
                             <p className="text-xs text-gray-500 truncate">{ctv.email}</p>

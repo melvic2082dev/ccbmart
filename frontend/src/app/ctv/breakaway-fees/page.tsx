@@ -143,7 +143,7 @@ export default function CtvBreakawayFeesPage() {
                         <div className="min-w-0 flex-1 space-y-1">
                           <div className="flex items-center gap-2 flex-wrap">
                             <Badge className={LEVEL_COLOR[r.level]}>{LEVEL_LABEL[r.level]}</Badge>
-                            <span className="font-medium truncate">{r.fromUser.name}</span>
+                            <span className="font-medium break-words">{r.fromUser.name}</span>
                           </div>
                           <p className="text-xs text-slate-500">
                             Thoát ly: {r.breakawayLog ? new Date(r.breakawayLog.breakawayAt).toLocaleDateString('vi-VN') : '-'}

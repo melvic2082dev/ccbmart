@@ -61,7 +61,7 @@ export default function CtvCustomersPage() {
                 >
                   <div className="flex items-center justify-between gap-3">
                     <div className="min-w-0 flex-1">
-                      <p className="font-medium truncate">{c.name}</p>
+                      <p className="font-medium break-words">{c.name}</p>
                       <p className="text-xs text-muted-foreground font-mono">{c.phone}</p>
                     </div>
                     <div className="text-right shrink-0">
