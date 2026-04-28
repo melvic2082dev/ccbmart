@@ -18,6 +18,7 @@ interface BreakFeeRecord {
 
 interface BreakFeeResponse {
   month: string;
+  eligible: boolean;
   summary: { level1: number; level2: number; level3: number; total: number };
   records: BreakFeeRecord[];
 }
@@ -50,6 +51,21 @@ export default function CtvBreakawayFeesPage() {
       .catch(console.error)
       .finally(() => setLoading(false));
   }, [month]);
+
+  if (!loading && data && !data.eligible) {
+    return (
+      <>
+        <h2 className="text-2xl font-bold mb-2 flex items-center gap-2">
+          <Network size={24} /> Phí sau thoát ly
+        </h2>
+        <Card>
+          <CardContent className="p-4 text-sm text-slate-600 dark:text-slate-300">
+            Đây là phí dành cho CTV cấp trên của CTV đã vượt cấp bậc quản lý.
+          </CardContent>
+        </Card>
+      </>
+    );
+  }
 
   return (
     <>
