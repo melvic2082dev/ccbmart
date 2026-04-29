@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import './landing.css';
-import { Header } from './Header';
+import { Header, type HeaderData } from './Header';
 import { type HeroData } from './Hero';
 import { type Product } from './ProductGrid';
 import { type PromoData, type TrustItemData } from './Sections';
@@ -16,6 +16,7 @@ import {
   FundHeadlineSection,
   JourneyGallerySection,
   SeniorFooter,
+  type FooterData,
 } from './SeniorSections';
 import {
   CATEGORIES, PRODUCTS,
@@ -36,6 +37,8 @@ type CmsContent = {
   hero: HeroData;
   promo: PromoData;
   whyUs: { title: string; body: string; imageUrl: string | null; isActive?: boolean };
+  header: HeaderData;
+  footer: FooterData;
   trustItems: TrustItemData[];
   featured: { id: number; section: 'featured' | 'deals'; productSlug: string; displayOrder: number; isActive: boolean }[];
   products: DbCatalogProduct[];
@@ -87,7 +90,7 @@ export function LandingPage() {
 
   return (
     <div className="ccb-landing">
-      <Header cartCount={0} categories={allCategories} />
+      <Header cartCount={0} categories={allCategories} header={content?.header} />
 
       {/* 1. Hero — full-width portrait + overlay + big CTA */}
       <SeniorHero data={content?.hero} />
@@ -105,7 +108,7 @@ export function LandingPage() {
       <JourneyGallerySection photos={content?.communityPhotos} />
 
       {/* 6. Footer */}
-      <SeniorFooter />
+      <SeniorFooter data={content?.footer} />
     </div>
   );
 }

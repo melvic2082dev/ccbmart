@@ -89,13 +89,55 @@ async function getOrInitWhyUs() {
   return row;
 }
 
+const DEFAULT_HEADER = {
+  hotline: '1900 6868',
+  shippingNote: 'Miễn phí giao hàng đơn trên 300.000 ₫',
+  searchPlaceholder: 'Tìm gạo, nước mắm, trà Shan Tuyết…',
+  utilityLinks: [
+    { label: 'Cửa hàng', href: '/stores' },
+    { label: 'Hành trình nghĩa tình', href: '/#hanh-trinh-nghia-tinh' },
+    { label: 'Minh bạch quỹ', href: '/#minh-bach-quy' },
+    { label: 'Liên hệ', href: '/about' },
+  ],
+  isActive: true,
+};
+
+const DEFAULT_FOOTER = {
+  hotline: '1900 6868',
+  hotlineNote: 'Đường dây ưu tiên dành cho Cựu Chiến Binh — 7:00 đến 21:00 mỗi ngày.',
+  addressLine1: 'Số 19 đường Lê Đức Thọ',
+  addressLine2: 'Mỹ Đình 2, Nam Từ Liêm, Hà Nội',
+  addressHours: 'Mở cửa 8:00 — 20:00',
+  commitments: [
+    { icon: 'RefreshCcw', label: 'Đổi trả vì nghĩa tình' },
+    { icon: 'Truck', label: 'Giao 24h tại các thành phố lớn' },
+    { icon: 'HandHeart', label: '1% mỗi đơn cho đồng đội' },
+  ],
+  copyright: '© 2026 CCB Mart — Hệ thống bán lẻ của cộng đồng Cựu Chiến Binh Việt Nam',
+  verifiedBadge: 'Hội CCB Việt Nam xác nhận',
+  isActive: true,
+};
+
+async function getOrInitHeader() {
+  let row = await prisma.landingHeader.findFirst({ orderBy: { id: 'asc' } });
+  if (!row) row = await prisma.landingHeader.create({ data: DEFAULT_HEADER });
+  return row;
+}
+async function getOrInitFooter() {
+  let row = await prisma.landingFooter.findFirst({ orderBy: { id: 'asc' } });
+  if (!row) row = await prisma.landingFooter.create({ data: DEFAULT_FOOTER });
+  return row;
+}
+
 // ---- Public: GET full landing content ----
 publicRouter.get('/content', async (_req, res, next) => {
   try {
-    const [hero, promo, whyUs, trustItems, featured, products, categories, communityPhotos, fundEntries, testimonials] = await Promise.all([
+    const [hero, promo, whyUs, header, footer, trustItems, featured, products, categories, communityPhotos, fundEntries, testimonials] = await Promise.all([
       getOrInitHero(),
       getOrInitPromo(),
       getOrInitWhyUs(),
+      getOrInitHeader(),
+      getOrInitFooter(),
       prisma.landingTrustItem.findMany({
         where: { isActive: true },
         orderBy: { displayOrder: 'asc' },
@@ -126,7 +168,7 @@ publicRouter.get('/content', async (_req, res, next) => {
         orderBy: { displayOrder: 'asc' },
       }),
     ]);
-    res.json({ hero, promo, whyUs, trustItems, featured, products, categories, communityPhotos, fundEntries, testimonials });
+    res.json({ hero, promo, whyUs, header, footer, trustItems, featured, products, categories, communityPhotos, fundEntries, testimonials });
   } catch (err) {
     next(err);
   }
@@ -172,16 +214,18 @@ adminRouter.post('/upload', cmsUpload.single('file'), (req, res) => {
 // ---- Admin: full content (same as public + inactive items) ----
 adminRouter.get('/', async (_req, res, next) => {
   try {
-    const [hero, promo, whyUs, trustItems, featured] = await Promise.all([
+    const [hero, promo, whyUs, header, footer, trustItems, featured] = await Promise.all([
       getOrInitHero(),
       getOrInitPromo(),
       getOrInitWhyUs(),
+      getOrInitHeader(),
+      getOrInitFooter(),
       prisma.landingTrustItem.findMany({ orderBy: { displayOrder: 'asc' } }),
       prisma.landingFeaturedProduct.findMany({
         orderBy: [{ section: 'asc' }, { displayOrder: 'asc' }],
       }),
     ]);
-    res.json({ hero, promo, whyUs, trustItems, featured });
+    res.json({ hero, promo, whyUs, header, footer, trustItems, featured });
   } catch (err) {
     next(err);
   }
@@ -388,6 +432,32 @@ adminRouter.delete('/categories/:id', async (req, res, next) => {
     res.json({ ok: true });
   } catch (err) {
     if (err.code === 'P2025') return res.status(404).json({ error: 'Category not found' });
+    next(err);
+  }
+});
+
+// ---- Header singleton ----
+const HEADER_FIELDS = ['hotline', 'shippingNote', 'searchPlaceholder', 'utilityLinks', 'isActive'];
+adminRouter.put('/header', async (req, res, next) => {
+  try {
+    const current = await getOrInitHeader();
+    const data = pick(req.body, HEADER_FIELDS);
+    const updated = await prisma.landingHeader.update({ where: { id: current.id }, data });
+    res.json(updated);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ---- Footer singleton ----
+const FOOTER_FIELDS = ['hotline', 'hotlineNote', 'addressLine1', 'addressLine2', 'addressHours', 'commitments', 'copyright', 'verifiedBadge', 'isActive'];
+adminRouter.put('/footer', async (req, res, next) => {
+  try {
+    const current = await getOrInitFooter();
+    const data = pick(req.body, FOOTER_FIELDS);
+    const updated = await prisma.landingFooter.update({ where: { id: current.id }, data });
+    res.json(updated);
+  } catch (err) {
     next(err);
   }
 });

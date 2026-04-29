@@ -77,10 +77,34 @@ type WhyUs = {
   isActive: boolean;
 };
 
+type LandingHeaderRow = {
+  id: number;
+  hotline: string;
+  shippingNote: string;
+  searchPlaceholder: string;
+  utilityLinks: { label: string; href: string }[];
+  isActive: boolean;
+};
+
+type LandingFooterRow = {
+  id: number;
+  hotline: string;
+  hotlineNote: string;
+  addressLine1: string;
+  addressLine2: string;
+  addressHours: string;
+  commitments: { icon: string; label: string }[];
+  copyright: string;
+  verifiedBadge: string;
+  isActive: boolean;
+};
+
 type CmsResponse = {
   hero: Hero;
   promo: Promo;
   whyUs: WhyUs;
+  header: LandingHeaderRow;
+  footer: LandingFooterRow;
   trustItems: TrustItem[];
   featured: FeaturedProduct[];
 };
@@ -91,7 +115,7 @@ export default function AdminLandingCmsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [toast, setToast] = useState<{ kind: 'ok' | 'err'; msg: string } | null>(null);
-  const [tab, setTab] = useState<'hero' | 'promo' | 'whyUs' | 'trust' | 'featured' | 'catalog' | 'categories' | 'community' | 'fund' | 'testimonials'>('hero');
+  const [tab, setTab] = useState<'hero' | 'promo' | 'whyUs' | 'header' | 'footer' | 'trust' | 'featured' | 'catalog' | 'categories' | 'community' | 'fund' | 'testimonials'>('hero');
 
   useEffect(() => {
     const u = getUser();
@@ -145,16 +169,18 @@ export default function AdminLandingCmsPage() {
 
       <Tabs value={tab} onValueChange={(v) => v && setTab(v as typeof tab)}>
         <TabsList className="flex-wrap h-auto">
+          <TabsTrigger value="header">Header</TabsTrigger>
           <TabsTrigger value="hero">Hero</TabsTrigger>
-          <TabsTrigger value="whyUs">Tại sao</TabsTrigger>
-          <TabsTrigger value="trust">Giá trị cốt lõi</TabsTrigger>
           <TabsTrigger value="featured">Sản phẩm nổi bật</TabsTrigger>
-          <TabsTrigger value="community">Hành trình kết nối</TabsTrigger>
-          <TabsTrigger value="fund">Quỹ Vì đồng đội</TabsTrigger>
-          <TabsTrigger value="testimonials">Tiếng nói chiến hữu</TabsTrigger>
-          <TabsTrigger value="promo">Promo Banner</TabsTrigger>
           <TabsTrigger value="catalog">Catalog sản phẩm</TabsTrigger>
+          <TabsTrigger value="fund">Quỹ Vì đồng đội</TabsTrigger>
+          <TabsTrigger value="community">Hành trình kết nối</TabsTrigger>
+          <TabsTrigger value="footer">Footer</TabsTrigger>
           <TabsTrigger value="categories">Danh mục</TabsTrigger>
+          <TabsTrigger value="whyUs">Tại sao (cũ)</TabsTrigger>
+          <TabsTrigger value="trust">Giá trị cốt lõi (cũ)</TabsTrigger>
+          <TabsTrigger value="testimonials">Tiếng nói (cũ)</TabsTrigger>
+          <TabsTrigger value="promo">Promo Banner (cũ)</TabsTrigger>
         </TabsList>
 
         <TabsContent value="hero">
@@ -195,6 +221,14 @@ export default function AdminLandingCmsPage() {
 
         <TabsContent value="testimonials">
           <TestimonialsEditor onError={(m) => flash('err', m)} onSuccess={(m) => flash('ok', m)} />
+        </TabsContent>
+
+        <TabsContent value="header">
+          <HeaderEditor row={data.header} onSaved={(h) => { setData({ ...data, header: h }); flash('ok', 'Đã lưu Header'); }} onError={(m) => flash('err', m)} />
+        </TabsContent>
+
+        <TabsContent value="footer">
+          <FooterEditor row={data.footer} onSaved={(f) => { setData({ ...data, footer: f }); flash('ok', 'Đã lưu Footer'); }} onError={(m) => flash('err', m)} />
         </TabsContent>
       </Tabs>
     </div>
@@ -2143,6 +2177,197 @@ function TestimonialDialog({ testimonial, onClose, onSaved, onError }: {
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+// ============================================================
+// Header editor — utility bar (hotline, shipping note, links, search)
+// ============================================================
+const FOOTER_ICON_OPTIONS = ['RefreshCcw', 'Truck', 'HandHeart', 'ShieldCheck', 'BadgeCheck', 'Award', 'Wallet', 'Phone', 'MapPin', 'Star', 'Gift'];
+
+function HeaderEditor({ row, onSaved, onError }: {
+  row: LandingHeaderRow;
+  onSaved: (h: LandingHeaderRow) => void;
+  onError: (msg: string) => void;
+}) {
+  const [form, setForm] = useState<LandingHeaderRow>(row);
+  const [saving, setSaving] = useState(false);
+  const set = <K extends keyof LandingHeaderRow>(k: K, v: LandingHeaderRow[K]) => setForm((f) => ({ ...f, [k]: v }));
+
+  const links = form.utilityLinks ?? [];
+  const updateLink = (i: number, key: 'label' | 'href', val: string) => {
+    const next = [...links];
+    next[i] = { ...next[i], [key]: val };
+    set('utilityLinks', next);
+  };
+  const addLink = () => set('utilityLinks', [...links, { label: '', href: '/' }]);
+  const removeLink = (i: number) => set('utilityLinks', links.filter((_, idx) => idx !== i));
+
+  const save = async () => {
+    setSaving(true);
+    try {
+      const updated = await api.adminLandingUpdateHeader(form as unknown as Record<string, unknown>);
+      onSaved(updated);
+    } catch (err) {
+      onError((err as Error).message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Card className="mt-4">
+      <CardHeader>
+        <CardTitle>Header — thanh utility + ô tìm kiếm</CardTitle>
+        <p className="text-xs text-muted-foreground mt-1">
+          Hiển thị trên cùng mọi trang. Hotline + thông báo giao hàng + 4 link điều hướng nhanh.
+        </p>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid lg:grid-cols-2 gap-3">
+          <Field label="Hotline (top utility bar)"><Input value={form.hotline} onChange={(e) => set('hotline', e.target.value)} /></Field>
+          <Field label="Search placeholder"><Input value={form.searchPlaceholder} onChange={(e) => set('searchPlaceholder', e.target.value)} /></Field>
+        </div>
+        <Field label="Thông báo giao hàng (utility bar)">
+          <Input value={form.shippingNote} onChange={(e) => set('shippingNote', e.target.value)} />
+        </Field>
+
+        <div className="space-y-2 pt-2">
+          <div className="flex items-center justify-between">
+            <Label className="text-xs">Link điều hướng (utility bar bên phải)</Label>
+            <Button variant="outline" size="sm" onClick={addLink}>
+              <Plus size={12} className="mr-1" />Thêm link
+            </Button>
+          </div>
+          {links.length === 0 && <p className="text-[11px] text-muted-foreground">Chưa có link</p>}
+          {links.map((l, i) => (
+            <div key={i} className="flex gap-2">
+              <Input className="flex-1" placeholder="Label (vd: Cửa hàng)" value={l.label} onChange={(e) => updateLink(i, 'label', e.target.value)} />
+              <Input className="flex-1" placeholder="Href (vd: /stores hoặc /#anchor)" value={l.href} onChange={(e) => updateLink(i, 'href', e.target.value)} />
+              <Button variant="outline" size="sm" onClick={() => removeLink(i)} className="text-red-600">
+                <X size={14} />
+              </Button>
+            </div>
+          ))}
+        </div>
+
+        <div className="flex items-center gap-2 pt-2 border-t">
+          <input id="header-active" type="checkbox" checked={form.isActive} onChange={(e) => set('isActive', e.target.checked)} />
+          <Label htmlFor="header-active">Hiển thị thanh utility</Label>
+        </div>
+
+        <div className="flex justify-end pt-4 border-t">
+          <Button onClick={save} disabled={saving}>
+            <Save size={14} className="mr-2" />
+            {saving ? 'Đang lưu…' : 'Lưu Header'}
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+// ============================================================
+// Footer editor — hotline / address / commitments / copyright
+// ============================================================
+function FooterEditor({ row, onSaved, onError }: {
+  row: LandingFooterRow;
+  onSaved: (f: LandingFooterRow) => void;
+  onError: (msg: string) => void;
+}) {
+  const [form, setForm] = useState<LandingFooterRow>(row);
+  const [saving, setSaving] = useState(false);
+  const set = <K extends keyof LandingFooterRow>(k: K, v: LandingFooterRow[K]) => setForm((f) => ({ ...f, [k]: v }));
+
+  const commitments = form.commitments ?? [];
+  const updateCommitment = (i: number, key: 'icon' | 'label', val: string) => {
+    const next = [...commitments];
+    next[i] = { ...next[i], [key]: val };
+    set('commitments', next);
+  };
+  const addCommitment = () => set('commitments', [...commitments, { icon: 'HandHeart', label: '' }]);
+  const removeCommitment = (i: number) => set('commitments', commitments.filter((_, idx) => idx !== i));
+
+  const save = async () => {
+    setSaving(true);
+    try {
+      const updated = await api.adminLandingUpdateFooter(form as unknown as Record<string, unknown>);
+      onSaved(updated);
+    } catch (err) {
+      onError((err as Error).message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Card className="mt-4">
+      <CardHeader>
+        <CardTitle>Footer — chân trang</CardTitle>
+        <p className="text-xs text-muted-foreground mt-1">
+          Hiển thị cuối trang chủ. Hotline + địa chỉ showroom + 3 cam kết + copyright.
+        </p>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid lg:grid-cols-2 gap-3">
+          <Field label="Hotline (font 32px)"><Input value={form.hotline} onChange={(e) => set('hotline', e.target.value)} /></Field>
+          <Field label="Verified badge"><Input value={form.verifiedBadge} onChange={(e) => set('verifiedBadge', e.target.value)} /></Field>
+        </div>
+        <Field label="Mô tả hotline">
+          <textarea
+            className="w-full min-h-[60px] rounded-md border bg-background px-3 py-2 text-sm"
+            value={form.hotlineNote}
+            onChange={(e) => set('hotlineNote', e.target.value)}
+          />
+        </Field>
+
+        <div className="grid lg:grid-cols-2 gap-3 pt-2 border-t">
+          <Field label="Địa chỉ – dòng 1"><Input value={form.addressLine1} onChange={(e) => set('addressLine1', e.target.value)} /></Field>
+          <Field label="Địa chỉ – dòng 2"><Input value={form.addressLine2} onChange={(e) => set('addressLine2', e.target.value)} /></Field>
+          <Field label="Giờ mở cửa"><Input value={form.addressHours} onChange={(e) => set('addressHours', e.target.value)} /></Field>
+        </div>
+
+        <div className="space-y-2 pt-2 border-t">
+          <div className="flex items-center justify-between">
+            <Label className="text-xs">Cam kết (3 dòng có icon)</Label>
+            <Button variant="outline" size="sm" onClick={addCommitment}>
+              <Plus size={12} className="mr-1" />Thêm cam kết
+            </Button>
+          </div>
+          {commitments.length === 0 && <p className="text-[11px] text-muted-foreground">Chưa có cam kết</p>}
+          {commitments.map((c, i) => (
+            <div key={i} className="flex gap-2">
+              <Select value={c.icon} onValueChange={(v) => updateCommitment(i, 'icon', v ?? c.icon)}>
+                <SelectTrigger className="w-[160px]"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {FOOTER_ICON_OPTIONS.map((n) => <SelectItem key={n} value={n}>{n}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              <Input className="flex-1" placeholder="Label (vd: Đổi trả vì nghĩa tình)" value={c.label} onChange={(e) => updateCommitment(i, 'label', e.target.value)} />
+              <Button variant="outline" size="sm" onClick={() => removeCommitment(i)} className="text-red-600">
+                <X size={14} />
+              </Button>
+            </div>
+          ))}
+        </div>
+
+        <Field label="Copyright">
+          <Input value={form.copyright} onChange={(e) => set('copyright', e.target.value)} />
+        </Field>
+
+        <div className="flex items-center gap-2 pt-2 border-t">
+          <input id="footer-active" type="checkbox" checked={form.isActive} onChange={(e) => set('isActive', e.target.checked)} />
+          <Label htmlFor="footer-active">Hiển thị footer</Label>
+        </div>
+
+        <div className="flex justify-end pt-4 border-t">
+          <Button onClick={save} disabled={saving}>
+            <Save size={14} className="mr-2" />
+            {saving ? 'Đang lưu…' : 'Lưu Footer'}
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 

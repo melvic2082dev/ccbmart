@@ -464,6 +464,12 @@ export const api = {
   adminLandingUpdateWhyUs: (data: Record<string, unknown>) =>
     fetchAPI('/admin/landing-cms/why-us', { method: 'PUT', body: JSON.stringify(data) }),
 
+  // Header / Footer chrome
+  adminLandingUpdateHeader: (data: Record<string, unknown>) =>
+    fetchAPI('/admin/landing-cms/header', { method: 'PUT', body: JSON.stringify(data) }),
+  adminLandingUpdateFooter: (data: Record<string, unknown>) =>
+    fetchAPI('/admin/landing-cms/footer', { method: 'PUT', body: JSON.stringify(data) }),
+
   // Community photos
   adminLandingCommunityPhotos: () => fetchAPI('/admin/landing-cms/community-photos'),
   adminLandingCreateCommunityPhoto: (data: Record<string, unknown>) =>

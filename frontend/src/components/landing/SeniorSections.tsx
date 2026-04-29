@@ -532,16 +532,47 @@ export function JourneyGallerySection({ photos }: { photos?: CommunityPhotoData[
 }
 
 // =========================================================================
-// 6. SENIOR FOOTER — big hotline + commitments
+// 6. SENIOR FOOTER — big hotline + commitments (CMS-driven with fallback)
 // =========================================================================
-export function SeniorFooter() {
-  const commitments = [
-    { icon: <RefreshCcw size={28} />, label: 'Đổi trả vì nghĩa tình' },
-    { icon: <Truck size={28} />, label: 'Giao 24h tại các thành phố lớn' },
-    { icon: <HandHeart size={28} />, label: '1% mỗi đơn cho đồng đội' },
-  ];
+
+export type FooterData = {
+  hotline?: string;
+  hotlineNote?: string;
+  addressLine1?: string;
+  addressLine2?: string;
+  addressHours?: string;
+  commitments?: { icon: string; label: string }[];
+  copyright?: string;
+  verifiedBadge?: string;
+  isActive?: boolean;
+};
+
+const FOOTER_ICON_MAP: Record<string, React.ComponentType<{ size?: number }>> = {
+  RefreshCcw, Truck, HandHeart, BadgeCheck, Phone,
+};
+
+export function SeniorFooter({ data }: { data?: FooterData } = {}) {
+  if (data && data.isActive === false) return null;
+  const hotline = data?.hotline ?? '1900 6868';
+  const hotlineNote = data?.hotlineNote ?? 'Đường dây ưu tiên dành cho Cựu Chiến Binh — 7:00 đến 21:00 mỗi ngày.';
+  const addr1 = data?.addressLine1 ?? 'Số 19 đường Lê Đức Thọ';
+  const addr2 = data?.addressLine2 ?? 'Mỹ Đình 2, Nam Từ Liêm, Hà Nội';
+  const addrHours = data?.addressHours ?? 'Mở cửa 8:00 — 20:00';
+  const copyright = data?.copyright ?? '© 2026 CCB Mart — Hệ thống bán lẻ của cộng đồng Cựu Chiến Binh Việt Nam';
+  const verifiedBadge = data?.verifiedBadge ?? 'Hội CCB Việt Nam xác nhận';
+  const commitments = data?.commitments && data.commitments.length > 0
+    ? data.commitments
+    : [
+        { icon: 'RefreshCcw', label: 'Đổi trả vì nghĩa tình' },
+        { icon: 'Truck', label: 'Giao 24h tại các thành phố lớn' },
+        { icon: 'HandHeart', label: '1% mỗi đơn cho đồng đội' },
+      ];
+
+  // Strip non-digits for tel: link
+  const telHref = `tel:${hotline.replace(/[^\d+]/g, '')}`;
+
   return (
-    <footer style={{ background: oliveDark, color: '#F2EBD9', padding: '80px 32px 48px' }}>
+    <footer style={{ background: 'var(--ccb-olive-dark)', color: '#F2EBD9', padding: '80px 32px 48px' }}>
       <div style={{ maxWidth: 1200, margin: '0 auto' }}>
         <div className="ccb-senior-footer-grid" style={{
           display: 'grid', gridTemplateColumns: '1.2fr 1fr 1fr', gap: 48, alignItems: 'flex-start',
@@ -555,18 +586,18 @@ export function SeniorFooter() {
             }}>
               Hỗ trợ trực tiếp
             </div>
-            <a href="tel:19006868" style={{
+            <a href={telHref} style={{
               display: 'inline-flex', alignItems: 'center', gap: 12,
               fontFamily: 'var(--font-display)', fontSize: 32, fontWeight: 800,
               color: '#FFFFFF', textDecoration: 'none',
             }}>
-              <Phone size={28} /> 1900 6868
+              <Phone size={28} /> {hotline}
             </a>
             <p style={{
               fontFamily: 'var(--font-body)', fontSize: 18, lineHeight: 1.55,
               marginTop: 16, maxWidth: 360, color: '#E8E0CC',
             }}>
-              Đường dây ưu tiên dành cho Cựu Chiến Binh — 7:00 đến 21:00 mỗi ngày.
+              {hotlineNote}
             </p>
           </div>
 
@@ -580,9 +611,9 @@ export function SeniorFooter() {
               Showroom & Kho
             </div>
             <div style={{ fontFamily: 'var(--font-body)', fontSize: 18, lineHeight: 1.6, color: '#FFFFFF' }}>
-              Số 19 đường Lê Đức Thọ<br />
-              Mỹ Đình 2, Nam Từ Liêm, Hà Nội<br />
-              <span style={{ color: '#E8E0CC' }}>Mở cửa 8:00 — 20:00</span>
+              {addr1}<br />
+              {addr2}<br />
+              <span style={{ color: '#E8E0CC' }}>{addrHours}</span>
             </div>
           </div>
 
@@ -596,15 +627,18 @@ export function SeniorFooter() {
               Cam kết của chúng tôi
             </div>
             <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: 16 }}>
-              {commitments.map((c) => (
-                <li key={c.label} style={{
-                  display: 'flex', alignItems: 'center', gap: 14,
-                  fontFamily: 'var(--font-body)', fontSize: 18, lineHeight: 1.4, color: '#FFFFFF',
-                }}>
-                  <span style={{ color: 'var(--ccb-gold)', flex: 'none' }}>{c.icon}</span>
-                  {c.label}
-                </li>
-              ))}
+              {commitments.map((c, i) => {
+                const IconCmp = FOOTER_ICON_MAP[c.icon] ?? HandHeart;
+                return (
+                  <li key={`${c.label}-${i}`} style={{
+                    display: 'flex', alignItems: 'center', gap: 14,
+                    fontFamily: 'var(--font-body)', fontSize: 18, lineHeight: 1.4, color: '#FFFFFF',
+                  }}>
+                    <span style={{ color: 'var(--ccb-gold)', flex: 'none' }}><IconCmp size={28} /></span>
+                    {c.label}
+                  </li>
+                );
+              })}
             </ul>
           </div>
         </div>
@@ -614,9 +648,9 @@ export function SeniorFooter() {
           display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16,
           fontFamily: 'var(--font-body)', fontSize: 15, color: '#C8BFA8',
         }}>
-          <span>© 2026 CCB Mart — Hệ thống bán lẻ của cộng đồng Cựu Chiến Binh Việt Nam</span>
+          <span>{copyright}</span>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-            <BadgeCheck size={16} /> Hội CCB Việt Nam xác nhận
+            <BadgeCheck size={16} /> {verifiedBadge}
           </span>
         </div>
       </div>

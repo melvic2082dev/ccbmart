@@ -68,6 +68,8 @@ async function main() {
     hero: Record<string, unknown>;
     promo: Record<string, unknown>;
     whyUs: Record<string, unknown>;
+    header: Record<string, unknown>;
+    footer: Record<string, unknown>;
   };
   await jsend(PROD, prodToken, 'PUT', '/admin/landing-cms/hero', clean(localBundle.hero));
   console.log('  ✓ Hero');
@@ -75,6 +77,10 @@ async function main() {
   console.log('  ✓ Promo');
   await jsend(PROD, prodToken, 'PUT', '/admin/landing-cms/why-us', clean(localBundle.whyUs));
   console.log('  ✓ WhyUs');
+  await jsend(PROD, prodToken, 'PUT', '/admin/landing-cms/header', clean(localBundle.header));
+  console.log('  ✓ Header');
+  await jsend(PROD, prodToken, 'PUT', '/admin/landing-cms/footer', clean(localBundle.footer));
+  console.log('  ✓ Footer');
 
   // ---- Bundle-sourced lists (Trust items + Featured picks live in /admin/landing-cms bundle) ----
   const localTrustItems = (localBundle as unknown as { trustItems: { id: number }[] }).trustItems ?? [];

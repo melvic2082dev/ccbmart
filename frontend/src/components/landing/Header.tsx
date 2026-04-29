@@ -8,7 +8,15 @@ import { LayoutDashboard, LayoutGrid, MapPin, Phone, Search, ShoppingCart, Truck
 import { getDashboardHref } from '@/lib/permissions';
 import { CATEGORIES, type Category, fetchDbCategories, mergeCategoriesWithDb } from './categories';
 
-export function Header({ cartCount = 0, categories: categoriesProp }: { cartCount?: number; categories?: Category[] }) {
+export type HeaderData = {
+  hotline?: string;
+  shippingNote?: string;
+  searchPlaceholder?: string;
+  utilityLinks?: { label: string; href: string }[];
+  isActive?: boolean;
+};
+
+export function Header({ cartCount = 0, categories: categoriesProp, header }: { cartCount?: number; categories?: Category[]; header?: HeaderData }) {
   const pathname = usePathname();
   const [scrolled, setScrolled] = useState(false);
   const [dashboardHref, setDashboardHref] = useState<string | null>(null);
@@ -51,28 +59,43 @@ export function Header({ cartCount = 0, categories: categoriesProp }: { cartCoun
   const allCategories = categoriesProp ?? fetchedCategories ?? CATEGORIES;
   const navCats = allCategories.slice(0, 7);
 
+  // Header chrome (CMS) — fall back to defaults so SSR + first render look complete.
+  const hotline = header?.hotline ?? '1900 6868';
+  const shippingNote = header?.shippingNote ?? 'Miễn phí giao hàng đơn trên 300.000 ₫';
+  const searchPlaceholder = header?.searchPlaceholder ?? 'Tìm gạo, nước mắm, trà Shan Tuyết…';
+  const utilityLinks = header?.utilityLinks && header.utilityLinks.length > 0
+    ? header.utilityLinks
+    : [
+        { label: 'Cửa hàng', href: '/stores' },
+        { label: 'Hành trình nghĩa tình', href: '/#hanh-trinh-nghia-tinh' },
+        { label: 'Minh bạch quỹ', href: '/#minh-bach-quy' },
+        { label: 'Liên hệ', href: '/about' },
+      ];
+  const showUtility = header?.isActive !== false;
+
   return (
     <>
       {/* Top utility bar */}
-      <div style={{ background: 'var(--ccb-olive-dark)', color: '#E8E4D4', fontSize: 12 }}>
-        <div style={{ maxWidth: 1600, margin: '0 auto', padding: '8px 24px',
-          display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
-          <div style={{ display: 'flex', gap: 20, alignItems: 'center', flexWrap: 'wrap' }}>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-              <Phone size={12} /> Hotline: 1900 6868
-            </span>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-              <Truck size={12} /> Miễn phí giao hàng đơn trên 300.000 ₫
-            </span>
-          </div>
-          <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
-            <Link href="/stores" style={{ color: 'inherit' }}>Cửa hàng</Link>
-            <Link href="/#hanh-trinh-nghia-tinh" style={{ color: 'inherit' }}>Hành trình nghĩa tình</Link>
-            <Link href="/#minh-bach-quy" style={{ color: 'inherit' }}>Minh bạch quỹ</Link>
-            <Link href="/about" style={{ color: 'inherit' }}>Liên hệ</Link>
+      {showUtility && (
+        <div style={{ background: 'var(--ccb-olive-dark)', color: '#E8E4D4', fontSize: 12 }}>
+          <div style={{ maxWidth: 1600, margin: '0 auto', padding: '8px 24px',
+            display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+            <div style={{ display: 'flex', gap: 20, alignItems: 'center', flexWrap: 'wrap' }}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                <Phone size={12} /> Hotline: {hotline}
+              </span>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                <Truck size={12} /> {shippingNote}
+              </span>
+            </div>
+            <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+              {utilityLinks.map((l) => (
+                <Link key={l.label + l.href} href={l.href} style={{ color: 'inherit' }}>{l.label}</Link>
+              ))}
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Flag stripe */}
       <div className="ccb-stripe" />
@@ -106,7 +129,7 @@ export function Header({ cartCount = 0, categories: categoriesProp }: { cartCoun
             }} />
             <input
               type="search"
-              placeholder="Tìm gạo, nước mắm, trà Shan Tuyết…"
+              placeholder={searchPlaceholder}
               style={{
                 width: '100%',
                 padding: '11px 14px 11px 42px',

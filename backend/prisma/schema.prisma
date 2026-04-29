@@ -989,6 +989,36 @@ model LandingFundEntry {
   @@map("landing_fund_entries")
 }
 
+// Header chrome (utility bar + search) — singleton
+model LandingHeader {
+  id                Int      @id @default(autoincrement())
+  hotline           String   @default("1900 6868")
+  shippingNote      String   @default("Miễn phí giao hàng đơn trên 300.000 ₫") @map("shipping_note")
+  searchPlaceholder String   @default("Tìm gạo, nước mắm, trà Shan Tuyết…") @map("search_placeholder")
+  utilityLinks      Json     @default("[]") @map("utility_links") // [{ label, href }]
+  isActive          Boolean  @default(true) @map("is_active")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  @@map("landing_header")
+}
+
+// Footer chrome (hotline / address / commitments / copyright) — singleton
+model LandingFooter {
+  id            Int      @id @default(autoincrement())
+  hotline       String   @default("1900 6868")
+  hotlineNote   String   @default("Đường dây ưu tiên dành cho Cựu Chiến Binh — 7:00 đến 21:00 mỗi ngày.") @map("hotline_note")
+  addressLine1  String   @default("Số 19 đường Lê Đức Thọ") @map("address_line1")
+  addressLine2  String   @default("Mỹ Đình 2, Nam Từ Liêm, Hà Nội") @map("address_line2")
+  addressHours  String   @default("Mở cửa 8:00 — 20:00") @map("address_hours")
+  commitments   Json     @default("[]") // [{ icon, label }]
+  copyright     String   @default("© 2026 CCB Mart — Hệ thống bán lẻ của cộng đồng Cựu Chiến Binh Việt Nam")
+  verifiedBadge String   @default("Hội CCB Việt Nam xác nhận") @map("verified_badge")
+  isActive      Boolean  @default(true) @map("is_active")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@map("landing_footer")
+}
+
 // "Tiếng nói chiến hữu" — real CCB testimonials with photo + verified badge
 model LandingTestimonial {
   id           Int      @id @default(autoincrement())
