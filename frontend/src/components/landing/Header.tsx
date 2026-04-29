@@ -67,8 +67,8 @@ export function Header({ cartCount = 0, categories: categoriesProp, header }: { 
     ? header.utilityLinks
     : [
         { label: 'Cửa hàng', href: '/stores' },
-        { label: 'Hành trình nghĩa tình', href: '/#hanh-trinh-nghia-tinh' },
-        { label: 'Minh bạch quỹ', href: '/#minh-bach-quy' },
+        { label: 'Hành trình nghĩa tình', href: '/#hoat-dong' },
+        { label: 'Minh bạch quỹ', href: '/#quy-nghia-tinh' },
         { label: 'Liên hệ', href: '/about' },
       ];
   const showUtility = header?.isActive !== false;

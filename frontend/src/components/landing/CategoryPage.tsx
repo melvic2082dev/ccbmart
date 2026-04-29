@@ -1,11 +1,63 @@
 'use client';
 
+import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { LandingShell } from './LandingShell';
 import { ProductCard } from './ProductGrid';
 import type { Category, ProductDetail } from './categories';
 
+type PriceBand = 'all' | 'lt50' | 'mid' | 'gt200';
+type SortKey = 'sold' | 'price_asc' | 'price_desc';
+
+const PAGE_SIZE = 12;
+
 export function CategoryPage({ category, products }: { category: Category; products: ProductDetail[] }) {
+  const regionLabels = category.filters.regions.map((r) => r.label);
+  const [selectedRegions, setSelectedRegions] = useState<string[]>([]); // empty = all
+  const [priceBand, setPriceBand] = useState<PriceBand>('all');
+  const [verifiedOnly, setVerifiedOnly] = useState(false);
+  const [sort, setSort] = useState<SortKey>('sold');
+  const [page, setPage] = useState(1);
+
+  // Apply filters
+  const filtered = useMemo(() => {
+    const matchesRegion = (p: ProductDetail) => {
+      if (selectedRegions.length === 0) return true;
+      const haystack = `${p.region ?? ''} ${p.producerHometown ?? ''} ${p.origin ?? ''}`.toLowerCase();
+      return selectedRegions.some((r) => haystack.includes(r.toLowerCase()));
+    };
+    const matchesPrice = (p: ProductDetail) => {
+      if (priceBand === 'all') return true;
+      if (priceBand === 'lt50') return p.price < 50000;
+      if (priceBand === 'mid') return p.price >= 50000 && p.price <= 200000;
+      return p.price > 200000;
+    };
+    const matchesVerified = (p: ProductDetail) => !verifiedOnly || p.verified;
+
+    const list = products.filter((p) => matchesRegion(p) && matchesPrice(p) && matchesVerified(p));
+
+    const soldNum = (s: string) => {
+      const m = s.match(/([\d.,]+)\s*([kK])?/);
+      if (!m) return 0;
+      const n = parseFloat(m[1].replace(/[.,]/g, ''));
+      return m[2] ? n * 1000 : n;
+    };
+    if (sort === 'price_asc') list.sort((a, b) => a.price - b.price);
+    else if (sort === 'price_desc') list.sort((a, b) => b.price - a.price);
+    else list.sort((a, b) => soldNum(b.sold) - soldNum(a.sold));
+
+    return list;
+  }, [products, selectedRegions, priceBand, verifiedOnly, sort]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  const pageProducts = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+
+  const toggleRegion = (label: string) => {
+    setSelectedRegions((prev) => prev.includes(label) ? prev.filter((r) => r !== label) : [...prev, label]);
+    setPage(1);
+  };
+
   return (
     <LandingShell>
       <main style={{ maxWidth: 1600, margin: '0 auto', padding: '32px 24px 72px' }}>
@@ -16,19 +68,42 @@ export function CategoryPage({ category, products }: { category: Category; produ
             <h3 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 18, margin: '0 0 12px' }}>Lọc sản phẩm</h3>
             <div style={{ background: '#fff', border: '1px solid var(--line)', borderRadius: 8, padding: 16 }}>
               <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 8 }}>Vùng / Phân loại</div>
-              {category.filters.regions.map((r) => (
-                <label key={r.label} style={{ display: 'block', fontSize: 13, padding: '4px 0' }}>
-                  <input type="checkbox" defaultChecked={r.checked} /> {r.label} ({r.count})
+              {regionLabels.map((label) => (
+                <label key={label} style={{ display: 'block', fontSize: 13, padding: '4px 0', cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={selectedRegions.includes(label)}
+                    onChange={() => toggleRegion(label)}
+                  />{' '}
+                  {label}
                 </label>
               ))}
               <div style={{ height: 1, background: 'var(--line)', margin: '12px 0' }} />
               <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 8 }}>Giá</div>
-              <label style={{ display: 'block', fontSize: 13, padding: '4px 0' }}><input type="radio" name="p" /> Dưới 50.000 ₫</label>
-              <label style={{ display: 'block', fontSize: 13, padding: '4px 0' }}><input type="radio" name="p" defaultChecked /> 50.000 – 200.000 ₫</label>
-              <label style={{ display: 'block', fontSize: 13, padding: '4px 0' }}><input type="radio" name="p" /> Trên 200.000 ₫</label>
+              {([
+                ['all', 'Tất cả'],
+                ['lt50', 'Dưới 50.000 ₫'],
+                ['mid', '50.000 – 200.000 ₫'],
+                ['gt200', 'Trên 200.000 ₫'],
+              ] as [PriceBand, string][]).map(([key, label]) => (
+                <label key={key} style={{ display: 'block', fontSize: 13, padding: '4px 0', cursor: 'pointer' }}>
+                  <input
+                    type="radio"
+                    name="price"
+                    checked={priceBand === key}
+                    onChange={() => { setPriceBand(key); setPage(1); }}
+                  />{' '}
+                  {label}
+                </label>
+              ))}
               <div style={{ height: 1, background: 'var(--line)', margin: '12px 0' }} />
-              <label style={{ display: 'flex', gap: 8, fontSize: 13, padding: '4px 0', alignItems: 'center' }}>
-                <input type="checkbox" defaultChecked /> <span style={{ color: 'var(--ccb-olive-dark)', fontWeight: 600 }}>★ CCB xác nhận</span>
+              <label style={{ display: 'flex', gap: 8, fontSize: 13, padding: '4px 0', alignItems: 'center', cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  checked={verifiedOnly}
+                  onChange={(e) => { setVerifiedOnly(e.target.checked); setPage(1); }}
+                />
+                <span style={{ color: 'var(--ccb-olive-dark)', fontWeight: 600 }}>★ CCB xác nhận</span>
               </label>
             </div>
           </aside>
@@ -51,21 +126,26 @@ export function CategoryPage({ category, products }: { category: Category; produ
               margin: '24px 0 16px', paddingBottom: 12, borderBottom: '1px solid var(--line)', gap: 12, flexWrap: 'wrap',
             }}>
               <div style={{ fontSize: 13, color: 'var(--ink-3)' }}>
-                Tìm thấy <b style={{ color: 'var(--ink-1)' }}>{category.productCount}</b> sản phẩm · hiển thị {products.length}
+                Tìm thấy <b style={{ color: 'var(--ink-1)' }}>{filtered.length}</b> sản phẩm
+                {filtered.length > PAGE_SIZE && <> · trang {safePage}/{totalPages}</>}
               </div>
-              <select style={{
-                fontFamily: 'var(--font-body)', fontSize: 13, padding: '8px 12px',
-                border: '1px solid var(--line-strong)', borderRadius: 4, background: '#fff',
-              }}>
-                <option>Sắp xếp: Bán chạy nhất</option>
-                <option>Giá thấp → cao</option>
-                <option>Giá cao → thấp</option>
+              <select
+                value={sort}
+                onChange={(e) => { setSort(e.target.value as SortKey); setPage(1); }}
+                style={{
+                  fontFamily: 'var(--font-body)', fontSize: 13, padding: '8px 12px',
+                  border: '1px solid var(--line-strong)', borderRadius: 4, background: '#fff',
+                }}
+              >
+                <option value="sold">Sắp xếp: Bán chạy nhất</option>
+                <option value="price_asc">Giá thấp → cao</option>
+                <option value="price_desc">Giá cao → thấp</option>
               </select>
             </div>
 
-            {products.length === 0 ? (
+            {pageProducts.length === 0 ? (
               <div style={{ background: '#fff', border: '1px solid var(--line)', borderRadius: 8, padding: 32, textAlign: 'center', color: 'var(--ink-3)' }}>
-                Chưa có sản phẩm trong danh mục này.
+                {products.length === 0 ? 'Chưa có sản phẩm trong danh mục này.' : 'Không có sản phẩm khớp bộ lọc.'}
               </div>
             ) : (
               <div style={{
@@ -73,25 +153,48 @@ export function CategoryPage({ category, products }: { category: Category; produ
                 gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
                 gap: 16,
               }}>
-                {products.map((p) => <ProductCard key={p.slug} product={p} />)}
+                {pageProducts.map((p) => <ProductCard key={p.slug} product={p} />)}
               </div>
             )}
 
-            <nav style={{ marginTop: 32, display: 'flex', gap: 6, justifyContent: 'center' }}>
-              {[1, 2, 3, '...', Math.ceil(category.productCount / 12)].map((p, i) => (
-                <span key={i} style={{
-                  padding: '8px 14px', border: '1px solid var(--line)', borderRadius: 4,
-                  background: p === 1 ? 'var(--ccb-red)' : '#fff',
-                  color: p === 1 ? '#FFF8E7' : 'var(--ink-2)',
-                  fontWeight: 600, fontSize: 13, cursor: 'pointer',
-                }}>{p}</span>
-              ))}
-            </nav>
+            {totalPages > 1 && (
+              <nav style={{ marginTop: 32, display: 'flex', gap: 6, justifyContent: 'center', flexWrap: 'wrap' }}>
+                {pageNumbers(safePage, totalPages).map((p, i) => (
+                  p === '...' ? (
+                    <span key={`gap-${i}`} style={{ padding: '8px 6px', color: 'var(--ink-3)' }}>…</span>
+                  ) : (
+                    <button
+                      key={p}
+                      type="button"
+                      onClick={() => setPage(p as number)}
+                      style={{
+                        padding: '8px 14px', border: '1px solid var(--line)', borderRadius: 4,
+                        background: p === safePage ? 'var(--ccb-red)' : '#fff',
+                        color: p === safePage ? '#FFF8E7' : 'var(--ink-2)',
+                        fontWeight: 600, fontSize: 13, cursor: 'pointer',
+                      }}
+                    >{p}</button>
+                  )
+                ))}
+              </nav>
+            )}
           </div>
         </div>
       </main>
     </LandingShell>
   );
+}
+
+function pageNumbers(current: number, total: number): (number | '...')[] {
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+  const out: (number | '...')[] = [1];
+  const start = Math.max(2, current - 1);
+  const end = Math.min(total - 1, current + 1);
+  if (start > 2) out.push('...');
+  for (let i = start; i <= end; i++) out.push(i);
+  if (end < total - 1) out.push('...');
+  out.push(total);
+  return out;
 }
 
 function Crumbs({ items }: { items: { label: string; href?: string }[] }) {

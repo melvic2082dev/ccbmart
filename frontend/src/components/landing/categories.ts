@@ -314,10 +314,11 @@ export function mergeWithDb(dbProducts: DbCatalogProduct[]): ProductDetail[] {
 }
 
 // Fetch DB catalog from API; returns [] silently on failure so callers fall back to hardcoded.
+// Uses ISR-style 60s revalidation so navigations between categories are instant.
 export async function fetchDbCatalog(): Promise<DbCatalogProduct[]> {
   const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api';
   try {
-    const res = await fetch(`${apiBase}/landing/products`, { cache: 'no-store' });
+    const res = await fetch(`${apiBase}/landing/products`, { next: { revalidate: 60 } });
     if (!res.ok) return [];
     return await res.json();
   } catch {
@@ -328,7 +329,7 @@ export async function fetchDbCatalog(): Promise<DbCatalogProduct[]> {
 export async function fetchDbCategories(): Promise<DbCategory[]> {
   const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api';
   try {
-    const res = await fetch(`${apiBase}/landing/categories`, { cache: 'no-store' });
+    const res = await fetch(`${apiBase}/landing/categories`, { next: { revalidate: 60 } });
     if (!res.ok) return [];
     return await res.json();
   } catch {

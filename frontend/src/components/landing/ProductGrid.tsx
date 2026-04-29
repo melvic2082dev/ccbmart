@@ -148,12 +148,12 @@ export function ProductCard({ product }: { product: Product }) {
           </div>
         )}
         <span className="ccb-product-cta" style={{
-          marginTop: 12,
+          marginTop: 'auto', paddingTop: 12,
+          display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6,
           background: 'transparent', color: 'var(--ccb-olive-dark)',
           border: '1px solid var(--ccb-olive)',
           borderRadius: 4, padding: '8px 12px',
           fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 13,
-          display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6,
           transition: 'background 0.15s ease, color 0.15s ease',
         }}>
           <ShoppingCart size={14} />

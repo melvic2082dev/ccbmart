@@ -95,8 +95,8 @@ const DEFAULT_HEADER = {
   searchPlaceholder: 'Tìm gạo, nước mắm, trà Shan Tuyết…',
   utilityLinks: [
     { label: 'Cửa hàng', href: '/stores' },
-    { label: 'Hành trình nghĩa tình', href: '/#hanh-trinh-nghia-tinh' },
-    { label: 'Minh bạch quỹ', href: '/#minh-bach-quy' },
+    { label: 'Hành trình nghĩa tình', href: '/#hoat-dong' },
+    { label: 'Minh bạch quỹ', href: '/#quy-nghia-tinh' },
     { label: 'Liên hệ', href: '/about' },
   ],
   isActive: true,

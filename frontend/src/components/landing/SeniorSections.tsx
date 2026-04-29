@@ -712,8 +712,30 @@ export function SeniorFooter({ data }: { data?: FooterData } = {}) {
           </div>
         </div>
 
+        {/* Useful links strip */}
+        <nav style={{
+          marginTop: 56, paddingTop: 32, borderTop: '1px solid rgba(242,235,217,0.2)',
+          display: 'flex', flexWrap: 'wrap', gap: '14px 28px',
+          fontFamily: 'var(--font-body)', fontSize: 16, lineHeight: 1.4,
+        }}>
+          {[
+            ['/about', 'Về chúng tôi'],
+            ['/stores', 'Cửa hàng'],
+            ['/faq', 'Câu hỏi thường gặp'],
+            ['/shipping-policy', 'Giao hàng'],
+            ['/return-policy', 'Đổi trả'],
+            ['/payment-methods', 'Thanh toán'],
+            ['/order-tracking', 'Tra cứu đơn'],
+            ['/careers', 'Tuyển dụng'],
+            ['/terms', 'Điều khoản'],
+            ['/privacy', 'Bảo mật'],
+          ].map(([href, label]) => (
+            <Link key={href} href={href} style={{ color: '#E8E0CC', textDecoration: 'none' }}>{label}</Link>
+          ))}
+        </nav>
+
         <div style={{
-          marginTop: 64, paddingTop: 24, borderTop: '1px solid rgba(242,235,217,0.2)',
+          marginTop: 32, paddingTop: 20, borderTop: '1px solid rgba(242,235,217,0.15)',
           display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16,
           fontFamily: 'var(--font-body)', fontSize: 15, color: '#C8BFA8',
         }}>

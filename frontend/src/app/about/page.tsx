@@ -75,7 +75,7 @@ export default function AboutPage() {
           <p style={{ maxWidth: 580, margin: '12px auto 20px', fontSize: 15 }}>
             Gửi thông tin sản phẩm và cơ sở canh tác. Đội ngũ CCB Mart sẽ liên hệ khảo sát trong vòng 7 ngày.
           </p>
-          <Link href="/login" style={{
+          <Link href="/careers" style={{
             background: 'var(--ccb-red)', color: '#FFF8E7',
             fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 16,
             padding: '14px 26px', borderRadius: 4, display: 'inline-block',

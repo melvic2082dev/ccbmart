@@ -8,7 +8,7 @@ export function generateStaticParams() {
   return CATEGORIES.map((c) => ({ slug: c.slug }));
 }
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 60;
 
 export default async function Page({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;

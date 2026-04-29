@@ -332,29 +332,27 @@ export function Footer() {
     { h: 'CCB Mart',     items: [
       { label: 'Về chúng tôi', href: '/about' },
       { label: 'Mạng lưới cửa hàng', href: '/stores' },
-      { label: 'Hội viên CCB', href: '/about' },
-      { label: 'Tuyển dụng', href: '#' },
+      { label: 'Tuyển dụng', href: '/careers' },
       { label: 'Liên hệ', href: '/about' },
     ] },
     { h: 'Mua sắm',      items: [
       { label: 'Tất cả danh mục', href: '/category/gao-luong-thuc' },
       { label: 'Đặc sản ba miền', href: '/category/dac-san-vung-mien' },
-      { label: 'Hàng khuyến mãi', href: '/category/hang-khuyen-mai' },
-      { label: 'Quà tặng', href: '/category/qua-tang-ccb' },
-      { label: 'Thẻ Hội viên', href: '/login' },
+      { label: 'Đặc sản miền Bắc', href: '/category/dac-san-mien-bac' },
+      { label: 'Đặc sản miền Trung', href: '/category/dac-san-mien-trung' },
+      { label: 'Đặc sản miền Nam', href: '/category/dac-san-mien-nam' },
     ] },
     { h: 'Hỗ trợ',       items: [
-      { label: 'Chính sách giao hàng', href: '#' },
-      { label: 'Chính sách đổi trả', href: '#' },
-      { label: 'Phương thức thanh toán', href: '/cart' },
-      { label: 'Câu hỏi thường gặp', href: '#' },
-      { label: 'Tra cứu đơn hàng', href: '#' },
+      { label: 'Câu hỏi thường gặp', href: '/faq' },
+      { label: 'Chính sách giao hàng', href: '/shipping-policy' },
+      { label: 'Chính sách đổi trả', href: '/return-policy' },
+      { label: 'Phương thức thanh toán', href: '/payment-methods' },
+      { label: 'Tra cứu đơn hàng', href: '/order-tracking' },
     ] },
     { h: 'Nhà cung cấp', items: [
-      { label: 'Trở thành đối tác', href: '/about' },
-      { label: 'Quy chuẩn sản phẩm', href: '/about' },
-      { label: 'Hỗ trợ Cựu Chiến Binh khởi nghiệp', href: '/about' },
+      { label: 'Trở thành đối tác', href: '/careers' },
       { label: 'Đăng ký gian hàng', href: '/login' },
+      { label: 'Tuyển dụng', href: '/careers' },
     ] },
   ];
   return (
@@ -394,10 +392,9 @@ export function Footer() {
           <div style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: '#B8B3A2' }}>
             © {new Date().getFullYear()} CCB Mart · Hệ thống bán lẻ Cựu Chiến Binh Việt Nam.
           </div>
-          <div style={{ display: 'flex', gap: 18, fontFamily: 'var(--font-body)', fontSize: 12 }}>
-            <a href="#" style={{ color: '#B8B3A2' }}>Điều khoản sử dụng</a>
-            <a href="#" style={{ color: '#B8B3A2' }}>Chính sách bảo mật</a>
-            <a href="#" style={{ color: '#B8B3A2' }}>Sơ đồ trang</a>
+          <div style={{ display: 'flex', gap: 18, fontFamily: 'var(--font-body)', fontSize: 12, flexWrap: 'wrap' }}>
+            <Link href="/terms" style={{ color: '#B8B3A2' }}>Điều khoản sử dụng</Link>
+            <Link href="/privacy" style={{ color: '#B8B3A2' }}>Chính sách bảo mật</Link>
           </div>
         </div>
       </div>

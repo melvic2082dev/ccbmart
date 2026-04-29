@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import { LandingShell } from '@/components/landing/LandingShell';
 import { ProductArt, formatVnd } from '@/components/landing/primitives';
@@ -15,6 +16,23 @@ export default function CartPage() {
   const memberDiscount = Math.round(subtotal * 0.05);
   const total = subtotal - memberDiscount;
 
+  const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [orderId, setOrderId] = useState<string | null>(null);
+
+  const onPlaceOrder = (e?: FormEvent) => {
+    e?.preventDefault();
+    if (submitting || submitted) return;
+    setSubmitting(true);
+    setTimeout(() => {
+      const id = `CCB-${new Date().getFullYear()}-${Math.floor(Math.random() * 9000000 + 1000000)}`;
+      setOrderId(id);
+      setSubmitted(true);
+      setSubmitting(false);
+      try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch { /* ignore */ }
+    }, 900);
+  };
+
   return (
     <LandingShell>
       <main style={{ maxWidth: 1600, margin: '0 auto', padding: '32px 24px 72px' }}>
@@ -24,6 +42,22 @@ export default function CartPage() {
           <span>Giỏ hàng &amp; Thanh toán</span>
         </div>
         <h1 style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 36, margin: '12px 0 24px' }}>Giỏ hàng của bạn</h1>
+
+        {submitted && orderId && (
+          <div style={{
+            background: 'var(--ccb-olive-tint)', border: '2px solid var(--ccb-olive)', borderLeft: '6px solid var(--ccb-olive-dark)',
+            borderRadius: 8, padding: '20px 24px', marginBottom: 24,
+          }}>
+            <div style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 22, color: 'var(--ccb-olive-dark)', marginBottom: 6 }}>
+              ✓ Đã đặt hàng thành công!
+            </div>
+            <div style={{ fontFamily: 'var(--font-body)', fontSize: 16, lineHeight: 1.6, color: 'var(--ink-2)' }}>
+              Mã đơn của bạn: <strong style={{ color: 'var(--ccb-red)', fontFamily: 'var(--font-display)' }}>{orderId}</strong>.
+              CCB Mart sẽ gọi xác nhận trong vòng 30 phút. Tra cứu trạng thái tại{' '}
+              <Link href="/order-tracking" style={{ color: 'var(--ccb-red)', fontWeight: 700 }}>Tra cứu đơn hàng</Link>.
+            </div>
+          </div>
+        )}
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: 32 }} className="ccb-cart-grid">
           <div>
@@ -88,12 +122,22 @@ export default function CartPage() {
                 <span style={{ fontWeight: 700 }}>Tổng</span>
                 <span style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 24, color: 'var(--ccb-red)' }}>{formatVnd(total)}</span>
               </div>
-              <button type="button" style={{
-                width: '100%', marginTop: 8, padding: '14px', borderRadius: 4,
-                background: 'var(--ccb-red)', color: '#FFF8E7',
-                fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 16,
-                border: 'none', cursor: 'pointer',
-              }}>Đặt hàng →</button>
+              <button
+                type="button"
+                onClick={() => onPlaceOrder()}
+                disabled={submitting || submitted}
+                style={{
+                  width: '100%', marginTop: 8, padding: '14px', borderRadius: 4,
+                  background: submitted ? 'var(--ccb-olive)' : 'var(--ccb-red)',
+                  color: '#FFF8E7',
+                  fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 16,
+                  border: 'none',
+                  cursor: submitting || submitted ? 'default' : 'pointer',
+                  opacity: submitting ? 0.75 : 1,
+                }}
+              >
+                {submitted ? 'Đã đặt hàng ✓' : submitting ? 'Đang xử lý…' : 'Đặt hàng →'}
+              </button>
               <div style={{ marginTop: 16, padding: 12, background: 'var(--ccb-olive-tint)', borderRadius: 6, fontSize: 12, color: 'var(--ccb-olive-dark)', lineHeight: 1.5 }}>
                 <b>★ 1% vì đồng đội.</b> Mỗi đơn hàng, CCB Mart trích 1% vào quỹ hỗ trợ gia đình CCB.
               </div>
