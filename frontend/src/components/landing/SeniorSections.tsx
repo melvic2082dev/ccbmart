@@ -129,7 +129,6 @@ export function ProducerPortraitsSection({ products }: { products: ProductDetail
 
 function ProducerPortrait({ product }: { product: ProductDetail }) {
   const { producerName, producerHometown, producerUnit, producerPhotoUrl, name } = product;
-  const initial = (producerName ?? 'CCB').split(' ').pop()?.[0]?.toUpperCase() ?? 'C';
   return (
     <div style={{ textAlign: 'center' }}>
       {/* Portrait — 200px, circular */}
@@ -137,18 +136,14 @@ function ProducerPortrait({ product }: { product: ProductDetail }) {
         position: 'relative',
         width: 200, height: 200, margin: '0 auto',
         borderRadius: '50%', overflow: 'hidden',
-        background: `linear-gradient(135deg, ${olive} 0%, ${brown} 100%)`,
-        border: `4px solid ${olive}`,
-        boxShadow: '0 8px 24px rgba(0,0,0,0.18)',
+        background: `radial-gradient(circle at 30% 30%, ${olive} 0%, ${oliveDark} 70%, #2F3E1B 100%)`,
+        border: `4px solid ${oliveDark}`,
+        boxShadow: '0 8px 24px rgba(0,0,0,0.22)',
       }}>
         {producerPhotoUrl ? (
           <Image src={producerPhotoUrl} alt={producerName ?? ''} fill sizes="200px" className="object-cover" unoptimized />
         ) : (
-          <div style={{
-            position: 'absolute', inset: 0,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: '#FFFFFF', fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 80,
-          }}>{initial}</div>
+          <DignifiedPortraitFallback />
         )}
       </div>
       <div style={{
@@ -177,34 +172,81 @@ function ProducerPortrait({ product }: { product: ProductDetail }) {
   );
 }
 
+function DignifiedPortraitFallback() {
+  // Stylised CCB monogram + 5-pointed star (military insignia feel) — no letter
+  return (
+    <div style={{
+      position: 'absolute', inset: 0,
+      display: 'flex', flexDirection: 'column',
+      alignItems: 'center', justifyContent: 'center',
+      gap: 8,
+    }}>
+      {/* 5-pointed star */}
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="#F4D35E" aria-hidden>
+        <path d="M12 2.5l2.39 7.36h7.74l-6.26 4.55 2.39 7.36L12 17.22l-6.26 4.55 2.39-7.36L1.87 9.86h7.74L12 2.5z" />
+      </svg>
+      <div style={{
+        fontFamily: 'var(--font-display)', fontWeight: 800,
+        fontSize: 28, letterSpacing: '0.18em',
+        color: '#FFF8E7',
+      }}>CCB</div>
+      <div style={{
+        fontFamily: 'var(--font-body)', fontSize: 11, fontWeight: 600,
+        letterSpacing: '0.15em', textTransform: 'uppercase',
+        color: 'rgba(255,248,231,0.75)',
+      }}>Cựu Chiến Binh</div>
+    </div>
+  );
+}
+
 // =========================================================================
-// 3. SẢN PHẨM CHỌN LỌC — large horizontal cards
+// 3. SẢN PHẨM CHỌN LỌC — large horizontal cards (reusable: interleave with fund)
 // =========================================================================
-export function SeniorProductGrid({ products }: { products: ProductDetail[] }) {
+export function SeniorProductGrid({
+  products, eyebrow, title, subtitle, sectionId, bg = '#FFFFFF',
+}: {
+  products: ProductDetail[];
+  eyebrow?: string;
+  title?: string;
+  subtitle?: string;
+  sectionId?: string;
+  bg?: string;
+}) {
   if (products.length === 0) return null;
   return (
-    <section id="san-pham" style={{ background: '#FFFFFF', padding: '96px 32px', borderBottom: '1px solid var(--line)' }}>
+    <section id={sectionId ?? 'san-pham'} style={{ background: bg, padding: '96px 32px', borderBottom: '1px solid var(--line)' }}>
       <div style={{ maxWidth: 1200, margin: '0 auto' }}>
         <div style={{ textAlign: 'center', marginBottom: 56 }}>
+          {eyebrow && (
+            <div style={{
+              fontFamily: 'var(--font-body)', fontSize: 14, fontWeight: 700,
+              letterSpacing: '0.08em', textTransform: 'uppercase',
+              color: deepRed, marginBottom: 12,
+            }}>
+              {eyebrow}
+            </div>
+          )}
           <h2 style={{
             fontFamily: 'var(--font-display)',
             fontSize: 'clamp(30px, 3.5vw, 42px)', lineHeight: 1.2, fontWeight: 800,
             color: 'var(--ink-1)', margin: 0,
           }}>
-            Sản phẩm chọn lọc
+            {title ?? 'Sản phẩm chọn lọc'}
           </h2>
-          <p style={{
-            fontFamily: 'var(--font-body)', fontSize: 20, lineHeight: 1.5,
-            color: 'var(--ink-2)', marginTop: 16,
-          }}>
-            Mỗi sản phẩm là một câu chuyện. Mỗi đơn hàng là một nghĩa cử.
-          </p>
+          {subtitle && (
+            <p style={{
+              fontFamily: 'var(--font-body)', fontSize: 20, lineHeight: 1.5,
+              color: 'var(--ink-2)', marginTop: 16, maxWidth: 720, marginLeft: 'auto', marginRight: 'auto',
+            }}>
+              {subtitle}
+            </p>
+          )}
         </div>
 
         <div className="ccb-senior-product-grid" style={{
           display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 32,
         }}>
-          {products.slice(0, 6).map((p) => <BigProductCard key={p.slug} product={p} />)}
+          {products.map((p) => <BigProductCard key={p.slug} product={p} />)}
         </div>
       </div>
     </section>
@@ -345,32 +387,59 @@ export function FundHeadlineSection({ entries }: { entries?: FundEntryData[] }) 
   const monthOutTotal = monthOuts.reduce((s, e) => s + e.amount, 0);
   const remaining = Math.max(0, monthIn - monthOutTotal);
 
+  // Count beneficiaries (distinct fund-out entries this month)
+  const beneficiaries = monthOuts.length;
+
   return (
-    <section id="quy-nghia-tinh" style={{ background: '#F0F4F0', padding: '96px 32px', borderBottom: '1px solid var(--line)' }}>
+    <section id="quy-nghia-tinh" style={{
+      background: 'linear-gradient(180deg, #F0F4F0 0%, #E8EFE5 100%)',
+      padding: '120px 32px', borderTop: `4px solid ${deepRed}`, borderBottom: '1px solid var(--line)',
+    }}>
       <div style={{ maxWidth: 980, margin: '0 auto', textAlign: 'center' }}>
         <div style={{
           fontFamily: 'var(--font-body)', fontSize: 16, fontWeight: 700,
-          letterSpacing: '0.06em', textTransform: 'uppercase',
-          color: oliveDark, marginBottom: 16,
+          letterSpacing: '0.08em', textTransform: 'uppercase',
+          color: deepRed, marginBottom: 16,
         }}>
-          Quỹ Vì đồng đội · Minh bạch
+          ★ Quỹ Vì đồng đội · Minh bạch tuyệt đối ★
         </div>
 
-        {/* HEADLINE NUMBER */}
+        <p style={{
+          fontFamily: 'var(--font-body)', fontSize: 22, lineHeight: 1.5,
+          color: 'var(--ink-2)', marginTop: 0, marginBottom: 32,
+          fontStyle: 'italic',
+        }}>
+          Mỗi đơn hàng tại CCB Mart trích <strong>1%</strong> cho quỹ.<br />
+          Tháng này đồng bào đã chung tay được:
+        </p>
+
+        {/* HEADLINE NUMBER — to như biển */}
         <div style={{
           fontFamily: 'var(--font-display)', fontWeight: 900,
-          fontSize: 'clamp(48px, 7vw, 80px)', lineHeight: 1.0,
+          fontSize: 'clamp(64px, 11vw, 140px)', lineHeight: 0.95,
           color: deepRed, fontVariantNumeric: 'tabular-nums',
-          letterSpacing: '-0.02em',
+          letterSpacing: '-0.03em',
+          textShadow: '0 2px 4px rgba(139,0,0,0.08)',
         }}>
-          {fmtFull(monthIn)} đ
+          {fmtFull(monthIn)} <span style={{ fontSize: '0.55em', fontWeight: 800 }}>đ</span>
         </div>
         <div style={{
-          fontFamily: 'var(--font-body)', fontSize: 20, lineHeight: 1.5,
-          color: 'var(--ink-2)', marginTop: 16,
+          fontFamily: 'var(--font-body)', fontSize: 22, lineHeight: 1.5,
+          color: 'var(--ink-2)', marginTop: 20,
         }}>
-          Tổng hỗ trợ Cựu Chiến Binh khó khăn từ quỹ 1% — <strong>{monthLabel}</strong>
+          Tổng quỹ hỗ trợ Cựu Chiến Binh khó khăn — <strong>{monthLabel}</strong>
         </div>
+        {beneficiaries > 0 && (
+          <div style={{
+            display: 'inline-flex', alignItems: 'center', gap: 10,
+            marginTop: 20, padding: '10px 20px',
+            background: '#FFFFFF', border: `2px solid ${oliveDark}`, borderRadius: 999,
+            fontFamily: 'var(--font-body)', fontSize: 16, fontWeight: 700,
+            color: oliveDark,
+          }}>
+            ✓ Đã hỗ trợ {beneficiaries} hoàn cảnh CCB trong tháng
+          </div>
+        )}
 
         {/* 3-line breakdown */}
         <div style={{

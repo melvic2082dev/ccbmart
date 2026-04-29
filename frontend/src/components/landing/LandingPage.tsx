@@ -98,11 +98,27 @@ export function LandingPage() {
       {/* 2. Bàn tay lính — 3 chân dung */}
       <ProducerPortraitsSection products={producerProducts as never} />
 
-      {/* 3. Sản phẩm chọn lọc — large cards */}
-      <SeniorProductGrid products={featured as never} />
+      {/* 3a. Sản phẩm chọn lọc — đợt 1 (3 sản phẩm) */}
+      <SeniorProductGrid
+        products={featured.slice(0, 3) as never}
+        eyebrow="Hàng tuyển chọn"
+        title="Tâm huyết từ những người lính già"
+        subtitle="Mỗi sản phẩm là một câu chuyện. Mỗi đơn hàng là một nghĩa cử."
+        sectionId="san-pham"
+      />
 
-      {/* 4. Quỹ nghĩa tình — to như biển */}
+      {/* 4. Quỹ nghĩa tình — chen giữa hai đợt sản phẩm */}
       <FundHeadlineSection entries={content?.fundEntries} />
+
+      {/* 3b. Sản phẩm chọn lọc — đợt 2 (3 sản phẩm còn lại) */}
+      <SeniorProductGrid
+        products={featured.slice(3, 6) as never}
+        eyebrow="Đặc sản tiếp theo"
+        title="Đồng đội từ khắp ba miền"
+        subtitle="Tiếp tục câu chuyện — sản vật từ những vùng đất nghĩa tình."
+        sectionId="san-pham-tiep"
+        bg="var(--paper-1)"
+      />
 
       {/* 5. Hoạt động gần đây */}
       <JourneyGallerySection photos={content?.communityPhotos} />
