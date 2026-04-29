@@ -914,6 +914,9 @@ model LandingProduct {
   rating         Decimal  @default(4.7) @db.Decimal(2, 1)
   sold           String   @default("0")
   region         String   @default("")
+  // Coarse-grained region grouping for /category filtering.
+  // Values: 'bac' | 'trung' | 'nam' | 'tay_nguyen' | null (= "Không thuộc vùng miền nào")
+  regionGroup    String?  @map("region_group")
   verified       Boolean  @default(false)
   badges         Json? // [{ label, variant }]
   imageUrl       String?  @map("image_url")

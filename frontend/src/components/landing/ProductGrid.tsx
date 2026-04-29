@@ -6,6 +6,8 @@ import { Badge, formatVnd, ProductArt, SectionHead, Star } from './primitives';
 type Tone = 'paper' | 'red' | 'olive' | 'gold';
 type BadgeVariant = 'red' | 'olive' | 'gold' | 'soft' | 'oliveSoft';
 
+export type RegionGroup = 'bac' | 'trung' | 'nam' | 'tay_nguyen';
+
 export type Product = {
   id: string;
   slug?: string;
@@ -17,6 +19,7 @@ export type Product = {
   rating: number;
   sold: string;
   region?: string;
+  regionGroup?: RegionGroup | null;
   badges?: { label: string; variant: BadgeVariant }[];
   verified?: boolean;
   imageUrl?: string | null;

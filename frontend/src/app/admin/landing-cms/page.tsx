@@ -873,6 +873,7 @@ type CatalogProduct = {
   rating: number | string;
   sold: string;
   region: string;
+  regionGroup: 'bac' | 'trung' | 'nam' | 'tay_nguyen' | null;
   verified: boolean;
   badges: { label: string; variant: string }[] | null;
   imageUrl: string | null;
@@ -895,13 +896,20 @@ type CatalogProduct = {
 const TONE_OPTIONS = ['paper', 'red', 'olive', 'gold'];
 const ICON_OPTIONS = ['wheat', 'soup', 'coffee', 'mountain', 'sun', 'palmtree', 'home', 'gift', 'tag', 'compass'];
 const BADGE_VARIANT_OPTIONS = ['red', 'olive', 'gold', 'soft', 'oliveSoft'];
+const REGION_GROUP_OPTIONS: { value: string; label: string }[] = [
+  { value: '__none', label: 'Không thuộc vùng miền nào' },
+  { value: 'bac', label: 'Miền Bắc' },
+  { value: 'trung', label: 'Miền Trung' },
+  { value: 'tay_nguyen', label: 'Tây Nguyên' },
+  { value: 'nam', label: 'Miền Nam' },
+];
 const DEFAULT_THUMBS = ['Mặt trước', 'Đóng gói', 'Cận cảnh', 'Vùng nguyên liệu'];
 
 function emptyProduct(): CatalogProduct {
   return {
     id: 0, slug: '', categorySlug: CATEGORIES[0]?.slug ?? '', name: '',
     art: '', tone: 'paper', price: 0, was: null, rating: 4.7, sold: '0',
-    region: '', verified: false, badges: null, imageUrl: null,
+    region: '', regionGroup: null, verified: false, badges: null, imageUrl: null,
     brand: '—', origin: '—', weight: '—', certifications: '—', distributor: '—',
     description: '', thumbs: DEFAULT_THUMBS,
     producerName: null, producerHometown: null, producerUnit: null, producerContribution: null,
@@ -1091,6 +1099,7 @@ function ProductEditDialog({ product, onClose, onSaved, onError }: {
         slug: form.slug, categorySlug: form.categorySlug, name: form.name,
         art: form.art, tone: form.tone, price: form.price, was: form.was,
         rating: Number(form.rating) || 0, sold: form.sold, region: form.region,
+        regionGroup: form.regionGroup,
         verified: form.verified, badges: form.badges, imageUrl: form.imageUrl,
         brand: form.brand, origin: form.origin, weight: form.weight,
         certifications: form.certifications, distributor: form.distributor,
@@ -1155,8 +1164,19 @@ function ProductEditDialog({ product, onClose, onSaved, onError }: {
               <Field label="Giá gạch (₫)">
                 <Input type="number" value={form.was ?? ''} onChange={(e) => set('was', e.target.value ? parseInt(e.target.value, 10) : null)} />
               </Field>
-              <Field label="Vùng / nguồn gốc">
-                <Input value={form.region} onChange={(e) => set('region', e.target.value)} />
+              <Field label="Vùng / nguồn gốc (tự do)">
+                <Input value={form.region} onChange={(e) => set('region', e.target.value)} placeholder="vd: Sóc Trăng" />
+              </Field>
+              <Field label="Phân loại vùng miền">
+                <Select
+                  value={form.regionGroup ?? '__none'}
+                  onValueChange={(v) => set('regionGroup', (v === '__none' || v == null ? null : v) as CatalogProduct['regionGroup'])}
+                >
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {REGION_GROUP_OPTIONS.map((o) => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+                  </SelectContent>
+                </Select>
               </Field>
               <Field label="Đã bán">
                 <Input value={form.sold} onChange={(e) => set('sold', e.target.value)} placeholder="vd: 1.2k" />

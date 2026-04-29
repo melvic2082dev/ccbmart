@@ -8,23 +8,41 @@ import type { Category, ProductDetail } from './categories';
 
 type PriceBand = 'all' | 'lt50' | 'mid' | 'gt200';
 type SortKey = 'sold' | 'price_asc' | 'price_desc';
+type RegionFilter = 'bac' | 'trung' | 'nam' | 'tay_nguyen' | 'none';
+
+const REGION_OPTIONS: { value: RegionFilter; label: string }[] = [
+  { value: 'bac',        label: 'Miền Bắc' },
+  { value: 'trung',      label: 'Miền Trung' },
+  { value: 'tay_nguyen', label: 'Tây Nguyên' },
+  { value: 'nam',        label: 'Miền Nam' },
+  { value: 'none',       label: 'Không thuộc vùng miền nào' },
+];
 
 const PAGE_SIZE = 12;
 
 export function CategoryPage({ category, products }: { category: Category; products: ProductDetail[] }) {
-  const regionLabels = category.filters.regions.map((r) => r.label);
-  const [selectedRegions, setSelectedRegions] = useState<string[]>([]); // empty = all
+  const [selectedRegions, setSelectedRegions] = useState<RegionFilter[]>([]); // empty = all
   const [priceBand, setPriceBand] = useState<PriceBand>('all');
   const [verifiedOnly, setVerifiedOnly] = useState(false);
   const [sort, setSort] = useState<SortKey>('sold');
   const [page, setPage] = useState(1);
 
+  // Compute counts per region group inside this category
+  const regionCounts = useMemo(() => {
+    const counts: Record<RegionFilter, number> = { bac: 0, trung: 0, nam: 0, tay_nguyen: 0, none: 0 };
+    for (const p of products) {
+      const key: RegionFilter = (p.regionGroup ?? 'none') as RegionFilter;
+      if (key in counts) counts[key]++;
+    }
+    return counts;
+  }, [products]);
+
   // Apply filters
   const filtered = useMemo(() => {
     const matchesRegion = (p: ProductDetail) => {
       if (selectedRegions.length === 0) return true;
-      const haystack = `${p.region ?? ''} ${p.producerHometown ?? ''} ${p.origin ?? ''}`.toLowerCase();
-      return selectedRegions.some((r) => haystack.includes(r.toLowerCase()));
+      const key: RegionFilter = (p.regionGroup ?? 'none') as RegionFilter;
+      return selectedRegions.includes(key);
     };
     const matchesPrice = (p: ProductDetail) => {
       if (priceBand === 'all') return true;
@@ -53,8 +71,8 @@ export function CategoryPage({ category, products }: { category: Category; produ
   const safePage = Math.min(page, totalPages);
   const pageProducts = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
-  const toggleRegion = (label: string) => {
-    setSelectedRegions((prev) => prev.includes(label) ? prev.filter((r) => r !== label) : [...prev, label]);
+  const toggleRegion = (key: RegionFilter) => {
+    setSelectedRegions((prev) => prev.includes(key) ? prev.filter((r) => r !== key) : [...prev, key]);
     setPage(1);
   };
 
@@ -67,17 +85,29 @@ export function CategoryPage({ category, products }: { category: Category; produ
           <aside>
             <h3 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 18, margin: '0 0 12px' }}>Lọc sản phẩm</h3>
             <div style={{ background: '#fff', border: '1px solid var(--line)', borderRadius: 8, padding: 16 }}>
-              <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 8 }}>Vùng / Phân loại</div>
-              {regionLabels.map((label) => (
-                <label key={label} style={{ display: 'block', fontSize: 13, padding: '4px 0', cursor: 'pointer' }}>
-                  <input
-                    type="checkbox"
-                    checked={selectedRegions.includes(label)}
-                    onChange={() => toggleRegion(label)}
-                  />{' '}
-                  {label}
-                </label>
-              ))}
+              <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 8 }}>Vùng miền</div>
+              {REGION_OPTIONS.map(({ value, label }) => {
+                const count = regionCounts[value];
+                const disabled = count === 0 && !selectedRegions.includes(value);
+                return (
+                  <label
+                    key={value}
+                    style={{
+                      display: 'block', fontSize: 13, padding: '4px 0',
+                      cursor: disabled ? 'not-allowed' : 'pointer',
+                      color: disabled ? 'var(--ink-4)' : 'var(--ink-2)',
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selectedRegions.includes(value)}
+                      disabled={disabled}
+                      onChange={() => toggleRegion(value)}
+                    />{' '}
+                    {label} <span style={{ color: 'var(--ink-4)' }}>({count})</span>
+                  </label>
+                );
+              })}
               <div style={{ height: 1, background: 'var(--line)', margin: '12px 0' }} />
               <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 8 }}>Giá</div>
               {([

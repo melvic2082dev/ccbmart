@@ -228,6 +228,7 @@ export type DbCatalogProduct = {
   rating: number | string;
   sold: string;
   region: string;
+  regionGroup: 'bac' | 'trung' | 'nam' | 'tay_nguyen' | null;
   verified: boolean;
   badges: { label: string; variant: string }[] | null;
   imageUrl: string | null;
@@ -290,6 +291,7 @@ export function mergeWithDb(dbProducts: DbCatalogProduct[]): ProductDetail[] {
       rating: typeof dp.rating === 'string' ? parseFloat(dp.rating) : dp.rating,
       sold: dp.sold || (base?.sold ?? ''),
       region: dp.region || (base?.region ?? ''),
+      regionGroup: dp.regionGroup ?? base?.regionGroup ?? null,
       category: dp.categorySlug,
       verified: dp.verified,
       badges: (dp.badges ?? base?.badges ?? []) as ProductDetail['badges'],

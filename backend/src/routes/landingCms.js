@@ -623,12 +623,13 @@ adminRouter.delete('/testimonials/:id', async (req, res, next) => {
 // ---- Catalog products CRUD ----
 const PRODUCT_FIELDS = [
   'slug', 'categorySlug', 'name', 'art', 'tone', 'price', 'was',
-  'rating', 'sold', 'region', 'verified', 'badges', 'imageUrl',
+  'rating', 'sold', 'region', 'regionGroup', 'verified', 'badges', 'imageUrl',
   'brand', 'origin', 'weight', 'certifications', 'distributor', 'description', 'thumbs',
   'producerName', 'producerHometown', 'producerUnit', 'producerContribution', 'producerPhotoUrl',
   'isActive', 'displayOrder',
 ];
 const VALID_TONES = new Set(['paper', 'red', 'olive', 'gold']);
+const VALID_REGION_GROUPS = new Set(['bac', 'trung', 'nam', 'tay_nguyen']);
 
 function normalizeProductPayload(body) {
   const data = pick(body, PRODUCT_FIELDS);
@@ -642,6 +643,13 @@ function normalizeProductPayload(body) {
   }
   if (data.tone && !VALID_TONES.has(data.tone)) {
     return { error: 'tone must be one of: paper, red, olive, gold' };
+  }
+  if ('regionGroup' in data) {
+    if (data.regionGroup === '' || data.regionGroup === null || data.regionGroup === undefined) {
+      data.regionGroup = null;
+    } else if (!VALID_REGION_GROUPS.has(data.regionGroup)) {
+      return { error: 'regionGroup must be one of: bac, trung, nam, tay_nguyen (or empty for none)' };
+    }
   }
   return { data };
 }
