@@ -204,6 +204,12 @@
   transition: opacity .25s ease;
 }
 
+/* Senior hero secondary CTA hover */
+.ccb-landing .ccb-cta-secondary-light:hover {
+  background: rgba(255,248,231,0.22) !important;
+  border-color: #FFFFFF !important;
+}
+
 /* Body min font 18px throughout the senior landing — already mostly done inline,
    but enforce as a safety net for any inherited content */
 .ccb-landing { font-size: 18px; line-height: 1.55; }

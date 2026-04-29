@@ -71,20 +71,34 @@ export function SeniorHero({ data }: { data?: HeroData }) {
         }}>
           {subtitle}
         </p>
-        <a href={ctaHref} style={{
-          display: 'inline-flex', alignItems: 'center', gap: 10,
-          marginTop: 40,
-          background: olive, color: '#FFFFFF',
-          fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 20,
-          padding: '18px 36px', borderRadius: 8,
-          minHeight: 56,
-          boxShadow: '0 6px 20px rgba(0,0,0,0.35)',
-          textDecoration: 'none',
-          transition: 'background 0.15s ease, transform 0.15s ease',
-        }} className="ccb-cta-primary">
-          <ShoppingCart size={22} />
-          {ctaText}
-        </a>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 14, marginTop: 40 }}>
+          <a href={ctaHref} style={{
+            display: 'inline-flex', alignItems: 'center', gap: 10,
+            background: olive, color: '#FFFFFF',
+            fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 20,
+            padding: '18px 36px', borderRadius: 8,
+            minHeight: 56,
+            boxShadow: '0 6px 20px rgba(0,0,0,0.35)',
+            textDecoration: 'none',
+            transition: 'background 0.15s ease, transform 0.15s ease',
+          }} className="ccb-cta-primary">
+            <ShoppingCart size={22} />
+            {ctaText}
+          </a>
+          <a href="/connect" style={{
+            display: 'inline-flex', alignItems: 'center', gap: 10,
+            background: 'rgba(255,248,231,0.10)', color: '#FFFFFF',
+            border: '2px solid rgba(255,248,231,0.45)',
+            fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 18,
+            padding: '16px 28px', borderRadius: 8,
+            minHeight: 56,
+            backdropFilter: 'blur(4px)',
+            textDecoration: 'none',
+            transition: 'background 0.15s ease, border-color 0.15s ease',
+          }} className="ccb-cta-secondary-light">
+            🤝 Tìm nhu yếu phẩm từ CCB
+          </a>
+        </div>
       </div>
     </section>
   );

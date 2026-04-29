@@ -127,8 +127,15 @@ export function ConnectListingsSection({ listings = DEFAULT_LISTINGS }: { listin
 
 function ConnectCard({ listing }: { listing: ConnectListing }) {
   const { iconEmoji, productName, veteranName, province, priceText, priceNote, zaloUrl, callTimes } = listing;
-  const href = zaloUrl ?? '#';
   const upperName = veteranName.toUpperCase();
+  const onZaloClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    if (zaloUrl) return; // real Zalo URL — let browser navigate
+    e.preventDefault();
+    if (typeof window !== 'undefined') {
+      const ok = window.confirm(`Mở Zalo để kết nối trực tiếp với ${veteranName} (${province})?\n\n(Demo — bản chính thức sẽ mở zalo.me/<số điện thoại>)`);
+      if (ok) window.alert('Đang mở Zalo… (placeholder demo)');
+    }
+  };
   return (
     <article className="ccb-connect-card" style={{
       background: '#FFFFFF',
@@ -164,7 +171,8 @@ function ConnectCard({ listing }: { listing: ConnectListing }) {
         }}>{priceNote}</small>
       </div>
       <a
-        href={href}
+        href={zaloUrl ?? '/connect'}
+        onClick={onZaloClick}
         target={zaloUrl ? '_blank' : undefined}
         rel={zaloUrl ? 'noopener noreferrer' : undefined}
         className="ccb-zalo-btn"

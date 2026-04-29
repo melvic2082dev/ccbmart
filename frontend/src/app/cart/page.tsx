@@ -5,16 +5,27 @@ import Link from 'next/link';
 import { LandingShell } from '@/components/landing/LandingShell';
 import { ProductArt, formatVnd } from '@/components/landing/primitives';
 
-const cartItems = [
-  { slug: 'gao-st25-soc-trang', name: 'Gạo ST25 Sóc Trăng, 5kg', art: 'Gạo\nST25', tone: 'gold' as const, unit: 187000, qty: 2 },
-  { slug: 'nuoc-mam-phu-quoc', name: 'Nước mắm Phú Quốc 40 độ đạm', art: 'Nước mắm\nPhú Quốc', tone: 'red' as const, unit: 125000, qty: 1 },
-  { slug: 'tra-shan-tuyet-ha-giang', name: 'Trà Shan Tuyết Hà Giang', art: 'Trà\nShan Tuyết', tone: 'olive' as const, unit: 240000, qty: 1 },
+type CartItem = { slug: string; name: string; art: string; tone: 'paper' | 'red' | 'olive' | 'gold'; unit: number; qty: number };
+
+const INITIAL_ITEMS: CartItem[] = [
+  { slug: 'gao-st25-soc-trang', name: 'Gạo ST25 Sóc Trăng, 5kg', art: 'Gạo\nST25', tone: 'gold', unit: 187000, qty: 2 },
+  { slug: 'nuoc-mam-phu-quoc', name: 'Nước mắm Phú Quốc 40 độ đạm', art: 'Nước mắm\nPhú Quốc', tone: 'red', unit: 125000, qty: 1 },
+  { slug: 'tra-shan-tuyet-ha-giang', name: 'Trà Shan Tuyết Hà Giang', art: 'Trà\nShan Tuyết', tone: 'olive', unit: 240000, qty: 1 },
 ];
 
 export default function CartPage() {
+  const [cartItems, setCartItems] = useState<CartItem[]>(INITIAL_ITEMS);
   const subtotal = cartItems.reduce((s, it) => s + it.unit * it.qty, 0);
   const memberDiscount = Math.round(subtotal * 0.05);
   const total = subtotal - memberDiscount;
+
+  const setQty = (slug: string, qty: number) => {
+    if (qty <= 0) {
+      setCartItems((prev) => prev.filter((it) => it.slug !== slug));
+    } else {
+      setCartItems((prev) => prev.map((it) => it.slug === slug ? { ...it, qty } : it));
+    }
+  };
 
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -76,14 +87,35 @@ export default function CartPage() {
                     <div style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 4 }}>Đơn giá: {formatVnd(it.unit)}</div>
                   </div>
                   <div style={{ display: 'inline-flex', alignItems: 'center', border: '1px solid var(--line-strong)', borderRadius: 4 }}>
-                    <button style={{ border: 'none', background: 'transparent', padding: '6px 10px', cursor: 'pointer' }}>−</button>
-                    <span style={{ padding: '0 12px', fontWeight: 600 }}>{it.qty}</span>
-                    <button style={{ border: 'none', background: 'transparent', padding: '6px 10px', cursor: 'pointer' }}>+</button>
+                    <button
+                      type="button"
+                      onClick={() => setQty(it.slug, it.qty - 1)}
+                      aria-label="Giảm số lượng"
+                      disabled={submitted}
+                      style={{ border: 'none', background: 'transparent', padding: '6px 10px', cursor: 'pointer', fontSize: 16 }}
+                    >−</button>
+                    <span style={{ padding: '0 12px', fontWeight: 600, minWidth: 24, textAlign: 'center' }}>{it.qty}</span>
+                    <button
+                      type="button"
+                      onClick={() => setQty(it.slug, it.qty + 1)}
+                      aria-label="Tăng số lượng"
+                      disabled={submitted}
+                      style={{ border: 'none', background: 'transparent', padding: '6px 10px', cursor: 'pointer', fontSize: 16 }}
+                    >+</button>
                   </div>
                   <div style={{ textAlign: 'right', minWidth: 110 }}>
                     <div style={{ fontFamily: 'var(--font-display)', fontWeight: 800, color: 'var(--ccb-red)', fontSize: 16 }}>
                       {formatVnd(it.unit * it.qty)}
                     </div>
+                    <button
+                      type="button"
+                      onClick={() => setQty(it.slug, 0)}
+                      disabled={submitted}
+                      style={{
+                        marginTop: 4, padding: 0, background: 'transparent', border: 'none',
+                        color: 'var(--ink-3)', fontSize: 12, cursor: 'pointer',
+                      }}
+                    >Xoá</button>
                   </div>
                 </div>
               ))}
