@@ -143,7 +143,7 @@ export default function AdminLandingCmsPage() {
         </div>
       )}
 
-      <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)}>
+      <Tabs value={tab} onValueChange={(v) => v && setTab(v as typeof tab)}>
         <TabsList className="flex-wrap h-auto">
           <TabsTrigger value="hero">Hero</TabsTrigger>
           <TabsTrigger value="whyUs">Tại sao</TabsTrigger>
@@ -540,7 +540,7 @@ function TrustItemsEditor({ items, onChanged, onError }: {
               value={draft.subtitle}
               onChange={(e) => setDraft({ ...draft, subtitle: e.target.value })}
             />
-            <Select value={draft.iconName} onValueChange={(v) => setDraft({ ...draft, iconName: v })}>
+            <Select value={draft.iconName} onValueChange={(v) => setDraft({ ...draft, iconName: v ?? 'ShieldCheck' })}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
                 {TRUST_ICON_OPTIONS.map((n) => <SelectItem key={n} value={n}>{n}</SelectItem>)}
@@ -619,7 +619,7 @@ function TrustItemRow({ item, onChanged, onError }: {
       <div className="grid sm:grid-cols-4 gap-2">
         <Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="Tiêu đề" />
         <Input value={form.subtitle} onChange={(e) => setForm({ ...form, subtitle: e.target.value })} placeholder="Subtitle" />
-        <Select value={form.iconName} onValueChange={(v) => setForm({ ...form, iconName: v })}>
+        <Select value={form.iconName} onValueChange={(v) => setForm({ ...form, iconName: v ?? 'ShieldCheck' })}>
           <SelectTrigger><SelectValue /></SelectTrigger>
           <SelectContent>
             {TRUST_ICON_OPTIONS.map((n) => <SelectItem key={n} value={n}>{n}</SelectItem>)}
@@ -749,7 +749,7 @@ function FeaturedSection({ label, section, items, allProducts, usedSlugs, onChan
         })}
       </div>
       <div className="flex gap-2 pt-2">
-        <Select value={draftSlug} onValueChange={setDraftSlug}>
+        <Select value={draftSlug} onValueChange={(v) => setDraftSlug(v ?? '')}>
           <SelectTrigger className="flex-1"><SelectValue placeholder="Chọn sản phẩm…" /></SelectTrigger>
           <SelectContent>
             {available.map((p) => <SelectItem key={p.slug} value={p.slug}>{p.name}</SelectItem>)}
@@ -938,7 +938,7 @@ function CatalogEditor({ onError, onSuccess }: {
               onChange={(e) => { setSearch(e.target.value); setPage(1); }}
             />
           </div>
-          <Select value={category || '__all'} onValueChange={(v) => { setCategory(v === '__all' ? '' : v); setPage(1); }}>
+          <Select value={category || '__all'} onValueChange={(v) => { setCategory(v === '__all' || v == null ? '' : v); setPage(1); }}>
             <SelectTrigger className="w-[220px]"><SelectValue placeholder="Tất cả danh mục" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="__all">Tất cả danh mục</SelectItem>
@@ -1104,7 +1104,7 @@ function ProductEditDialog({ product, onClose, onSaved, onError }: {
               <Input value={form.name} onChange={(e) => set('name', e.target.value)} />
             </Field>
             <Field label="Danh mục">
-              <Select value={form.categorySlug} onValueChange={(v) => set('categorySlug', v)}>
+              <Select value={form.categorySlug} onValueChange={(v) => set('categorySlug', v ?? form.categorySlug)}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {CATEGORIES.map((c) => <SelectItem key={c.slug} value={c.slug}>{c.name}</SelectItem>)}
@@ -1149,7 +1149,7 @@ function ProductEditDialog({ product, onClose, onSaved, onError }: {
               <Input value={form.art} onChange={(e) => set('art', e.target.value)} placeholder="vd: GẠO\nST25" />
             </Field>
             <Field label="Tone (màu nền khi không có ảnh)">
-              <Select value={form.tone} onValueChange={(v) => set('tone', v)}>
+              <Select value={form.tone} onValueChange={(v) => set('tone', v ?? form.tone)}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {TONE_OPTIONS.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
@@ -1170,7 +1170,7 @@ function ProductEditDialog({ product, onClose, onSaved, onError }: {
               {(form.badges ?? []).map((b, i) => (
                 <div key={i} className="flex gap-2">
                   <Input className="flex-1" placeholder="Label (vd: −15%, Hot)" value={b.label} onChange={(e) => updateBadge(i, 'label', e.target.value)} />
-                  <Select value={b.variant} onValueChange={(v) => updateBadge(i, 'variant', v)}>
+                  <Select value={b.variant} onValueChange={(v) => updateBadge(i, 'variant', v ?? b.variant)}>
                     <SelectTrigger className="w-[120px]"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       {BADGE_VARIANT_OPTIONS.map((v) => <SelectItem key={v} value={v}>{v}</SelectItem>)}
@@ -1443,7 +1443,7 @@ function CategoryEditDialog({ category, onClose, onSaved, onError }: {
             <Input type="number" value={form.productCount} onChange={(e) => set('productCount', parseInt(e.target.value, 10) || 0)} />
           </Field>
           <Field label="Icon">
-            <Select value={form.icon} onValueChange={(v) => set('icon', v)}>
+            <Select value={form.icon} onValueChange={(v) => set('icon', v ?? form.icon)}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
                 {ICON_OPTIONS.map((i) => <SelectItem key={i} value={i}>{i}</SelectItem>)}
@@ -1451,7 +1451,7 @@ function CategoryEditDialog({ category, onClose, onSaved, onError }: {
             </Select>
           </Field>
           <Field label="Tone">
-            <Select value={form.tone} onValueChange={(v) => set('tone', v)}>
+            <Select value={form.tone} onValueChange={(v) => set('tone', v ?? form.tone)}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
                 {TONE_OPTIONS.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
@@ -1927,7 +1927,7 @@ function FundEntryDialog({ entry, onClose, onSaved, onError }: {
               <Input type="date" value={form.occurredAt.slice(0, 10)} onChange={(e) => set('occurredAt', new Date(e.target.value).toISOString())} />
             </Field>
             <Field label="Loại">
-              <Select value={form.type} onValueChange={(v) => set('type', v as 'in' | 'out')}>
+              <Select value={form.type} onValueChange={(v) => set('type', (v ?? 'in') as 'in' | 'out')}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="in">Thu</SelectItem>

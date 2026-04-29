@@ -291,7 +291,7 @@ export function mergeWithDb(dbProducts: DbCatalogProduct[]): ProductDetail[] {
       region: dp.region || (base?.region ?? ''),
       category: dp.categorySlug,
       verified: dp.verified,
-      badges: dp.badges ?? base?.badges ?? [],
+      badges: (dp.badges ?? base?.badges ?? []) as ProductDetail['badges'],
       imageUrl: dp.imageUrl ?? base?.imageUrl ?? null,
       // Rich fields — DB if non-empty, else hardcoded base, else default placeholder
       brand: dp.brand && dp.brand !== '—' ? dp.brand : (base?.brand ?? '—'),
