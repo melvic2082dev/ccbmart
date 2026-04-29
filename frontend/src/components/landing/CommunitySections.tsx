@@ -23,8 +23,8 @@ export function WhyUsSection({ data }: { data?: WhyUsData } = {}) {
   const body = data?.body ?? 'CCB Mart sinh ra từ trăn trở của những người lính trở về đời thường: nhiều đồng đội năm xưa nay tuổi đã cao, vẫn miệt mài làm nông, chăn nuôi, sản xuất đặc sản quê hương — nhưng đầu ra lại bấp bênh. Mỗi sản phẩm trên kệ hàng là một câu chuyện, mỗi đơn hàng là một nghĩa cử.';
 
   return (
-    <section style={{ background: 'var(--paper-1)', borderTop: '1px solid var(--line)', borderBottom: '1px solid var(--line)' }}>
-      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '64px 24px',
+    <section id="cau-chuyen" style={{ background: 'var(--paper-1)', borderTop: '1px solid var(--line)', borderBottom: '1px solid var(--line)' }}>
+      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '96px 24px',
         display: 'grid', gridTemplateColumns: data?.imageUrl ? '1fr 1fr' : '1fr', gap: 48, alignItems: 'center' }} className="ccb-whyus-grid">
         <div>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
@@ -75,7 +75,7 @@ export function CoreValuesSection({ items }: { items?: TrustItemData[] } = {}) {
     : fallback;
 
   return (
-    <section style={{ background: 'var(--paper-0)', padding: '56px 0', borderBottom: '1px solid var(--line)' }}>
+    <section style={{ background: 'var(--paper-0)', padding: '80px 0', borderBottom: '1px solid var(--line)' }}>
       <div style={{ maxWidth: 1600, margin: '0 auto', padding: '0 24px' }}>
         <SectionHead eyebrow="Điều cốt lõi" title="Giá trị mà CCB Mart cam kết" />
         <div style={{
@@ -124,10 +124,10 @@ export type CommunityPhotoData = {
 export function CommunityJourneySection({ photos }: { photos?: CommunityPhotoData[] } = {}) {
   if (!photos || photos.length === 0) return null;
   return (
-    <section style={{ background: 'var(--paper-1)', padding: '64px 0', borderTop: '1px solid var(--line)', borderBottom: '1px solid var(--line)' }}>
+    <section id="hanh-trinh-nghia-tinh" style={{ background: 'var(--paper-1)', padding: '96px 0', borderTop: '1px solid var(--line)', borderBottom: '1px solid var(--line)' }}>
       <div style={{ maxWidth: 1600, margin: '0 auto', padding: '0 24px' }}>
-        <SectionHead eyebrow="Việc làm thật" title="Hành trình kết nối — Hoạt động cộng đồng"
-          link="Xem tất cả hoạt động" linkHref="/about" />
+        <SectionHead eyebrow="Việc làm thật" title="Hành trình nghĩa tình — Hoạt động gần đây"
+          link="Xem tất cả hoạt động" linkHref="#hanh-trinh-nghia-tinh" />
         <div style={{
           display: 'grid', gridTemplateColumns: `repeat(${Math.min(photos.length, 4)}, 1fr)`, gap: 16, marginTop: 28,
         }} className="ccb-journey-grid">
@@ -191,61 +191,98 @@ const fmtVND = (n: number) => n.toLocaleString('vi-VN');
 
 export function TransparencyFundSection({ entries }: { entries?: FundEntryData[] } = {}) {
   if (!entries || entries.length === 0) return null;
-  const totalIn = entries.filter((e) => e.type === 'in').reduce((s, e) => s + e.amount, 0);
-  const totalOut = entries.filter((e) => e.type === 'out').reduce((s, e) => s + e.amount, 0);
-  const balance = entries[0]?.balance ?? totalIn - totalOut;
+
+  // Compute current-month vs all-time stats. Current month = newest entry's month.
+  const newest = entries[0];
+  const newestDate = new Date(newest.occurredAt);
+  const curMonth = newestDate.getMonth();
+  const curYear = newestDate.getFullYear();
+  const monthLabel = `${String(curMonth + 1).padStart(2, '0')}/${curYear}`;
+
+  const inMonth = (e: FundEntryData) => {
+    const d = new Date(e.occurredAt);
+    return d.getMonth() === curMonth && d.getFullYear() === curYear;
+  };
+  const monthIn = entries.filter((e) => inMonth(e) && e.type === 'in').reduce((s, e) => s + e.amount, 0);
+  const monthOuts = entries.filter((e) => inMonth(e) && e.type === 'out');
+  const monthOutTotal = monthOuts.reduce((s, e) => s + e.amount, 0);
+  const monthRemaining = Math.max(0, monthIn - monthOutTotal);
+
+  const outsSummary = monthOuts.length > 0
+    ? monthOuts.map((e) => e.description).join(' · ')
+    : '—';
 
   return (
-    <section style={{ background: 'var(--paper-0)', padding: '64px 0', borderBottom: '1px solid var(--line)' }}>
+    <section id="minh-bach-quy" style={{ background: '#F0F4F0', padding: '96px 0', borderTop: '1px solid var(--line)', borderBottom: '1px solid var(--line)' }}>
       <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px' }}>
-        <SectionHead eyebrow="Minh bạch tuyệt đối" title="Quỹ Vì đồng đội — công khai mỗi tháng" />
+        <SectionHead eyebrow="Dashboard minh bạch" title={`Quỹ Vì đồng đội — Tháng ${monthLabel}`} />
 
-        {/* Top stats */}
+        {/* 3 KPI cards — month summary */}
         <div style={{
-          marginTop: 24, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12,
+          marginTop: 32, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 16,
         }}>
-          <FundStat label="Đã nhận" value={`+${fmtVND(totalIn)} ₫`} variant="in" />
-          <FundStat label="Đã chi" value={`−${fmtVND(totalOut)} ₫`} variant="out" />
-          <FundStat label="Số dư hiện tại" value={`${fmtVND(balance)} ₫`} variant="balance" />
+          <FundKpiCard
+            label={`Tổng thu từ 1% – Tháng ${monthLabel}`}
+            value={`${fmtVND(monthIn)} ₫`}
+            variant="in"
+            note="Trích 1% trên doanh thu mọi đơn hàng"
+          />
+          <FundKpiCard
+            label="Đã trao trong tháng"
+            value={`${fmtVND(monthOutTotal)} ₫`}
+            variant="out"
+            note={outsSummary}
+          />
+          <FundKpiCard
+            label={`Còn lại cho Tháng ${String(curMonth + 2).padStart(2, '0')}/${curYear}`}
+            value={`${fmtVND(monthRemaining)} ₫`}
+            variant="balance"
+            note="Sẽ ưu tiên hỗ trợ CCB neo đơn"
+          />
         </div>
 
-        {/* Timeline */}
-        <div style={{ marginTop: 24, background: '#FFFFFF', border: '1px solid var(--line)', borderRadius: 8, overflow: 'hidden' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
-            <thead style={{ background: 'var(--paper-1)' }}>
-              <tr>
-                <th style={tH}>Ngày</th>
-                <th style={tH}>Loại</th>
-                <th style={{ ...tH, textAlign: 'right' }}>Số tiền</th>
-                <th style={tH}>Mô tả</th>
-                <th style={{ ...tH, textAlign: 'right' }}>Số dư</th>
-              </tr>
-            </thead>
-            <tbody>
-              {entries.slice(0, 8).map((e) => (
-                <tr key={e.id} style={{ borderTop: '1px solid var(--line)' }}>
-                  <td style={tD}>{new Date(e.occurredAt).toLocaleDateString('vi-VN')}</td>
-                  <td style={tD}>
-                    <span style={{
-                      display: 'inline-block', padding: '2px 8px', borderRadius: 999, fontSize: 11, fontWeight: 700,
-                      background: e.type === 'in' ? 'var(--ccb-olive-tint)' : 'var(--ccb-red-tint)',
-                      color: e.type === 'in' ? 'var(--ccb-olive-dark)' : 'var(--ccb-red)',
-                    }}>{e.type === 'in' ? 'Thu' : 'Chi'}</span>
-                  </td>
-                  <td style={{ ...tD, textAlign: 'right', fontVariantNumeric: 'tabular-nums', color: e.type === 'in' ? 'var(--ccb-olive-dark)' : 'var(--ccb-red)' }}>
-                    {e.type === 'in' ? '+' : '−'}{fmtVND(e.amount)} ₫
-                  </td>
-                  <td style={tD}>{e.description}</td>
-                  <td style={{ ...tD, textAlign: 'right', fontVariantNumeric: 'tabular-nums', color: 'var(--ink-3)' }}>
-                    {e.balance != null ? `${fmtVND(e.balance)} ₫` : '—'}
-                  </td>
+        {/* Timeline (history) */}
+        <div style={{ marginTop: 32 }}>
+          <h3 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 18, color: 'var(--ink-1)', margin: '0 0 12px' }}>
+            Lịch sử giao dịch
+          </h3>
+          <div style={{ background: '#FFFFFF', border: '1px solid var(--line)', borderRadius: 8, overflow: 'hidden' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
+              <thead style={{ background: 'var(--paper-1)' }}>
+                <tr>
+                  <th style={tH}>Ngày</th>
+                  <th style={tH}>Loại</th>
+                  <th style={{ ...tH, textAlign: 'right' }}>Số tiền</th>
+                  <th style={tH}>Mô tả</th>
+                  <th style={{ ...tH, textAlign: 'right' }}>Số dư</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {entries.slice(0, 8).map((e) => (
+                  <tr key={e.id} style={{ borderTop: '1px solid var(--line)' }}>
+                    <td style={tD}>{new Date(e.occurredAt).toLocaleDateString('vi-VN')}</td>
+                    <td style={tD}>
+                      <span style={{
+                        display: 'inline-block', padding: '2px 8px', borderRadius: 999, fontSize: 11, fontWeight: 700,
+                        background: e.type === 'in' ? 'var(--ccb-olive-tint)' : 'var(--ccb-red-tint)',
+                        color: e.type === 'in' ? 'var(--ccb-olive-dark)' : 'var(--ccb-red)',
+                      }}>{e.type === 'in' ? 'Thu' : 'Chi'}</span>
+                    </td>
+                    <td style={{ ...tD, textAlign: 'right', fontVariantNumeric: 'tabular-nums', color: e.type === 'in' ? 'var(--ccb-olive-dark)' : 'var(--ccb-red)' }}>
+                      {e.type === 'in' ? '+' : '−'}{fmtVND(e.amount)} ₫
+                    </td>
+                    <td style={tD}>{e.description}</td>
+                    <td style={{ ...tD, textAlign: 'right', fontVariantNumeric: 'tabular-nums', color: 'var(--ink-3)' }}>
+                      {e.balance != null ? `${fmtVND(e.balance)} ₫` : '—'}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
-        <p style={{ marginTop: 12, fontSize: 12, color: 'var(--ink-3)', fontStyle: 'italic' }}>
-          Sao kê chi tiết được công khai mỗi tháng. Mọi khoản chi đều có biên lai và xác nhận của Hội Cựu Chiến Binh địa phương.
+        <p style={{ marginTop: 16, fontSize: 12.5, color: 'var(--ink-3)', fontStyle: 'italic', textAlign: 'center' }}>
+          Sao kê chi tiết công khai mỗi tháng. Mọi khoản chi đều có biên lai và xác nhận của Hội Cựu Chiến Binh địa phương.
         </p>
       </div>
     </section>
@@ -255,20 +292,38 @@ export function TransparencyFundSection({ entries }: { entries?: FundEntryData[]
 const tH: React.CSSProperties = { textAlign: 'left', padding: '12px 16px', fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 12, letterSpacing: '0.04em', textTransform: 'uppercase', color: 'var(--ink-3)' };
 const tD: React.CSSProperties = { padding: '12px 16px', fontFamily: 'var(--font-body)', color: 'var(--ink-1)' };
 
-function FundStat({ label, value, variant }: { label: string; value: string; variant: 'in' | 'out' | 'balance' }) {
-  const palette = variant === 'in' ? { bg: 'var(--ccb-olive-tint)', fg: 'var(--ccb-olive-dark)' }
-    : variant === 'out' ? { bg: 'var(--ccb-red-tint)', fg: 'var(--ccb-red)' }
-    : { bg: '#F5E9C9', fg: 'var(--ccb-gold-dark)' };
+function FundKpiCard({ label, value, variant, note }: { label: string; value: string; variant: 'in' | 'out' | 'balance'; note?: string }) {
+  const palette = variant === 'in' ? { fg: 'var(--ccb-olive-dark)', accent: 'var(--ccb-olive)' }
+    : variant === 'out' ? { fg: 'var(--ccb-red)', accent: 'var(--ccb-red)' }
+    : { fg: 'var(--ccb-gold-dark)', accent: 'var(--ccb-gold)' };
   return (
     <div style={{
-      background: palette.bg, borderRadius: 8, padding: '16px 18px',
+      background: '#FFFFFF', borderRadius: 10, padding: '24px 24px 20px',
+      borderLeft: `4px solid ${palette.accent}`,
+      boxShadow: 'var(--shadow-sm)',
     }}>
-      <div style={{ fontFamily: 'var(--font-body)', fontSize: 11, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: palette.fg, opacity: 0.85 }}>
+      <div style={{
+        fontFamily: 'var(--font-body)', fontSize: 12, fontWeight: 700,
+        letterSpacing: '0.04em', textTransform: 'uppercase',
+        color: 'var(--ink-3)',
+      }}>
         {label}
       </div>
-      <div style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 24, color: palette.fg, marginTop: 4, fontVariantNumeric: 'tabular-nums' }}>
+      <div style={{
+        fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 30, lineHeight: 1.1,
+        color: palette.fg, marginTop: 8, fontVariantNumeric: 'tabular-nums',
+      }}>
         {value}
       </div>
+      {note && (
+        <div style={{
+          fontFamily: 'var(--font-body)', fontSize: 13, color: 'var(--ink-2)',
+          marginTop: 12, paddingTop: 12, borderTop: '1px solid var(--line)',
+          lineHeight: 1.45,
+        }}>
+          {note}
+        </div>
+      )}
     </div>
   );
 }
@@ -287,7 +342,7 @@ export type TestimonialData = {
 export function CCBTestimonialsSection({ items }: { items?: TestimonialData[] } = {}) {
   if (!items || items.length === 0) return null;
   return (
-    <section style={{ background: 'var(--paper-1)', padding: '64px 0', borderTop: '1px solid var(--line)', borderBottom: '1px solid var(--line)' }}>
+    <section id="tieng-noi" style={{ background: 'var(--paper-1)', padding: '96px 0', borderTop: '1px solid var(--line)', borderBottom: '1px solid var(--line)' }}>
       <div style={{ maxWidth: 1600, margin: '0 auto', padding: '0 24px' }}>
         <SectionHead eyebrow="Tiếng nói chiến hữu" title="Đồng đội giúp đồng đội" />
         <div style={{

@@ -42,14 +42,14 @@ export function ProductGrid({
   linkHref?: string;
 }) {
   return (
-    <section id={id} style={{ background: 'var(--paper-0)', padding: '48px 0', borderBottom: '1px solid var(--line)' }}>
+    <section id={id} style={{ background: 'var(--paper-0)', padding: '80px 0', borderBottom: '1px solid var(--line)' }}>
       <div style={{ maxWidth: 1600, margin: '0 auto', padding: '0 24px' }}>
         <SectionHead eyebrow={eyebrow} title={title} link={link} linkHref={linkHref} />
         <div style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-          gap: 16, marginTop: 24,
-        }}>
+          gap: 20, marginTop: 32,
+        }} className="ccb-product-grid">
           {products.map((p) => <ProductCard key={p.id} product={p} />)}
         </div>
       </div>
@@ -58,15 +58,18 @@ export function ProductGrid({
 }
 
 export function ProductCard({ product }: { product: Product }) {
-  const { slug, name, art, tone, price, was, rating, sold, region, badges = [], verified, imageUrl, producerName, producerHometown } = product;
+  const { slug, name, art, tone, price, was, rating, sold, region, badges = [], verified, imageUrl, producerName, producerHometown, producerContribution } = product;
   const href = slug ? `/product/${slug}` : '#';
+  // Default 1% contribution if not explicitly set
+  const contribution = producerContribution ?? Math.round(price * 0.01);
   return (
-    <Link href={href} style={{
+    <Link href={href} className="ccb-product-card" style={{
       background: '#FFFFFF', border: '1px solid var(--line)',
       borderRadius: 8, overflow: 'hidden',
       boxShadow: 'var(--shadow-sm)',
       display: 'flex', flexDirection: 'column',
       color: 'inherit',
+      transition: 'transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease',
     }}>
       <div style={{ position: 'relative', height: 170 }}>
         {imageUrl ? (
@@ -74,7 +77,18 @@ export function ProductCard({ product }: { product: Product }) {
         ) : (
           <ProductArt label={art} tone={tone} />
         )}
-        <div style={{ position: 'absolute', top: 8, left: 8, display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+        <div style={{ position: 'absolute', top: 8, left: 8, display: 'flex', gap: 4, flexWrap: 'wrap', maxWidth: 'calc(100% - 16px)' }}>
+          {producerHometown && (
+            <span style={{
+              display: 'inline-flex', alignItems: 'center', gap: 3,
+              background: 'var(--ccb-red)', color: '#FFFFFF',
+              padding: '3px 8px', borderRadius: 4,
+              fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 10,
+              letterSpacing: '0.02em',
+            }}>
+              <BadgeCheck size={10} /> Từ CCB {producerHometown.split(',')[0]}
+            </span>
+          )}
           {badges.map((b, i) => <Badge key={i} variant={b.variant}>{b.label}</Badge>)}
         </div>
         {verified && (
@@ -121,13 +135,25 @@ export function ProductCard({ product }: { product: Product }) {
           </span>
           {was && <span style={{ fontSize: 12, color: 'var(--ink-4)', textDecoration: 'line-through' }}>{formatVnd(was)}</span>}
         </div>
-        <span style={{
+        {/* 1% contribution caption — visible only when there's a real producer (skips fallback hardcoded items) */}
+        {producerName && contribution > 0 && (
+          <div style={{
+            marginTop: 8, padding: '6px 10px',
+            background: 'var(--ccb-olive-tint)', borderRadius: 4,
+            fontFamily: 'var(--font-body)', fontSize: 11, color: 'var(--ccb-olive-dark)',
+            fontWeight: 600, lineHeight: 1.4,
+          }}>
+            Mua sản phẩm này → góp <strong>{formatVnd(contribution)}</strong> vào quỹ Vì đồng đội
+          </div>
+        )}
+        <span className="ccb-product-cta" style={{
           marginTop: 12,
-          background: 'transparent', color: 'var(--ccb-red)',
-          border: '1px solid var(--ccb-red)',
+          background: 'transparent', color: 'var(--ccb-olive-dark)',
+          border: '1px solid var(--ccb-olive)',
           borderRadius: 4, padding: '8px 12px',
           fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 13,
           display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+          transition: 'background 0.15s ease, color 0.15s ease',
         }}>
           <ShoppingCart size={14} />
           Xem chi tiết

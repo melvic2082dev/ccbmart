@@ -14,20 +14,22 @@ const COMMUNITY_PHOTOS = [
   { caption: 'Họp mặt CCB Quân khu 7 — kết nối nhà cung cấp đặc sản miền Đông', impactValue: '38', impactLabel: 'CCB tham dự', displayOrder: 3 },
 ];
 
-const NOW = new Date();
-const monthsAgo = (n: number) => {
-  const d = new Date(NOW);
-  d.setMonth(d.getMonth() - n);
-  return d;
-};
-
+// Concrete Apr 2026 narrative per design spec:
+//   Thu  Apr 2026: 2.450.000 ₫ (trích 1% doanh thu)
+//   Chi  Apr 2026: 2 suất quà Hà Giang (600k) + Hỗ trợ phẫu thuật Nghệ An (1.400k) = 2.000k
+//   Còn  cho May 2026: 450.000 ₫
+// Running balance assumes a 1.000.000 ₫ carry-over opening at start of Feb 2026.
 const FUND_ENTRIES = [
-  { occurredAt: monthsAgo(0), type: 'in', amount: 18_500_000, description: 'Trích 1% doanh thu tháng 4 (đơn online)', balance: 84_300_000, displayOrder: 0 },
-  { occurredAt: monthsAgo(0), type: 'out', amount: 12_000_000, description: 'Trao 12 phần quà CCB Hà Giang (300k/suất)', balance: 65_800_000, displayOrder: 1 },
-  { occurredAt: monthsAgo(1), type: 'in', amount: 22_100_000, description: 'Trích 1% doanh thu tháng 3', balance: 77_800_000, displayOrder: 2 },
-  { occurredAt: monthsAgo(1), type: 'out', amount: 15_000_000, description: 'Hỗ trợ chi phí mổ tim CCB Lê Văn N. — Đắk Lắk', balance: 55_700_000, displayOrder: 3 },
-  { occurredAt: monthsAgo(2), type: 'in', amount: 19_300_000, description: 'Trích 1% doanh thu tháng 2', balance: 70_700_000, displayOrder: 4 },
-  { occurredAt: monthsAgo(3), type: 'out', amount: 8_500_000, description: 'Quà Tết 17 hộ CCB neo đơn (500k/hộ)', balance: 51_400_000, displayOrder: 5 },
+  // April 2026 (current month) — newest first
+  { occurredAt: new Date('2026-04-25T09:00:00.000Z'), type: 'in', amount: 2_450_000, description: 'Trích 1% doanh thu tháng 4/2026 (đơn online + showroom)', balance: 3_230_000, displayOrder: 0 },
+  { occurredAt: new Date('2026-04-18T10:30:00.000Z'), type: 'out', amount: 1_400_000, description: 'Hỗ trợ chi phí phẫu thuật CCB tại Nghệ An', balance: 780_000, displayOrder: 1 },
+  { occurredAt: new Date('2026-04-08T08:00:00.000Z'), type: 'out', amount: 600_000, description: 'Trao 2 suất quà CCB tại Hà Giang (300.000 ₫/suất)', balance: 2_180_000, displayOrder: 2 },
+  // March 2026 history
+  { occurredAt: new Date('2026-03-26T09:00:00.000Z'), type: 'in', amount: 2_180_000, description: 'Trích 1% doanh thu tháng 3/2026', balance: 2_780_000, displayOrder: 3 },
+  { occurredAt: new Date('2026-03-15T10:00:00.000Z'), type: 'out', amount: 1_500_000, description: 'Hỗ trợ thuốc men CCB Lê Văn N. — Đắk Lắk', balance: 600_000, displayOrder: 4 },
+  // February 2026 history
+  { occurredAt: new Date('2026-02-28T09:00:00.000Z'), type: 'in', amount: 1_950_000, description: 'Trích 1% doanh thu tháng 2/2026', balance: 2_100_000, displayOrder: 5 },
+  { occurredAt: new Date('2026-02-10T10:00:00.000Z'), type: 'out', amount: 850_000, description: 'Quà Tết 3 hộ CCB neo đơn (Cao Bằng, Lạng Sơn)', balance: 150_000, displayOrder: 6 },
 ];
 
 const TESTIMONIALS = [
@@ -65,13 +67,10 @@ async function main() {
     console.log(`= Community photos already has ${existingPhotos} rows, skip`);
   }
 
-  const existingFund = await prisma.landingFundEntry.count();
-  if (existingFund === 0) {
-    await prisma.landingFundEntry.createMany({ data: FUND_ENTRIES });
-    console.log(`+ Seeded ${FUND_ENTRIES.length} fund entries`);
-  } else {
-    console.log(`= Fund entries already has ${existingFund} rows, skip`);
-  }
+  // Fund entries are curated monthly narrative — reseed to match the latest design spec.
+  await prisma.landingFundEntry.deleteMany({});
+  await prisma.landingFundEntry.createMany({ data: FUND_ENTRIES });
+  console.log(`+ Reseeded ${FUND_ENTRIES.length} fund entries (Apr 2026 narrative)`);
 
   const existingTestimonials = await prisma.landingTestimonial.count();
   if (existingTestimonials === 0) {

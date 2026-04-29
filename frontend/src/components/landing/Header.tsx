@@ -66,9 +66,10 @@ export function Header({ cartCount = 0, categories: categoriesProp }: { cartCoun
             </span>
           </div>
           <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
-            <Link href="/stores" style={{ color: 'inherit' }}>Hệ thống cửa hàng</Link>
-            <Link href="/about" style={{ color: 'inherit' }}>Về CCB Mart</Link>
-            <a href="#" style={{ color: 'inherit' }}>Hỗ trợ</a>
+            <Link href="/stores" style={{ color: 'inherit' }}>Cửa hàng</Link>
+            <Link href="/#hanh-trinh-nghia-tinh" style={{ color: 'inherit' }}>Hành trình nghĩa tình</Link>
+            <Link href="/#minh-bach-quy" style={{ color: 'inherit' }}>Minh bạch quỹ</Link>
+            <Link href="/about" style={{ color: 'inherit' }}>Liên hệ</Link>
           </div>
         </div>
       </div>

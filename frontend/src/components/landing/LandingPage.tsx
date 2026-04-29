@@ -77,33 +77,33 @@ export function LandingPage() {
   const deals = pickFrom(catalog, cmsDealSlugs.length > 0 ? cmsDealSlugs : defaultDealSlugs);
 
   return (
-    <LandingShell>
+    <LandingShell categories={allCategories}>
       {/* 1. Hero */}
       {(!content || content.hero.isActive !== false) && <Hero data={content?.hero} />}
 
-      {/* 2. Tại sao chúng tôi làm dự án này */}
-      <WhyUsSection data={content?.whyUs} />
-
-      {/* 3. Giá trị cốt lõi (replaces TrustBar) */}
+      {/* 2. Feature bar (Giá trị cốt lõi) — moved up, right after Hero */}
       <CoreValuesSection items={content?.trustItems} />
 
-      {/* 4. Sản phẩm tiêu biểu — kèm tên + quê CCB sản xuất */}
+      {/* 3. Tại sao CCB Mart ra đời */}
+      <WhyUsSection data={content?.whyUs} />
+
+      {/* 4. Sản phẩm tiêu biểu */}
       <ProductGrid id="featured" eyebrow="Sản phẩm từ tâm huyết người lính" title="Hàng tuyển chọn — Mỗi món một câu chuyện" products={featured} link="Xem tất cả sản phẩm" linkHref="/category/dac-san-vung-mien" />
 
-      {/* 5. Hành trình kết nối — hoạt động cộng đồng */}
+      {/* 5. Dashboard minh bạch — Quỹ Vì đồng đội */}
+      <TransparencyFundSection entries={content?.fundEntries} />
+
+      {/* 6. Hành trình nghĩa tình — Hoạt động cộng đồng */}
       <CommunityJourneySection photos={content?.communityPhotos} />
 
-      {/* 6. Promo banner (interlude — chương trình ngắn hạn nếu có) */}
+      {/* 7. Sản phẩm tiêu biểu khác (deals) */}
+      <ProductGrid eyebrow="Sản phẩm tiêu biểu khác" title="Đặc sản từ đồng đội — ưu đãi mỗi tuần" products={deals} link="Xem khuyến mãi" linkHref="/category/hang-khuyen-mai" />
+
+      {/* 8. Promo banner (interlude — chương trình ngắn hạn nếu có) */}
       {(!content || content.promo.isActive !== false) && <PromoBanner data={content?.promo} />}
 
-      {/* 7. Deals */}
-      <ProductGrid eyebrow="Ưu đãi tuần này" title="Hàng giảm giá — vẫn đảm bảo nghĩa tình" products={deals} link="Xem khuyến mãi" linkHref="/category/hang-khuyen-mai" />
-
-      {/* 8. Categories navigation strip */}
+      {/* 9. Categories navigation strip */}
       <CategoryStrip categories={allCategories} />
-
-      {/* 9. Bảng minh bạch quỹ Vì đồng đội */}
-      <TransparencyFundSection entries={content?.fundEntries} />
 
       {/* 10. Tiếng nói chiến hữu */}
       <CCBTestimonialsSection items={content?.testimonials} />

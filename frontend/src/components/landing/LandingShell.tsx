@@ -4,11 +4,12 @@ import './landing.css';
 import type { ReactNode } from 'react';
 import { Header } from './Header';
 import { Footer } from './Sections';
+import type { Category } from './categories';
 
-export function LandingShell({ children }: { children: ReactNode }) {
+export function LandingShell({ children, categories }: { children: ReactNode; categories?: Category[] }) {
   return (
     <div className="ccb-landing">
-      <Header cartCount={0} />
+      <Header cartCount={0} categories={categories} />
       {children}
       <Footer />
 

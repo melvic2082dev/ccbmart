@@ -67,7 +67,7 @@ export function CategoryStrip({ categories }: { categories?: Category[] } = {}) 
   // Show 8 categories on the homepage strip — first 8 entries
   const cats = (categories ?? CATEGORIES).slice(0, 8);
   return (
-    <section style={{ background: 'var(--paper-0)', padding: '40px 0', borderBottom: '1px solid var(--line)' }}>
+    <section style={{ background: 'var(--paper-0)', padding: '64px 0', borderBottom: '1px solid var(--line)' }}>
       <div style={{ maxWidth: 1600, margin: '0 auto', padding: '0 24px' }}>
         <SectionHead eyebrow="Danh mục nổi bật" title="Mua sắm theo nhóm hàng" link="Xem tất cả danh mục" />
         <div style={{
@@ -243,7 +243,7 @@ export function RegionStrip() {
     { name: 'Miền Nam',   cities: 'TP. HCM · Cần Thơ · Sóc Trăng · An Giang', count: '19 tỉnh', href: '/category/dac-san-mien-nam' },
   ];
   return (
-    <section style={{ background: 'var(--paper-0)', padding: '56px 0', borderBottom: '1px solid var(--line)' }}>
+    <section style={{ background: 'var(--paper-0)', padding: '80px 0', borderBottom: '1px solid var(--line)' }}>
       <div style={{ maxWidth: 1600, margin: '0 auto', padding: '0 24px' }}>
         <SectionHead eyebrow="Trên toàn quốc" title="Đặc sản ba miền, gửi về tận nhà" />
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 16, marginTop: 28 }}>
@@ -294,7 +294,7 @@ export function CommunityVoices() {
     },
   ];
   return (
-    <section style={{ background: 'var(--paper-1)', padding: '64px 0', borderBottom: '1px solid var(--line)' }}>
+    <section style={{ background: 'var(--paper-1)', padding: '96px 0', borderBottom: '1px solid var(--line)' }}>
       <div style={{ maxWidth: 1600, margin: '0 auto', padding: '0 24px' }}>
         <SectionHead eyebrow="Tiếng nói cộng đồng" title="Đồng đội giúp đồng đội" />
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 20, marginTop: 28 }}>
