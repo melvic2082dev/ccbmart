@@ -806,3 +806,131 @@ model AdminManualAction {
   @@index([targetType, targetId])
   @@map("admin_manual_actions")
 }
+
+// ============================================================
+// Landing-page CMS (hybrid): super_admin + ops_admin chỉnh content
+// thường xuyên thay đổi; layout & section skeleton vẫn ở code.
+// ============================================================
+
+model LandingHero {
+  id               Int      @id @default(autoincrement())
+  eyebrow          String   @default("Hệ thống bán lẻ · Cựu Chiến Binh Việt Nam")
+  title            String   @default("Hàng Việt chất lượng, do Cựu Chiến Binh cung cấp.")
+  subtitle         String   @db.Text
+  imageUrl         String?  @map("image_url")
+  primaryCtaText   String   @default("Mua sắm ngay") @map("primary_cta_text")
+  primaryCtaHref   String   @default("#featured") @map("primary_cta_href")
+  secondaryCtaText String?  @map("secondary_cta_text")
+  secondaryCtaHref String?  @map("secondary_cta_href")
+  stat1Value       String   @default("2.400+") @map("stat1_value")
+  stat1Label       String   @default("Nhà cung cấp Cựu Chiến Binh") @map("stat1_label")
+  stat2Value       String   @default("63") @map("stat2_value")
+  stat2Label       String   @default("Tỉnh / thành phố có mặt") @map("stat2_label")
+  stat3Value       String   @default("180k+") @map("stat3_value")
+  stat3Label       String   @default("Đơn hàng đã giao") @map("stat3_label")
+  isActive         Boolean  @default(true) @map("is_active")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  @@map("landing_hero")
+}
+
+model LandingPromoBanner {
+  id               Int       @id @default(autoincrement())
+  eyebrow          String    @default("Chương trình đặc biệt")
+  title            String
+  subtitle         String    @db.Text
+  imageUrl         String?   @map("image_url")
+  endDate          DateTime? @map("end_date")
+  primaryCtaText   String    @default("Xem ưu đãi") @map("primary_cta_text")
+  primaryCtaHref   String    @default("#") @map("primary_cta_href")
+  secondaryCtaText String?   @map("secondary_cta_text")
+  secondaryCtaHref String?   @map("secondary_cta_href")
+  isActive         Boolean   @default(true) @map("is_active")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+
+  @@map("landing_promo_banner")
+}
+
+model LandingTrustItem {
+  id           Int      @id @default(autoincrement())
+  title        String
+  subtitle     String
+  iconName     String   @default("ShieldCheck") @map("icon_name")
+  displayOrder Int      @default(0) @map("display_order")
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@index([isActive, displayOrder])
+  @@map("landing_trust_items")
+}
+
+model LandingFeaturedProduct {
+  id           Int      @id @default(autoincrement())
+  section      String // 'featured' | 'deals'
+  productSlug  String   @map("product_slug")
+  displayOrder Int      @default(0) @map("display_order")
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@unique([section, productSlug])
+  @@index([section, isActive, displayOrder])
+  @@map("landing_featured_products")
+}
+
+// Catalog category CMS — overlays / replaces the hardcoded CATEGORIES.
+model LandingCategory {
+  id            Int      @id @default(autoincrement())
+  slug          String   @unique
+  name          String
+  shortName     String?  @map("short_name")
+  icon          String   @default("tag") // wheat|soup|coffee|mountain|sun|palmtree|home|gift|tag|compass
+  tone          String   @default("paper") // red|olive|gold|paper
+  description   String   @db.Text
+  productCount  Int      @default(0) @map("product_count")
+  filters       Json? // { regions: [{ label, count, checked? }] }
+  displayOrder  Int      @default(0) @map("display_order")
+  isActive      Boolean  @default(true) @map("is_active")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@index([isActive, displayOrder])
+  @@map("landing_categories")
+}
+
+// Catalog product CMS — overlays / replaces the hardcoded PRODUCTS in
+// frontend/src/components/landing/categories.ts. When a slug exists here,
+// the public landing API returns this row instead of the hardcoded one.
+model LandingProduct {
+  id             Int      @id @default(autoincrement())
+  slug           String   @unique
+  categorySlug   String   @map("category_slug")
+  name           String
+  art            String   @default("") // visual fallback label when no imageUrl
+  tone           String   @default("paper") // paper | red | olive | gold
+  price          Int      @default(0) // VND, integer
+  was            Int? // strike-through price
+  rating         Decimal  @default(4.7) @db.Decimal(2, 1)
+  sold           String   @default("0")
+  region         String   @default("")
+  verified       Boolean  @default(false)
+  badges         Json? // [{ label, variant }]
+  imageUrl       String?  @map("image_url")
+  // Rich fields used on /product/[slug] detail page
+  brand          String   @default("—")
+  origin         String   @default("—")
+  weight         String   @default("—")
+  certifications String   @default("—")
+  distributor    String   @default("—")
+  description    String   @default("") @db.Text
+  thumbs         Json? // string[] — labels for the 4 thumb buttons
+  isActive       Boolean  @default(true) @map("is_active")
+  displayOrder   Int      @default(0) @map("display_order")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  @@index([categorySlug, isActive, displayOrder])
+  @@index([isActive])
+  @@map("landing_products")
+}

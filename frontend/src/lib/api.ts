@@ -409,6 +409,56 @@ export const api = {
   },
   adminAuditLogActions: () => fetchAPI('/admin/audit-logs/actions'),
   logout: () => fetchAPI('/auth/logout', { method: 'POST' }),
+
+  // Landing CMS — public read
+  landingContent: () => fetchAPI('/landing/content'),
+
+  // Landing CMS — admin (super_admin + ops_admin)
+  adminLandingCms: () => fetchAPI('/admin/landing-cms'),
+  adminLandingUploadImage: (formData: FormData) =>
+    fetchMultipart('/admin/landing-cms/upload', formData),
+  adminLandingUpdateHero: (data: Record<string, unknown>) =>
+    fetchAPI('/admin/landing-cms/hero', { method: 'PUT', body: JSON.stringify(data) }),
+  adminLandingUpdatePromo: (data: Record<string, unknown>) =>
+    fetchAPI('/admin/landing-cms/promo', { method: 'PUT', body: JSON.stringify(data) }),
+  adminLandingCreateTrustItem: (data: Record<string, unknown>) =>
+    fetchAPI('/admin/landing-cms/trust-items', { method: 'POST', body: JSON.stringify(data) }),
+  adminLandingUpdateTrustItem: (id: number, data: Record<string, unknown>) =>
+    fetchAPI(`/admin/landing-cms/trust-items/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  adminLandingDeleteTrustItem: (id: number) =>
+    fetchAPI(`/admin/landing-cms/trust-items/${id}`, { method: 'DELETE' }),
+  adminLandingCreateFeatured: (data: Record<string, unknown>) =>
+    fetchAPI('/admin/landing-cms/featured-products', { method: 'POST', body: JSON.stringify(data) }),
+  adminLandingUpdateFeatured: (id: number, data: Record<string, unknown>) =>
+    fetchAPI(`/admin/landing-cms/featured-products/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  adminLandingDeleteFeatured: (id: number) =>
+    fetchAPI(`/admin/landing-cms/featured-products/${id}`, { method: 'DELETE' }),
+
+  // Catalog products CRUD
+  adminLandingProducts: (params: { search?: string; category?: string; page?: number; limit?: number } = {}) => {
+    const qs = new URLSearchParams();
+    if (params.search) qs.set('search', params.search);
+    if (params.category) qs.set('category', params.category);
+    if (params.page) qs.set('page', String(params.page));
+    if (params.limit) qs.set('limit', String(params.limit));
+    const s = qs.toString();
+    return fetchAPI(`/admin/landing-cms/products${s ? `?${s}` : ''}`);
+  },
+  adminLandingCreateProduct: (data: Record<string, unknown>) =>
+    fetchAPI('/admin/landing-cms/products', { method: 'POST', body: JSON.stringify(data) }),
+  adminLandingUpdateProduct: (id: number, data: Record<string, unknown>) =>
+    fetchAPI(`/admin/landing-cms/products/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  adminLandingDeleteProduct: (id: number) =>
+    fetchAPI(`/admin/landing-cms/products/${id}`, { method: 'DELETE' }),
+
+  // Catalog categories CRUD
+  adminLandingCategories: () => fetchAPI('/admin/landing-cms/categories'),
+  adminLandingCreateCategory: (data: Record<string, unknown>) =>
+    fetchAPI('/admin/landing-cms/categories', { method: 'POST', body: JSON.stringify(data) }),
+  adminLandingUpdateCategory: (id: number, data: Record<string, unknown>) =>
+    fetchAPI(`/admin/landing-cms/categories/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  adminLandingDeleteCategory: (id: number) =>
+    fetchAPI(`/admin/landing-cms/categories/${id}`, { method: 'DELETE' }),
 };
 
 export function formatVND(amount: number): string {

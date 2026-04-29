@@ -1,8 +1,38 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { Truck } from 'lucide-react';
 import { Star } from './primitives';
 
-export function Hero() {
+export type HeroData = {
+  eyebrow?: string;
+  title?: string;
+  subtitle?: string;
+  imageUrl?: string | null;
+  primaryCtaText?: string;
+  primaryCtaHref?: string;
+  secondaryCtaText?: string | null;
+  secondaryCtaHref?: string | null;
+  stat1Value?: string; stat1Label?: string;
+  stat2Value?: string; stat2Label?: string;
+  stat3Value?: string; stat3Label?: string;
+  isActive?: boolean;
+};
+
+export function Hero({ data }: { data?: HeroData } = {}) {
+  const eyebrow = data?.eyebrow ?? 'Hệ thống bán lẻ · Cựu Chiến Binh Việt Nam';
+  const titleText = data?.title;
+  const subtitle = data?.subtitle ?? 'CCB Mart mang đặc sản và nhu yếu phẩm từ khắp mọi miền đất nước về tận nhà quý khách — được tuyển chọn, đóng gói và phân phối bởi mạng lưới hội viên Cựu Chiến Binh trên toàn quốc.';
+  const primaryCtaText = data?.primaryCtaText ?? 'Mua sắm ngay';
+  const primaryCtaHref = data?.primaryCtaHref ?? '#featured';
+  const secondaryCtaText = data?.secondaryCtaText ?? 'Đăng nhập / Đăng ký →';
+  const secondaryCtaHref = data?.secondaryCtaHref ?? '/login';
+  const stat1V = data?.stat1Value ?? '2.400+';
+  const stat1L = data?.stat1Label ?? 'Nhà cung cấp Cựu Chiến Binh';
+  const stat2V = data?.stat2Value ?? '63';
+  const stat2L = data?.stat2Label ?? 'Tỉnh / thành phố có mặt';
+  const stat3V = data?.stat3Value ?? '180k+';
+  const stat3L = data?.stat3Label ?? 'Đơn hàng đã giao';
+
   return (
     <section style={{
       background: 'var(--paper-0)', borderBottom: '1px solid var(--line)',
@@ -18,7 +48,7 @@ export function Hero() {
             <span style={{
               fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 12,
               letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--ccb-red)',
-            }}>Hệ thống bán lẻ · Cựu Chiến Binh Việt Nam</span>
+            }}>{eyebrow}</span>
           </div>
 
           <h1 style={{
@@ -26,47 +56,77 @@ export function Hero() {
             fontSize: 'clamp(36px, 4vw, 52px)', lineHeight: 1.2,
             letterSpacing: '-0.02em', color: 'var(--ink-1)', margin: 0,
           }}>
-            Hàng Việt chất lượng,<br />
-            <span style={{ color: 'var(--ccb-red)' }}>do Cựu Chiến Binh</span><br />
-            cung cấp.
+            {titleText ? (
+              titleText
+            ) : (
+              <>
+                Hàng Việt chất lượng,<br />
+                <span style={{ color: 'var(--ccb-red)' }}>do Cựu Chiến Binh</span><br />
+                cung cấp.
+              </>
+            )}
           </h1>
 
           <p style={{
             fontFamily: 'var(--font-body)', fontSize: 18, lineHeight: 1.6,
             color: 'var(--ink-2)', marginTop: 32, maxWidth: 520,
-          }}>
-            CCB Mart mang đặc sản và nhu yếu phẩm từ khắp mọi miền đất nước về tận nhà quý khách —
-            được tuyển chọn, đóng gói và phân phối bởi mạng lưới hội viên Cựu Chiến Binh trên toàn quốc.
-          </p>
+          }}>{subtitle}</p>
 
           <div style={{ display: 'flex', gap: 12, marginTop: 32, flexWrap: 'wrap' }}>
-            <a href="#featured" style={{
+            <a href={primaryCtaHref} style={{
               background: 'var(--ccb-red)', color: '#FFF8E7',
               fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 16,
               padding: '14px 26px', borderRadius: 4,
               display: 'inline-flex', alignItems: 'center', gap: 8,
-            }}>Mua sắm ngay</a>
-            <Link href="/login" style={{
-              background: 'transparent', color: 'var(--ccb-olive)',
-              fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 16,
-              padding: '14px 26px', borderRadius: 4,
-              border: '1px solid var(--ccb-olive)',
-              display: 'inline-flex', alignItems: 'center', gap: 8,
-            }}>Đăng nhập / Đăng ký →</Link>
+            }}>{primaryCtaText}</a>
+            {secondaryCtaText && secondaryCtaHref && (
+              <Link href={secondaryCtaHref} style={{
+                background: 'transparent', color: 'var(--ccb-olive)',
+                fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 16,
+                padding: '14px 26px', borderRadius: 4,
+                border: '1px solid var(--ccb-olive)',
+                display: 'inline-flex', alignItems: 'center', gap: 8,
+              }}>{secondaryCtaText}</Link>
+            )}
           </div>
 
           <div style={{
             display: 'flex', gap: 32, marginTop: 40, paddingTop: 24,
             borderTop: '1px solid var(--line)', flexWrap: 'wrap',
           }}>
-            <Stat n="2.400+" label="Nhà cung cấp Cựu Chiến Binh" />
-            <Stat n="63"     label="Tỉnh / thành phố có mặt" />
-            <Stat n="180k+"  label="Đơn hàng đã giao" />
+            <Stat n={stat1V} label={stat1L} />
+            <Stat n={stat2V} label={stat2L} />
+            <Stat n={stat3V} label={stat3L} />
           </div>
         </div>
 
         {/* Right column visual */}
         <div style={{ position: 'relative', height: 520 }} className="ccb-hero-visual">
+          {data?.imageUrl ? (
+            <div style={{
+              position: 'absolute', inset: 0, borderRadius: 8, overflow: 'hidden',
+              boxShadow: 'var(--shadow-lg)', border: '1px solid var(--line)',
+            }}>
+              <Image
+                src={data.imageUrl}
+                alt="Hero"
+                fill
+                priority
+                sizes="(max-width: 1100px) 100vw, 50vw"
+                className="object-cover"
+                unoptimized
+              />
+            </div>
+          ) : <DefaultHeroVisual />}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function DefaultHeroVisual() {
+  return (
+    <>
           <div style={{
             position: 'absolute', inset: 0,
             background: 'radial-gradient(circle at 60% 40%, var(--ccb-olive-tint) 0%, transparent 65%)',
@@ -139,9 +199,7 @@ export function Hero() {
               <div style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: 'var(--ink-3)', marginTop: 2 }}>Hà Nội · TP. Hồ Chí Minh · Đà Nẵng</div>
             </div>
           </div>
-        </div>
-      </div>
-    </section>
+    </>
   );
 }
 

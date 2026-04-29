@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import Link from 'next/link';
 import { ShoppingCart } from 'lucide-react';
 import { Badge, formatVnd, ProductArt, SectionHead, Star } from './primitives';
@@ -18,6 +19,7 @@ export type Product = {
   region?: string;
   badges?: { label: string; variant: BadgeVariant }[];
   verified?: boolean;
+  imageUrl?: string | null;
 };
 
 export function ProductGrid({
@@ -52,7 +54,7 @@ export function ProductGrid({
 }
 
 export function ProductCard({ product }: { product: Product }) {
-  const { slug, name, art, tone, price, was, rating, sold, region, badges = [], verified } = product;
+  const { slug, name, art, tone, price, was, rating, sold, region, badges = [], verified, imageUrl } = product;
   const href = slug ? `/product/${slug}` : '#';
   return (
     <Link href={href} style={{
@@ -63,7 +65,11 @@ export function ProductCard({ product }: { product: Product }) {
       color: 'inherit',
     }}>
       <div style={{ position: 'relative', height: 170 }}>
-        <ProductArt label={art} tone={tone} />
+        {imageUrl ? (
+          <Image src={imageUrl} alt={name} fill sizes="(max-width:768px) 50vw, 220px" className="object-cover" unoptimized />
+        ) : (
+          <ProductArt label={art} tone={tone} />
+        )}
         <div style={{ position: 'absolute', top: 8, left: 8, display: 'flex', gap: 4, flexWrap: 'wrap' }}>
           {badges.map((b, i) => <Badge key={i} variant={b.variant}>{b.label}</Badge>)}
         </div>

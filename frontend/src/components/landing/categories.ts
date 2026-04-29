@@ -209,3 +209,153 @@ export function getProductsByCategory(slug: string): ProductDetail[] {
 export function getProductBySlug(slug: string): ProductDetail | undefined {
   return PRODUCTS.find((p) => p.slug === slug);
 }
+
+// ---- DB-backed catalog overlay ----
+// CMS rows in `landing_products` table override hardcoded entries by slug; new
+// slugs not present in PRODUCTS get added at the end. Hardcoded fields not in
+// the DB schema (description, brand, weight, etc.) carry over from the static
+// row when slugs match — so detail pages still render rich copy.
+
+export type DbCatalogProduct = {
+  id: number;
+  slug: string;
+  categorySlug: string;
+  name: string;
+  art: string;
+  tone: string;
+  price: number;
+  was: number | null;
+  rating: number | string;
+  sold: string;
+  region: string;
+  verified: boolean;
+  badges: { label: string; variant: string }[] | null;
+  imageUrl: string | null;
+  brand?: string;
+  origin?: string;
+  weight?: string;
+  certifications?: string;
+  distributor?: string;
+  description?: string;
+  thumbs?: string[] | null;
+  isActive: boolean;
+  displayOrder: number;
+};
+
+export type DbCategory = {
+  id: number;
+  slug: string;
+  name: string;
+  shortName: string | null;
+  icon: string;
+  tone: string;
+  description: string;
+  productCount: number;
+  filters: { regions: { label: string; count: number; checked?: boolean }[] } | null;
+  displayOrder: number;
+  isActive: boolean;
+};
+
+export function mergeWithDb(dbProducts: DbCatalogProduct[]): ProductDetail[] {
+  const bySlug = new Map<string, ProductDetail>();
+  for (const p of PRODUCTS) bySlug.set(p.slug, p);
+
+  for (const dp of dbProducts) {
+    if (!dp.isActive) {
+      bySlug.delete(dp.slug); // hidden
+      continue;
+    }
+    const base = bySlug.get(dp.slug);
+    const merged: ProductDetail = {
+      // Defaults for fields not in DB
+      ...(base ?? {
+        id: dp.slug, slug: dp.slug, name: '', art: '', tone: 'paper', price: 0,
+        rating: 4.7, sold: '0', region: '', category: '', verified: false,
+        brand: '—', origin: '—', weight: '—', certifications: '—', distributor: '—',
+        description: '', thumbs: ['Mặt trước', 'Đóng gói', 'Cận cảnh', 'Vùng nguyên liệu'],
+      }),
+      // DB fields override
+      id: dp.slug,
+      slug: dp.slug,
+      name: dp.name,
+      art: dp.art || (base?.art ?? ''),
+      tone: (dp.tone as ProductDetail['tone']) || (base?.tone ?? 'paper'),
+      price: dp.price,
+      was: dp.was ?? undefined,
+      rating: typeof dp.rating === 'string' ? parseFloat(dp.rating) : dp.rating,
+      sold: dp.sold || (base?.sold ?? ''),
+      region: dp.region || (base?.region ?? ''),
+      category: dp.categorySlug,
+      verified: dp.verified,
+      badges: dp.badges ?? base?.badges ?? [],
+      imageUrl: dp.imageUrl ?? base?.imageUrl ?? null,
+      // Rich fields — DB if non-empty, else hardcoded base, else default placeholder
+      brand: dp.brand && dp.brand !== '—' ? dp.brand : (base?.brand ?? '—'),
+      origin: dp.origin && dp.origin !== '—' ? dp.origin : (base?.origin ?? '—'),
+      weight: dp.weight && dp.weight !== '—' ? dp.weight : (base?.weight ?? '—'),
+      certifications: dp.certifications && dp.certifications !== '—' ? dp.certifications : (base?.certifications ?? '—'),
+      distributor: dp.distributor && dp.distributor !== '—' ? dp.distributor : (base?.distributor ?? '—'),
+      description: dp.description || base?.description || '',
+      thumbs: (dp.thumbs && dp.thumbs.length > 0) ? dp.thumbs : (base?.thumbs ?? ['Mặt trước', 'Đóng gói', 'Cận cảnh', 'Vùng nguyên liệu']),
+    };
+    bySlug.set(dp.slug, merged);
+  }
+  return Array.from(bySlug.values());
+}
+
+// Fetch DB catalog from API; returns [] silently on failure so callers fall back to hardcoded.
+export async function fetchDbCatalog(): Promise<DbCatalogProduct[]> {
+  const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api';
+  try {
+    const res = await fetch(`${apiBase}/landing/products`, { cache: 'no-store' });
+    if (!res.ok) return [];
+    return await res.json();
+  } catch {
+    return [];
+  }
+}
+
+export async function fetchDbCategories(): Promise<DbCategory[]> {
+  const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api';
+  try {
+    const res = await fetch(`${apiBase}/landing/categories`, { cache: 'no-store' });
+    if (!res.ok) return [];
+    return await res.json();
+  } catch {
+    return [];
+  }
+}
+
+// Merge DB categories onto hardcoded list (slug-based override).
+// Inactive DB rows hide their hardcoded counterpart. New slugs append.
+export function mergeCategoriesWithDb(dbCategories: DbCategory[]): Category[] {
+  const bySlug = new Map<string, Category>();
+  for (const c of CATEGORIES) bySlug.set(c.slug, c);
+
+  for (const dc of dbCategories) {
+    if (!dc.isActive) {
+      bySlug.delete(dc.slug);
+      continue;
+    }
+    const base = bySlug.get(dc.slug);
+    bySlug.set(dc.slug, {
+      slug: dc.slug,
+      name: dc.name,
+      shortName: dc.shortName ?? base?.shortName,
+      icon: (dc.icon as Category['icon']) || base?.icon || 'tag',
+      tone: (dc.tone as CategoryTone) || base?.tone || 'paper',
+      description: dc.description || base?.description || '',
+      productCount: dc.productCount,
+      filters: dc.filters ?? base?.filters ?? { regions: [] },
+    });
+  }
+
+  // Sort by displayOrder if present in DB, else preserve insertion order
+  const orderMap = new Map<string, number>();
+  dbCategories.forEach((dc) => orderMap.set(dc.slug, dc.displayOrder));
+  return Array.from(bySlug.values()).sort((a, b) => {
+    const oa = orderMap.has(a.slug) ? orderMap.get(a.slug)! : 999;
+    const ob = orderMap.has(b.slug) ? orderMap.get(b.slug)! : 999;
+    return oa - ob;
+  });
+}

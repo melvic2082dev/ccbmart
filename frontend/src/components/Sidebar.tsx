@@ -8,7 +8,7 @@ import {
   PlusCircle, Banknote, ClipboardCheck, Wallet, Award, CreditCard,
   ChevronLeft, ChevronRight, Sun, Moon, Menu, X, FileSpreadsheet,
   GraduationCap, BookOpen, ShieldCheck, Calculator, FileBarChart, Receipt,
-  Coins, Network, UserCog
+  Coins, Network, UserCog, Layout
 } from 'lucide-react';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { api } from '@/lib/api';
@@ -90,11 +90,12 @@ const adminGroups: NavGroup[] = [
   {
     title: 'Cấu hình & báo cáo',
     items: [
-      { label: 'eKYC',      href: '/admin/kyc',           icon: <ShieldCheck size={20} />,      accent: 'cyan'    },
-      { label: 'Import',    href: '/admin/import',        icon: <FileSpreadsheet size={20} />,  accent: 'lime'    },
-      { label: 'Cấu hình',  href: '/admin/config',        icon: <Settings size={20} />,         accent: 'violet'  },
-      { label: 'Báo cáo',   href: '/admin/reports',       icon: <FileText size={20} />,         accent: 'rose'    },
-      { label: 'Thông báo', href: '/admin/notifications', icon: <Bell size={20} />, isNotificationLink: true, accent: 'orange' },
+      { label: 'eKYC',         href: '/admin/kyc',           icon: <ShieldCheck size={20} />,      accent: 'cyan'    },
+      { label: 'Import',       href: '/admin/import',        icon: <FileSpreadsheet size={20} />,  accent: 'lime'    },
+      { label: 'Cấu hình',     href: '/admin/config',        icon: <Settings size={20} />,         accent: 'violet'  },
+      { label: 'Trang chủ CMS', href: '/admin/landing-cms',  icon: <Layout size={20} />,           accent: 'green'   },
+      { label: 'Báo cáo',      href: '/admin/reports',       icon: <FileText size={20} />,         accent: 'rose'    },
+      { label: 'Thông báo',    href: '/admin/notifications', icon: <Bell size={20} />, isNotificationLink: true, accent: 'orange' },
     ],
   },
   {

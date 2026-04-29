@@ -1,20 +1,36 @@
+import { useEffect, useState } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import {
-  Coffee, Compass, Gift, HandHeart, Home, MapPin, Mountain, Palmtree,
-  RefreshCcw, ShieldCheck, Soup, Sun, Tag, Truck, Wheat,
+  Award, BookOpen, Coffee, Compass, Gift, HandHeart, Home, MapPin, Mountain, Palmtree,
+  RefreshCcw, ShieldCheck, Soup, Star as StarIcon, Sun, Tag, Truck, Wallet, Wheat,
 } from 'lucide-react';
 import { SectionHead, Star } from './primitives';
-import { CATEGORIES } from './categories';
+import { CATEGORIES, type Category } from './categories';
 
 const ICONS = { wheat: Wheat, soup: Soup, coffee: Coffee, mountain: Mountain, sun: Sun, palmtree: Palmtree, home: Home, gift: Gift, tag: Tag, compass: Compass } as const;
 
-export function TrustBar() {
-  const items = [
+// Map CMS-stored icon name → lucide component for TrustBar items.
+const TRUST_ICON_MAP: Record<string, React.ComponentType<{ size?: number }>> = {
+  ShieldCheck, Truck, RefreshCcw, HandHeart, Award, Wallet,
+  Coffee, Wheat, MapPin, Star: StarIcon, Gift, BookOpen,
+};
+
+export type TrustItemData = { id: number; title: string; subtitle: string; iconName: string };
+
+export function TrustBar({ items: cmsItems }: { items?: TrustItemData[] } = {}) {
+  const fallback = [
     { icon: <ShieldCheck size={22} />, title: 'Nguồn gốc rõ ràng', sub: 'Xuất xứ từ hội viên CCB, có chứng nhận' },
     { icon: <Truck size={22} />,        title: 'Giao hàng 24 giờ', sub: 'Miễn phí đơn từ 300.000 ₫' },
     { icon: <RefreshCcw size={22} />,   title: 'Đổi trả 7 ngày',   sub: 'Không hài lòng, hoàn tiền 100%' },
     { icon: <HandHeart size={22} />,    title: '1% cho đồng đội',  sub: 'Hỗ trợ CCB khó khăn trên toàn quốc' },
   ];
+  const items = cmsItems && cmsItems.length > 0
+    ? cmsItems.map((it) => {
+        const IconCmp = TRUST_ICON_MAP[it.iconName] ?? ShieldCheck;
+        return { icon: <IconCmp size={22} />, title: it.title, sub: it.subtitle };
+      })
+    : fallback;
   return (
     <section style={{ background: 'var(--paper-1)', borderTop: '1px solid var(--line)', borderBottom: '1px solid var(--line)' }}>
       <div style={{ maxWidth: 1600, margin: '0 auto', padding: 24,
@@ -47,9 +63,9 @@ const tones: Record<Tone, { bg: string; fg: string }> = {
   paper: { bg: 'var(--paper-1)',        fg: 'var(--ink-2)' },
 };
 
-export function CategoryStrip() {
-  // Show 8 categories on the homepage strip — first 8 entries from the central config
-  const cats = CATEGORIES.slice(0, 8);
+export function CategoryStrip({ categories }: { categories?: Category[] } = {}) {
+  // Show 8 categories on the homepage strip — first 8 entries
+  const cats = (categories ?? CATEGORIES).slice(0, 8);
   return (
     <section style={{ background: 'var(--paper-0)', padding: '40px 0', borderBottom: '1px solid var(--line)' }}>
       <div style={{ maxWidth: 1600, margin: '0 auto', padding: '0 24px' }}>
@@ -87,7 +103,57 @@ export function CategoryStrip() {
   );
 }
 
-export function PromoBanner() {
+export type PromoData = {
+  eyebrow?: string;
+  title?: string;
+  subtitle?: string;
+  imageUrl?: string | null;
+  endDate?: string | null;
+  primaryCtaText?: string;
+  primaryCtaHref?: string;
+  secondaryCtaText?: string | null;
+  secondaryCtaHref?: string | null;
+  isActive?: boolean;
+};
+
+function useCountdown(targetIso: string | null) {
+  // Server render + first client render must agree → start with null, fill in after mount.
+  // Take the ISO string (stable across renders) instead of a Date — passing a fresh `new Date()`
+  // each render would change the dep reference and re-run the effect every tick → infinite loop.
+  const [parts, setParts] = useState<{ d: string; h: string; m: string; s: string } | null>(null);
+
+  useEffect(() => {
+    if (!targetIso) { setParts(null); return; }
+    const targetMs = new Date(targetIso).getTime();
+    if (isNaN(targetMs)) { setParts(null); return; }
+    const compute = () => {
+      const diff = targetMs - Date.now();
+      const safe = Math.max(0, diff);
+      const days = Math.floor(safe / 86400000);
+      const h = Math.floor((safe % 86400000) / 3600000);
+      const m = Math.floor((safe % 3600000) / 60000);
+      const s = Math.floor((safe % 60000) / 1000);
+      const pad = (n: number) => String(n).padStart(2, '0');
+      setParts({ d: pad(Math.min(99, days)), h: pad(h), m: pad(m), s: pad(s) });
+    };
+    compute();
+    const id = setInterval(compute, 1000);
+    return () => clearInterval(id);
+  }, [targetIso]);
+
+  return parts;
+}
+
+export function PromoBanner({ data }: { data?: PromoData } = {}) {
+  const eyebrow = data?.eyebrow ?? 'Kỷ niệm 30/4 · Chương trình lớn';
+  const title = data?.title;
+  const subtitle = data?.subtitle ?? 'Từ 20/4 đến 02/5/2026. Ưu đãi đặc biệt cho Hội viên Hội Cựu Chiến Binh Việt Nam và gia đình khi đặt hàng trực tuyến.';
+  const primaryCtaText = data?.primaryCtaText ?? 'Xem ưu đãi';
+  const primaryCtaHref = data?.primaryCtaHref ?? '#';
+  const secondaryCtaText = data?.secondaryCtaText ?? 'Đăng ký Hội viên';
+  const secondaryCtaHref = data?.secondaryCtaHref ?? '/login';
+
+  const countdown = useCountdown(data?.endDate ?? null);
   return (
     <section style={{ background: 'var(--ccb-red)', color: '#FFF8E7' }}>
       <div style={{
@@ -100,44 +166,73 @@ export function PromoBanner() {
             <span style={{
               fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 12,
               letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--ccb-gold)',
-            }}>Kỷ niệm 30/4 · Chương trình lớn</span>
+            }}>{eyebrow}</span>
           </div>
           <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 44, lineHeight: 1.1, margin: 0 }}>
-            Tri ân Cựu Chiến Binh<br/>
-            <span style={{ color: 'var(--ccb-gold)' }}>giảm đến 30%</span> toàn hệ thống
+            {title ? title : (
+              <>
+                Tri ân Cựu Chiến Binh<br/>
+                <span style={{ color: 'var(--ccb-gold)' }}>giảm đến 30%</span> toàn hệ thống
+              </>
+            )}
           </h2>
           <p style={{ fontFamily: 'var(--font-body)', fontSize: 16, lineHeight: 1.6, color: '#F2E8CF', marginTop: 16, maxWidth: 520 }}>
-            Từ 20/4 đến 02/5/2026. Ưu đãi đặc biệt cho Hội viên Hội Cựu Chiến Binh Việt Nam và gia đình khi đặt hàng trực tuyến.
+            {subtitle}
           </p>
           <div style={{ display: 'flex', gap: 12, marginTop: 28, flexWrap: 'wrap' }}>
-            <a href="#" style={{
+            <a href={primaryCtaHref} style={{
               background: '#FBF7EE', color: 'var(--ccb-red-deep)',
               fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 16,
               padding: '14px 26px', borderRadius: 4,
-            }}>Xem ưu đãi</a>
-            <Link href="/login" style={{
-              background: 'transparent', color: 'var(--ccb-gold)',
-              fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 16,
-              padding: '14px 26px', borderRadius: 4,
-              border: '1px solid var(--ccb-gold)',
-            }}>Đăng ký Hội viên</Link>
+            }}>{primaryCtaText}</a>
+            {secondaryCtaText && secondaryCtaHref && (
+              <Link href={secondaryCtaHref} style={{
+                background: 'transparent', color: 'var(--ccb-gold)',
+                fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 16,
+                padding: '14px 26px', borderRadius: 4,
+                border: '1px solid var(--ccb-gold)',
+              }}>{secondaryCtaText}</Link>
+            )}
           </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
-          {[['12','Ngày'],['08','Giờ'],['23','Phút'],['45','Giây']].map(([n,l]) => (
-            <div key={l} style={{
-              background: 'var(--ccb-red-deep)', borderRadius: 8,
-              padding: '20px 12px', textAlign: 'center',
-              border: '1px solid rgba(255,248,231,0.1)',
-            }}>
-              <div style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 40, lineHeight: 1, color: 'var(--ccb-gold)' }}>{n}</div>
-              <div style={{ fontFamily: 'var(--font-body)', fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', marginTop: 6, color: '#F2E8CF' }}>{l}</div>
-            </div>
-          ))}
-        </div>
+        {data?.imageUrl ? (
+          <div style={{ position: 'relative', aspectRatio: '4 / 3', borderRadius: 8, overflow: 'hidden', border: '1px solid rgba(255,248,231,0.2)' }}>
+            <Image
+              src={data.imageUrl}
+              alt="Promo"
+              fill
+              sizes="(max-width: 1100px) 100vw, 40vw"
+              className="object-cover"
+              unoptimized
+            />
+          </div>
+        ) : (
+          <CountdownBlocks countdown={countdown} />
+        )}
       </div>
     </section>
+  );
+}
+
+function CountdownBlocks({ countdown }: { countdown: { d: string; h: string; m: string; s: string } | null }) {
+  // Use placeholder values (matching server render) until client mounts to avoid hydration mismatch.
+  const blocks: [string, string][] = countdown
+    ? [[countdown.d, 'Ngày'], [countdown.h, 'Giờ'], [countdown.m, 'Phút'], [countdown.s, 'Giây']]
+    : [['12', 'Ngày'], ['08', 'Giờ'], ['23', 'Phút'], ['45', 'Giây']];
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
+      {blocks.map(([n, l]) => (
+        <div key={l} style={{
+          background: 'var(--ccb-red-deep)', borderRadius: 8,
+          padding: '20px 12px', textAlign: 'center',
+          border: '1px solid rgba(255,248,231,0.1)',
+        }}>
+          <div style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 40, lineHeight: 1, color: 'var(--ccb-gold)', fontVariantNumeric: 'tabular-nums' }}>{n}</div>
+          <div style={{ fontFamily: 'var(--font-body)', fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', marginTop: 6, color: '#F2E8CF' }}>{l}</div>
+        </div>
+      ))}
+    </div>
   );
 }
 

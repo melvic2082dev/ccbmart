@@ -6,12 +6,13 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { LayoutDashboard, LayoutGrid, MapPin, Phone, Search, ShoppingCart, Truck, UserRound } from 'lucide-react';
 import { getDashboardHref } from '@/lib/permissions';
-import { CATEGORIES } from './categories';
+import { CATEGORIES, type Category, fetchDbCategories, mergeCategoriesWithDb } from './categories';
 
-export function Header({ cartCount = 0 }: { cartCount?: number }) {
+export function Header({ cartCount = 0, categories: categoriesProp }: { cartCount?: number; categories?: Category[] }) {
   const pathname = usePathname();
   const [scrolled, setScrolled] = useState(false);
   const [dashboardHref, setDashboardHref] = useState<string | null>(null);
+  const [fetchedCategories, setFetchedCategories] = useState<Category[] | null>(null);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -30,6 +31,16 @@ export function Header({ cartCount = 0 }: { cartCount?: number }) {
     } catch { /* ignore */ }
   }, []);
 
+  // If no prop, self-fetch DB categories (with hardcoded fallback baked into merge).
+  useEffect(() => {
+    if (categoriesProp) return;
+    let cancelled = false;
+    fetchDbCategories()
+      .then((db) => { if (!cancelled && db.length > 0) setFetchedCategories(mergeCategoriesWithDb(db)); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [categoriesProp]);
+
   const isActive = (href: string) => {
     if (!pathname) return false;
     if (href === '/') return pathname === '/';
@@ -37,7 +48,8 @@ export function Header({ cartCount = 0 }: { cartCount?: number }) {
   };
 
   // Top 7 categories shown inline; full list still reachable via "Danh mục" button
-  const navCats = CATEGORIES.slice(0, 7);
+  const allCategories = categoriesProp ?? fetchedCategories ?? CATEGORIES;
+  const navCats = allCategories.slice(0, 7);
 
   return (
     <>

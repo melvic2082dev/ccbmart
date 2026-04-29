@@ -34,6 +34,7 @@ const taxRoutes = require('./routes/tax');
 const monthlyReportRoutes = require('./routes/monthlyReport');
 const auditLogRoutes = require('./routes/auditLogs');
 const healthRoutes = require('./routes/health');
+const landingCmsRoutes = require('./routes/landingCms');
 const { subscribeUser, unsubscribeUser } = require('./services/pushNotification');
 const { authenticate: authMw } = require('./middleware/auth');
 const { createMomoPayment, verifyMomoSignature, createZaloPayPayment, verifyZaloPayCallback } = require('./services/payment');
@@ -101,6 +102,10 @@ app.use('/api/admin/business-household', businessHouseholdRoutes);
 app.use('/api/training-logs', trainingLogRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/admin/reports', reportRoutes);
+
+// Landing-page CMS — must mount BEFORE the catch-all /api routes below (which apply global auth)
+app.use('/api/landing', landingCmsRoutes.publicRouter);
+app.use('/api/admin/landing-cms', landingCmsRoutes.adminRouter);
 
 // V12.2: eKYC, invoices, tax, monthly report (routers define their own /admin/... /ctv/... paths)
 app.use('/api', kycRoutes);

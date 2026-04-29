@@ -1,19 +1,30 @@
 import { notFound } from 'next/navigation';
 import { ProductPage } from '@/components/landing/ProductPage';
-import { getCategory, getProductBySlug, getProductsByCategory, PRODUCTS } from '@/components/landing/categories';
+import {
+  PRODUCTS, fetchDbCatalog, fetchDbCategories, mergeCategoriesWithDb, mergeWithDb,
+} from '@/components/landing/categories';
 
 export function generateStaticParams() {
   return PRODUCTS.map((p) => ({ slug: p.slug }));
 }
 
+export const dynamic = 'force-dynamic';
+
 export default async function Page({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const product = getProductBySlug(slug);
+
+  const [dbProducts, dbCategories] = await Promise.all([fetchDbCatalog(), fetchDbCategories()]);
+  const catalog = mergeWithDb(dbProducts);
+  const product = catalog.find((p) => p.slug === slug);
   if (!product) notFound();
-  const category = getCategory(product.category);
+
+  const categories = mergeCategoriesWithDb(dbCategories);
+  const category = categories.find((c) => c.slug === product.category);
   if (!category) notFound();
-  const related = getProductsByCategory(product.category)
-    .filter((p) => p.slug !== product.slug)
+
+  const related = catalog
+    .filter((p) => p.category === product.category && p.slug !== product.slug)
     .slice(0, 4);
+
   return <ProductPage product={product} category={category} related={related} />;
 }

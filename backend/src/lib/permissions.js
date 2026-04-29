@@ -69,6 +69,8 @@ const MENU_ROLE_ACCESS = {
   'admin/config':               [OPS_ADMIN],
   'admin/reports':              [OPS_ADMIN, FINANCE_ADMIN],
   'admin/notifications':        [OPS_ADMIN],
+  // Landing CMS — super_admin và ops_admin
+  'admin/landing-cms':          [OPS_ADMIN],
   // Quản trị (super_admin only)
   'admin/users':                [],
 };
