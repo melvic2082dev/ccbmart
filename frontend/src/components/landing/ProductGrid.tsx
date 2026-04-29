@@ -1,7 +1,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { ShoppingCart, BadgeCheck, MapPin } from 'lucide-react';
-import { Badge, formatVnd, ProductArt, SectionHead, Star } from './primitives';
+import { Badge, formatVnd, ProductArt, SectionHead, Star, WaxSeal } from './primitives';
 
 type Tone = 'paper' | 'red' | 'olive' | 'gold';
 type BadgeVariant = 'red' | 'olive' | 'gold' | 'soft' | 'oliveSoft';
@@ -96,15 +96,8 @@ export function ProductCard({ product }: { product: Product }) {
           {badges.map((b, i) => <Badge key={i} variant={b.variant}>{b.label}</Badge>)}
         </div>
         {verified && (
-          <div style={{
-            position: 'absolute', bottom: 8, right: 8,
-            background: 'rgba(251, 247, 238, 0.95)', border: '1px solid var(--ccb-olive)',
-            borderRadius: 999, padding: '2px 8px',
-            fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 10,
-            color: 'var(--ccb-olive-dark)',
-            display: 'inline-flex', alignItems: 'center', gap: 4,
-          }}>
-            <BadgeCheck size={11} /> Đồng đội tin dùng
+          <div title="Đồng đội tin dùng — đã được CCB Mart xác nhận" style={{ position: 'absolute', bottom: 8, right: 8 }}>
+            <WaxSeal size={42} />
           </div>
         )}
       </div>

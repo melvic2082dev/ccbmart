@@ -81,6 +81,40 @@ export function CategoryPage({ category, products }: { category: Category; produ
       <main style={{ maxWidth: 1600, margin: '0 auto', padding: '32px 24px 72px' }}>
         <Crumbs items={[{ label: 'Trang chủ', href: '/' }, { label: category.name }]} />
 
+        {/* Hero banner — Unsplash CC0 photo themed per category, with brand-coloured overlay for text legibility */}
+        <section style={{
+          marginTop: 16, position: 'relative',
+          height: 220, borderRadius: 12, overflow: 'hidden',
+          border: '1px solid var(--line)', boxShadow: 'var(--shadow-md)',
+        }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={`/category-hero/${category.slug}.jpg`}
+            alt=""
+            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+          />
+          <div style={{
+            position: 'absolute', inset: 0,
+            background: 'linear-gradient(90deg, rgba(28,26,20,0.78) 0%, rgba(28,26,20,0.45) 55%, rgba(28,26,20,0.15) 100%)',
+          }} />
+          <div style={{
+            position: 'absolute', inset: 0, padding: '32px 40px',
+            display: 'flex', flexDirection: 'column', justifyContent: 'center', maxWidth: 720,
+          }}>
+            <div style={{
+              fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 12,
+              letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--ccb-gold)', marginBottom: 8,
+            }}>Danh mục</div>
+            <h1 style={{
+              fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 'clamp(28px, 3vw, 44px)',
+              margin: 0, lineHeight: 1.1, color: '#FBF7EE',
+            }}>{category.name}</h1>
+            <p style={{ fontSize: 15, color: '#E8E4D4', marginTop: 12, marginBottom: 0, maxWidth: 600, lineHeight: 1.5 }}>
+              {category.description}
+            </p>
+          </div>
+        </section>
+
         <div style={{ display: 'grid', gridTemplateColumns: '260px 1fr', gap: 32, marginTop: 24 }} className="ccb-2col">
           <aside>
             <h3 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 18, margin: '0 0 12px' }}>Lọc sản phẩm</h3>
@@ -140,20 +174,8 @@ export function CategoryPage({ category, products }: { category: Category; produ
 
           <div>
             <div style={{
-              fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 12,
-              letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--ccb-red)',
-            }}>Danh mục</div>
-            <h1 style={{
-              fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 40,
-              margin: '6px 0 8px', lineHeight: 1.1,
-            }}>{category.name}</h1>
-            <p style={{ fontSize: 15, color: 'var(--ink-2)', maxWidth: 720, lineHeight: 1.6, margin: 0 }}>
-              {category.description}
-            </p>
-
-            <div style={{
               display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-              margin: '24px 0 16px', paddingBottom: 12, borderBottom: '1px solid var(--line)', gap: 12, flexWrap: 'wrap',
+              margin: '0 0 16px', paddingBottom: 12, borderBottom: '1px solid var(--line)', gap: 12, flexWrap: 'wrap',
             }}>
               <div style={{ fontSize: 13, color: 'var(--ink-3)' }}>
                 Tìm thấy <b style={{ color: 'var(--ink-1)' }}>{filtered.length}</b> sản phẩm
