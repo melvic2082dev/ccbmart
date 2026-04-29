@@ -75,7 +75,7 @@ export default function StoresPage() {
           Hệ thống {TOTAL_STORES} cửa hàng CCB Mart
         </h1>
         <p style={{ maxWidth: 640, fontSize: 16, color: 'var(--ink-2)' }}>
-          Tìm cửa hàng gần bạn nhất. Mọi cửa hàng CCB Mart đều do chi hội Cựu Chiến Binh địa phương vận hành.
+          Tìm cửa hàng gần bạn nhất. Mọi cửa hàng CCB Mart đều do đồng đội Cựu Chiến Binh tại địa phương vận hành — Ban liên lạc Trung đoàn E29 hỗ trợ chuẩn hoá quy trình.
         </p>
 
         <div style={{ display: 'flex', gap: 12, margin: '24px 0 32px', flexWrap: 'wrap' }}>

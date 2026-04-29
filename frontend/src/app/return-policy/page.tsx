@@ -8,7 +8,7 @@ export default function ReturnPolicyPage() {
       eyebrow="Chính sách"
       title="Chính sách đổi trả"
       breadcrumbLabel="Chính sách đổi trả"
-      intro="CCB Mart cam kết hoàn tiền 100% nếu sản phẩm bị lỗi, sai mô tả hoặc hết hạn. Mọi sản phẩm đều được Hội CCB địa phương xác nhận trước khi giao tới khách hàng."
+      intro="CCB Mart cam kết hoàn tiền 100% nếu sản phẩm bị lỗi, sai mô tả hoặc hết hạn. Mọi sản phẩm đều được đồng đội CCB tại địa phương khảo sát và bảo chứng trước khi giao tới khách hàng."
       sections={[
         { kind: 'heading', text: 'Thời gian áp dụng' },
         { kind: 'paragraph', body: 'Trong vòng 7 ngày kể từ ngày nhận hàng, bạn có quyền yêu cầu đổi/trả nếu thuộc một trong các trường hợp dưới đây.' },

@@ -34,8 +34,8 @@ export default function PaymentMethodsPage() {
         { kind: 'heading', text: '4. Thẻ ATM / Visa / Mastercard' },
         { kind: 'paragraph', body: 'Hỗ trợ đầy đủ thẻ nội địa (qua cổng NAPAS) và thẻ quốc tế Visa, Mastercard, JCB. Mọi giao dịch đều được mã hoá theo chuẩn PCI-DSS.' },
 
-        { kind: 'heading', text: '5. Trả sau (cho Hội viên)' },
-        { kind: 'paragraph', body: 'Hội viên CCB có lịch sử mua hàng từ 6 tháng trở lên có thể đăng ký Trả sau với hạn mức 5.000.000 ₫. Đơn được giao ngay, thanh toán trong vòng 30 ngày không phụ phí.' },
+        { kind: 'heading', text: '5. Trả sau (cho thành viên CCB Mart)' },
+        { kind: 'paragraph', body: 'Thành viên CCB Mart có lịch sử mua hàng từ 6 tháng trở lên có thể đăng ký Trả sau với hạn mức 5.000.000 ₫. Đơn được giao ngay, thanh toán trong vòng 30 ngày không phụ phí.' },
 
         { kind: 'callout', tone: 'red', title: 'An toàn thanh toán',
           body: 'CCB Mart không bao giờ yêu cầu khách hàng cung cấp mật khẩu Internet Banking, OTP qua điện thoại hay tin nhắn. Mọi yêu cầu như vậy đều là lừa đảo — vui lòng báo ngay hotline 1900 6868.' },

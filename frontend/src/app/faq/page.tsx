@@ -12,7 +12,7 @@ export default function FaqPage() {
       sections={[
         { kind: 'heading', text: 'Đặt hàng & thanh toán' },
         { kind: 'qa', question: 'Tôi có cần đăng ký tài khoản để mua hàng không?',
-          answer: 'Không bắt buộc. Bạn có thể mua hàng với tư cách khách. Tuy nhiên nếu đăng ký Hội viên, bạn sẽ được hưởng giá ưu đãi và tích điểm cho mỗi đơn.' },
+          answer: 'Không bắt buộc. Bạn có thể mua hàng với tư cách khách. Tuy nhiên nếu đăng ký thành viên CCB Mart, bạn sẽ được hưởng giá ưu đãi và tích điểm cho mỗi đơn.' },
         { kind: 'qa', question: 'CCB Mart hỗ trợ những phương thức thanh toán nào?',
           answer: 'Tiền mặt khi nhận hàng (COD), chuyển khoản ngân hàng, ví điện tử (Momo, ZaloPay, VNPay) và thẻ ATM/Visa/Mastercard.' },
         { kind: 'qa', question: 'Tôi có thể xuất hoá đơn VAT không?',
@@ -34,17 +34,17 @@ export default function FaqPage() {
 
         { kind: 'heading', text: 'Quỹ Vì đồng đội' },
         { kind: 'qa', question: 'Quỹ Vì đồng đội là gì?',
-          answer: 'Là quỹ trích 1% từ mỗi đơn hàng để hỗ trợ Cựu Chiến Binh có hoàn cảnh khó khăn (neo đơn, bệnh tật, mất sức lao động). Mọi khoản chi đều có biên lai và xác nhận của Hội CCB địa phương.' },
+          answer: 'Là quỹ trích 1% từ mỗi đơn hàng để hỗ trợ Cựu Chiến Binh có hoàn cảnh khó khăn (neo đơn, bệnh tật, mất sức lao động). Mọi khoản chi đều có biên lai và xác nhận của đồng đội CCB tại địa phương.' },
         { kind: 'qa', question: 'Tôi có thể đóng góp thêm vào quỹ không?',
           answer: 'Có. Tại bước thanh toán, bạn có thể chọn đóng góp thêm 5.000 / 10.000 / 20.000 ₫ (hoặc số tiền tự nhập). Toàn bộ số tiền được công khai trên trang Minh bạch quỹ mỗi tháng.' },
         { kind: 'qa', question: 'Làm sao biết tiền quỹ được dùng đúng mục đích?',
-          answer: 'Sao kê chi tiết được công khai mỗi tháng tại trang chủ — mục Quỹ Vì đồng đội. Mọi khoản chi đều kèm biên lai, ảnh và xác nhận của Hội CCB cấp xã/phường.' },
+          answer: 'Sao kê chi tiết được công khai mỗi tháng tại trang chủ — mục Quỹ Vì đồng đội. Mọi khoản chi đều kèm biên lai, ảnh và xác nhận của đồng đội CCB tại địa phương; Ban liên lạc Trung đoàn E29 trực tiếp triển khai.' },
 
         { kind: 'heading', text: 'Trở thành đối tác / nhà cung cấp' },
         { kind: 'qa', question: 'Tôi là Cựu Chiến Binh, làm sao đưa sản phẩm lên CCB Mart?',
-          answer: 'Đăng ký tại trang Trở thành đối tác. Hội CCB địa phương sẽ xác nhận và hướng dẫn quy trình kiểm định, đóng gói, niêm yết.' },
+          answer: 'Đăng ký tại trang Trở thành đối tác. Ban liên lạc Trung đoàn E29 sẽ làm việc cùng đồng đội CCB tại địa phương để khảo sát, hướng dẫn quy trình đóng gói và niêm yết.' },
         { kind: 'qa', question: 'Phí đưa sản phẩm lên CCB Mart là bao nhiêu?',
-          answer: 'Hội viên CCB không phải trả phí niêm yết. CCB Mart chỉ trích 7-12% trên giá bán (tuỳ ngành hàng) để vận hành.' },
+          answer: 'Cựu Chiến Binh không phải trả phí niêm yết. CCB Mart chỉ trích 7-12% trên giá bán (tuỳ ngành hàng) để vận hành.' },
       ]}
       cta={{ label: 'Liên hệ trực tiếp với CCB Mart', href: '/about' }}
     />

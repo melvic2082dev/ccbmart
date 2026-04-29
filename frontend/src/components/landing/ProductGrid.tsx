@@ -104,7 +104,7 @@ export function ProductCard({ product }: { product: Product }) {
             color: 'var(--ccb-olive-dark)',
             display: 'inline-flex', alignItems: 'center', gap: 4,
           }}>
-            <BadgeCheck size={11} /> Hội CCB xác nhận
+            <BadgeCheck size={11} /> Đồng đội tin dùng
           </div>
         )}
       </div>

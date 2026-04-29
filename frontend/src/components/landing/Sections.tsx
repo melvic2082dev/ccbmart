@@ -147,10 +147,10 @@ function useCountdown(targetIso: string | null) {
 export function PromoBanner({ data }: { data?: PromoData } = {}) {
   const eyebrow = data?.eyebrow ?? 'Kỷ niệm 30/4 · Chương trình lớn';
   const title = data?.title;
-  const subtitle = data?.subtitle ?? 'Từ 20/4 đến 02/5/2026. Ưu đãi đặc biệt cho Hội viên Hội Cựu Chiến Binh Việt Nam và gia đình khi đặt hàng trực tuyến.';
+  const subtitle = data?.subtitle ?? 'Từ 20/4 đến 02/5/2026. Ưu đãi đặc biệt cho thành viên CCB Mart và đồng đội Cựu Chiến Binh khi đặt hàng trực tuyến.';
   const primaryCtaText = data?.primaryCtaText ?? 'Xem ưu đãi';
   const primaryCtaHref = data?.primaryCtaHref ?? '#';
-  const secondaryCtaText = data?.secondaryCtaText ?? 'Đăng ký Hội viên';
+  const secondaryCtaText = data?.secondaryCtaText ?? 'Đăng ký thành viên';
   const secondaryCtaHref = data?.secondaryCtaHref ?? '/login';
 
   const countdown = useCountdown(data?.endDate ?? null);
@@ -366,7 +366,7 @@ export function Footer() {
               <img src="/ccb-mart-logo.png" alt="CCB Mart" style={{ height: 36, width: 'auto', display: 'block' }} />
             </div>
             <p style={{ fontFamily: 'var(--font-body)', fontSize: 13, lineHeight: 1.6, marginTop: 16, color: '#D4CFBE' }}>
-              Hệ thống bán lẻ và phân phối của cộng đồng Cựu Chiến Binh Việt Nam. Đồng hành cùng bà con trên khắp mọi miền Tổ quốc.
+              Một dự án của Ban liên lạc Trung đoàn E29 — đồng hành cùng người lính làm kinh tế trên khắp mọi miền Tổ quốc.
             </p>
           </div>
           {cols.map((c) => (

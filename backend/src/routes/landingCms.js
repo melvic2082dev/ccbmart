@@ -52,11 +52,11 @@ const DEFAULT_PROMO = {
   eyebrow: 'Kỷ niệm 30/4 · Chương trình lớn',
   title: 'Tri ân Cựu Chiến Binh, giảm đến 30% toàn hệ thống',
   subtitle:
-    'Từ 20/4 đến 02/5/2026. Ưu đãi đặc biệt cho Hội viên Hội Cựu Chiến Binh Việt Nam và gia đình khi đặt hàng trực tuyến.',
+    'Từ 20/4 đến 02/5/2026. Ưu đãi đặc biệt cho thành viên CCB Mart và đồng đội Cựu Chiến Binh khi đặt hàng trực tuyến.',
   imageUrl: null,
   primaryCtaText: 'Xem ưu đãi',
   primaryCtaHref: '#',
-  secondaryCtaText: 'Đăng ký Hội viên',
+  secondaryCtaText: 'Đăng ký thành viên',
   secondaryCtaHref: '/login',
   isActive: true,
 };
@@ -113,8 +113,8 @@ const DEFAULT_FOOTER = {
     { icon: 'Truck', label: 'Giao 24h tại các thành phố lớn' },
     { icon: 'HandHeart', label: '1% mỗi đơn cho đồng đội' },
   ],
-  copyright: '© 2026 CCB Mart — Hệ thống bán lẻ của cộng đồng Cựu Chiến Binh Việt Nam',
-  verifiedBadge: 'Hội CCB Việt Nam xác nhận',
+  copyright: '© 2026 CCB Mart — Một dự án của Ban liên lạc Trung đoàn E29',
+  verifiedBadge: 'Ban liên lạc Trung đoàn E29 vận hành',
   isActive: true,
 };
 

@@ -282,7 +282,7 @@ export function TransparencyFundSection({ entries }: { entries?: FundEntryData[]
           </div>
         </div>
         <p style={{ marginTop: 16, fontSize: 12.5, color: 'var(--ink-3)', fontStyle: 'italic', textAlign: 'center' }}>
-          Sao kê chi tiết công khai mỗi tháng. Mọi khoản chi đều có biên lai và xác nhận của Hội Cựu Chiến Binh địa phương.
+          Sao kê chi tiết công khai mỗi tháng. Mọi khoản chi đều có biên lai và xác nhận của đồng đội Cựu Chiến Binh tại địa phương — Ban liên lạc Trung đoàn E29 trực tiếp triển khai.
         </p>
       </div>
     </section>

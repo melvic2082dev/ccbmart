@@ -13,7 +13,7 @@ export default function CareersPage() {
         { kind: 'heading', text: 'Chính sách tuyển dụng' },
         { kind: 'bullet', items: [
           'Ưu tiên 1: Cựu Chiến Binh, thân nhân liệt sĩ, thương binh.',
-          'Ưu tiên 2: Con em Hội viên CCB và lao động có hoàn cảnh khó khăn.',
+          'Ưu tiên 2: Con em Cựu Chiến Binh và lao động có hoàn cảnh khó khăn.',
           'Lương cơ bản từ 8 triệu (nhân viên cửa hàng) đến 35 triệu (quản lý vùng).',
           'Đóng đầy đủ BHXH, BHYT, BHTN ngay từ ngày làm việc đầu tiên.',
           'Phụ cấp ăn trưa, công tác phí, thưởng năng suất hằng tháng.',

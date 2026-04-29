@@ -26,7 +26,7 @@ export default function ShippingPolicyPage() {
         ]},
 
         { kind: 'heading', text: 'Đối tác vận chuyển' },
-        { kind: 'paragraph', body: 'CCB Mart kết hợp đội shipper nội bộ tại Hà Nội & TP. HCM với các đối tác Giao Hàng Nhanh, Viettel Post và J&T Express cho các tuyến tỉnh. Mọi shipper đều được Hội CCB địa phương giám sát.' },
+        { kind: 'paragraph', body: 'CCB Mart kết hợp đội shipper nội bộ tại Hà Nội & TP. HCM với các đối tác Giao Hàng Nhanh, Viettel Post và J&T Express cho các tuyến tỉnh. Đội shipper nội bộ là đồng đội CCB hoặc con em CCB do Ban liên lạc Trung đoàn E29 tuyển chọn.' },
 
         { kind: 'heading', text: 'Theo dõi đơn hàng' },
         { kind: 'paragraph', body: 'Sau khi đặt hàng thành công, bạn sẽ nhận được mã đơn qua SMS và email. Vào trang Tra cứu đơn hàng để xem trạng thái và vị trí shipper theo thời gian thực.' },

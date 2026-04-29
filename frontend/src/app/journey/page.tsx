@@ -56,7 +56,7 @@ export default function JourneyAllPage() {
             fontFamily: 'var(--font-body)', fontSize: 19, lineHeight: 1.65,
             color: 'var(--ink-2)', margin: 0,
           }}>
-            Hình ảnh thật từ chi hội CCB cấp xã. Không photoshop, không stock — chỉ có những bàn tay đã từng cầm súng. Mỗi chuyến đi là một câu chuyện chưa kể.
+            Hình ảnh thật từ những chuyến đi của Ban liên lạc Trung đoàn E29 cùng đồng đội CCB tại các địa phương. Không photoshop, không stock — chỉ có những bàn tay đã từng cầm súng. Mỗi chuyến đi là một câu chuyện chưa kể.
           </p>
         </header>
 

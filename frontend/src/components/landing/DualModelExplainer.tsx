@@ -109,7 +109,7 @@ export function DualModelExplainer() {
 
             <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: 10 }}>
               <Bullet icon={<BadgeCheck size={20} color={OLIVE_DARK} />}>
-                Chúng tôi <strong>nhập hàng &amp; kiểm định</strong> bởi Hội CCB địa phương
+                Chúng tôi <strong>nhập hàng &amp; kiểm tra</strong> tại nguồn — đồng đội E29 trực tiếp khảo sát
               </Bullet>
               <Bullet icon={<Truck size={20} color={OLIVE_DARK} />}>
                 <strong>Giao 24h</strong> nội thành Hà Nội · TP. HCM · Đà Nẵng
@@ -192,7 +192,7 @@ export function DualModelExplainer() {
                 <strong>Giá tận gốc</strong> — không trung gian, không phí dịch vụ
               </Bullet>
               <Bullet icon={<BadgeCheck size={20} color={ZALO_DARK} />}>
-                Mỗi CCB đều có <strong>xác nhận của chi hội</strong> địa phương
+                Mỗi CCB đều có <strong>đồng đội cùng đơn vị bảo chứng</strong> uy tín
               </Bullet>
             </ul>
 

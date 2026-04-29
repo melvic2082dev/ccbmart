@@ -237,7 +237,7 @@ function WaxSeal() {
       <span style={{ position: 'absolute', inset: 6, border: '1px dashed rgba(255,233,194,0.55)', borderRadius: '50%' }} />
       <div>
         <div style={{ color: 'var(--ccb-gold)', fontSize: 13, lineHeight: 1, marginBottom: 2 }}>★</div>
-        Đã kiểm định<br />bởi Hội CCB
+        Đồng đội<br />E29 tin dùng
       </div>
     </div>
   );
@@ -343,7 +343,7 @@ function BigProductCard({ product }: { product: ProductDetail }) {
             transition: 'transform 0.25s ease, opacity 0.25s ease',
             pointerEvents: 'none',
           }}>
-            ✓ Sản phẩm đã qua kiểm định chất lượng bởi Hội Cựu Chiến Binh {certPlace}.
+            ✓ Sản phẩm được đồng đội Cựu Chiến Binh tại {certPlace} kiểm tra và bảo chứng — Ban liên lạc Trung đoàn E29 đứng ra giới thiệu.
           </div>
         )}
       </div>
@@ -529,7 +529,7 @@ export function FundHeadlineSection({ entries }: { entries?: FundEntryData[] }) 
           marginTop: 40, fontFamily: 'var(--font-body)', fontSize: 16, lineHeight: 1.5,
           color: 'var(--ink-3)', fontStyle: 'italic',
         }}>
-          Sao kê chi tiết được công khai mỗi tháng. Mọi khoản chi đều có biên lai và xác nhận của Hội Cựu Chiến Binh địa phương.
+          Sao kê chi tiết được công khai mỗi tháng. Mọi khoản chi đều có biên lai và xác nhận của đồng đội Cựu Chiến Binh tại địa phương — do Ban liên lạc Trung đoàn E29 trực tiếp triển khai.
         </p>
       </div>
     </section>
@@ -694,8 +694,8 @@ export function SeniorFooter({ data }: { data?: FooterData } = {}) {
   const addr1 = data?.addressLine1 ?? 'Số 19 đường Lê Đức Thọ';
   const addr2 = data?.addressLine2 ?? 'Mỹ Đình 2, Nam Từ Liêm, Hà Nội';
   const addrHours = data?.addressHours ?? 'Mở cửa 8:00 — 20:00';
-  const copyright = data?.copyright ?? '© 2026 CCB Mart — Hệ thống bán lẻ của cộng đồng Cựu Chiến Binh Việt Nam';
-  const verifiedBadge = data?.verifiedBadge ?? 'Hội CCB Việt Nam xác nhận';
+  const copyright = data?.copyright ?? '© 2026 CCB Mart — Một dự án của Ban liên lạc Trung đoàn E29';
+  const verifiedBadge = data?.verifiedBadge ?? 'Ban liên lạc Trung đoàn E29 vận hành';
   const commitments = data?.commitments && data.commitments.length > 0
     ? data.commitments
     : [

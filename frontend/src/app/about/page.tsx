@@ -26,8 +26,9 @@ export default function AboutPage() {
               <span style={{ color: 'var(--ccb-red)' }}>do Cựu Chiến Binh</span> cung cấp.
             </h1>
             <p style={{ fontSize: 17, lineHeight: 1.7, maxWidth: 540, color: 'var(--ink-2)' }}>
-              CCB Mart là hệ thống bán lẻ được Hội Cựu Chiến Binh Việt Nam bảo trợ, kết nối người tiêu dùng
-              với nông sản và đặc sản vùng miền do chính hội viên CCB canh tác trên khắp cả nước.
+              CCB Mart là một dự án của <strong>Ban liên lạc Trung đoàn E29</strong> — đồng hành cùng
+              người lính làm kinh tế, kết nối người tiêu dùng với nông sản và đặc sản vùng miền do chính
+              các Cựu Chiến Binh canh tác trên khắp cả nước.
             </p>
             <p style={{ fontSize: 16, lineHeight: 1.7, maxWidth: 540, color: 'var(--ink-2)', marginTop: 12 }}>
               Chúng tôi tin rằng những người lính năm xưa — với tinh thần kỷ luật, trung thực và trách nhiệm —
@@ -46,9 +47,43 @@ export default function AboutPage() {
           </div>
         </section>
 
+        {/* Ai vận hành — explicit disclosure */}
+        <section style={{
+          background: '#FFFFFF',
+          border: '2px solid var(--ccb-olive)',
+          borderLeft: '6px solid var(--ccb-olive-dark)',
+          borderRadius: 12,
+          padding: '28px 32px',
+          marginBottom: 48,
+        }}>
+          <div style={{
+            fontFamily: 'var(--font-body)', fontSize: 13, fontWeight: 700,
+            letterSpacing: '0.10em', textTransform: 'uppercase', color: 'var(--ccb-olive-dark)',
+            marginBottom: 8,
+          }}>
+            Đơn vị vận hành
+          </div>
+          <h2 style={{
+            fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 26,
+            margin: '0 0 12px', color: 'var(--ink-1)',
+          }}>
+            Ban liên lạc Trung đoàn E29
+          </h2>
+          <p style={{ fontSize: 16, lineHeight: 1.7, color: 'var(--ink-2)', margin: 0 }}>
+            CCB Mart do <strong>Ban liên lạc Trung đoàn E29</strong> sáng lập và vận hành — một tập thể
+            các Cựu Chiến Binh từng cùng đơn vị, nay đồng lòng đi tiếp một &ldquo;mặt trận&rdquo; mới: giúp đồng đội
+            phát triển kinh tế, có thu nhập ổn định trên chính mảnh đất quê hương.
+          </p>
+          <p style={{ fontSize: 16, lineHeight: 1.7, color: 'var(--ink-2)', margin: '12px 0 0' }}>
+            CCB Mart <strong>không phải là Hội Cựu Chiến Binh Việt Nam</strong> và <strong>không được Hội CCB Việt Nam
+            xác nhận chính thức</strong>. Chúng tôi là một sáng kiến độc lập của Ban liên lạc E29, hoạt động
+            song song và sẵn sàng đóng góp cho các hoạt động của Hội CCB ở mọi cấp khi được mời.
+          </p>
+        </section>
+
         <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 28, margin: '0 0 16px' }}>Ba giá trị cốt lõi</h2>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 20, marginBottom: 48 }}>
-          <Value title="Nguồn gốc minh bạch" color="var(--ccb-red)"      body="Mỗi sản phẩm có mã QR truy xuất về đến hộ canh tác, hợp tác xã CCB địa phương." />
+          <Value title="Nguồn gốc minh bạch" color="var(--ccb-red)"      body="Mỗi sản phẩm có mã QR truy xuất về đến hộ canh tác của đồng đội CCB tại địa phương." />
           <Value title="Chất lượng cam kết"   color="var(--ccb-olive)"    body="Đảm bảo VietGAP hoặc cao hơn. Đổi trả 7 ngày nếu không hài lòng." />
           <Value title="1% vì đồng đội"       color="var(--ccb-gold-dark)" body="Mỗi đơn hàng trích 1% vào quỹ hỗ trợ gia đình CCB có hoàn cảnh khó khăn." />
         </div>
@@ -62,7 +97,7 @@ export default function AboutPage() {
           </h2>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 24 }}>
             <Stat n="127"    label="Cửa hàng toàn quốc" />
-            <Stat n="2.340+" label="Hội viên CCB cung ứng" />
+            <Stat n="2.340+" label="Đồng đội CCB cung ứng" />
             <Stat n="58"     label="Tỉnh thành phục vụ" />
             <Stat n="12 tỷ"  label="Quỹ Vì đồng đội 2025" />
           </div>
@@ -70,7 +105,7 @@ export default function AboutPage() {
 
         <section style={{ background: 'var(--ccb-red-tint)', borderRadius: 12, padding: 40, textAlign: 'center' }}>
           <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 26, color: 'var(--ccb-red-dark)', margin: 0 }}>
-            Bạn là hội viên CCB và muốn cung ứng sản phẩm?
+            Bạn là Cựu Chiến Binh và muốn cung ứng sản phẩm?
           </h2>
           <p style={{ maxWidth: 580, margin: '12px auto 20px', fontSize: 15 }}>
             Gửi thông tin sản phẩm và cơ sở canh tác. Đội ngũ CCB Mart sẽ liên hệ khảo sát trong vòng 7 ngày.

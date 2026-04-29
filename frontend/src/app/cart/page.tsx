@@ -138,7 +138,7 @@ export default function CartPage() {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               <Pay label="Thanh toán khi nhận hàng (COD)" sub="Miễn phí · Phổ biến nhất" defaultChecked />
               <Pay label="Chuyển khoản ngân hàng" sub="Giảm thêm 5.000 ₫" />
-              <Pay label="Thẻ Hội viên CCB" sub="Giảm thêm 5% toàn hoá đơn" />
+              <Pay label="Thẻ thành viên CCB Mart" sub="Giảm thêm 5% toàn hoá đơn" />
               <Pay label="Ví MoMo / VNPay" sub="Giao dịch nhanh" />
             </div>
           </div>

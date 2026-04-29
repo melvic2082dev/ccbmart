@@ -116,7 +116,7 @@ export const CATEGORIES: Category[] = [
     name: 'Hàng khuyến mãi',
     icon: 'tag',
     tone: 'red',
-    description: 'Sản phẩm đang giảm giá toàn hệ thống — cập nhật mỗi tuần. Ưu đãi đặc biệt cho Hội viên CCB và gia đình.',
+    description: 'Sản phẩm đang giảm giá toàn hệ thống — cập nhật mỗi tuần. Ưu đãi đặc biệt cho thành viên CCB Mart và đồng đội Cựu Chiến Binh.',
     productCount: 35,
     filters: { regions: [{ label: 'Đang khuyến mãi', count: 35, checked: true }] },
   },
@@ -138,7 +138,7 @@ const M = (over: Partial<ProductDetail>): ProductDetail => ({
 
 export const PRODUCTS: ProductDetail[] = [
   // Gạo & Lương thực
-  M({ slug: 'gao-st25-soc-trang', category: 'gao-luong-thuc', name: 'Gạo ST25 Sóc Trăng — Túi 5 kg', art: 'GẠO\nST25', tone: 'gold', price: 187000, was: 220000, rating: 4.9, sold: '1.2k', region: 'Sóc Trăng', verified: true, badges: [{ label: '−15%', variant: 'red' }, { label: 'Hot', variant: 'gold' }], brand: 'Gạo Ông Cua', origin: 'Sóc Trăng', weight: '5 kg / túi', certifications: 'VietGAP, CCB xác nhận', distributor: 'HTX CCB Sóc Trăng', description: 'Gạo ST25 do ông Hồ Quang Cua và cộng sự nghiên cứu, đạt giải Gạo Ngon Nhất Thế Giới 2019. Hiện phân phối qua CCB Mart trực tiếp từ vùng canh tác của hội viên Hội Cựu Chiến Binh tỉnh Sóc Trăng.' }),
+  M({ slug: 'gao-st25-soc-trang', category: 'gao-luong-thuc', name: 'Gạo ST25 Sóc Trăng — Túi 5 kg', art: 'GẠO\nST25', tone: 'gold', price: 187000, was: 220000, rating: 4.9, sold: '1.2k', region: 'Sóc Trăng', verified: true, badges: [{ label: '−15%', variant: 'red' }, { label: 'Hot', variant: 'gold' }], brand: 'Gạo Ông Cua', origin: 'Sóc Trăng', weight: '5 kg / túi', certifications: 'VietGAP, đồng đội tin dùng', distributor: 'HTX CCB Sóc Trăng', description: 'Gạo ST25 do ông Hồ Quang Cua và cộng sự nghiên cứu, đạt giải Gạo Ngon Nhất Thế Giới 2019. Hiện phân phối qua CCB Mart trực tiếp từ vùng canh tác của các Cựu Chiến Binh tại tỉnh Sóc Trăng.' }),
   M({ slug: 'nep-cai-hai-hau', category: 'gao-luong-thuc', name: 'Nếp cái hoa vàng Hải Hậu — 2 kg', art: 'NẾP\nCÁI', tone: 'olive', price: 95000, rating: 4.8, sold: '634', region: 'Nam Định', verified: true, brand: 'HTX Hải Hậu', origin: 'Hải Hậu, Nam Định', weight: '2 kg / túi', certifications: 'VietGAP', distributor: 'HTX CCB Hải Hậu', description: 'Nếp cái hoa vàng truyền thống vùng Hải Hậu — hạt tròn mẩy, dẻo thơm, dùng nấu xôi và làm bánh chưng.' }),
   M({ slug: 'gao-lut-huyet-rong', category: 'gao-luong-thuc', name: 'Gạo lứt huyết rồng hữu cơ — 1 kg', art: 'GẠO\nLỨT', tone: 'red', price: 68000, rating: 4.7, sold: '452', region: 'An Giang', brand: 'Hữu cơ An Giang', origin: 'An Giang', weight: '1 kg', certifications: 'Organic Việt Nam', distributor: 'HTX CCB An Giang', description: 'Gạo lứt huyết rồng nguyên cám, giàu chất xơ và sắt — lựa chọn của thực đơn lành mạnh.' }),
   M({ slug: 'mien-dong-cao-bang', category: 'gao-luong-thuc', name: 'Miến dong Cao Bằng — 500 g', art: 'MIẾN\nDONG', tone: 'gold', price: 45000, rating: 4.6, sold: '478', region: 'Cao Bằng', brand: 'Cao Bằng truyền thống', origin: 'Cao Bằng', weight: '500 g', certifications: 'VietGAP', distributor: 'HTX CCB Cao Bằng', description: 'Miến dong làm từ củ dong riềng vùng cao, sợi trong, dai và không phụ gia.' }),
