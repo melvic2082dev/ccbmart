@@ -930,6 +930,7 @@ model LandingProduct {
   producerHometown     String? @map("producer_hometown")
   producerUnit         String? @map("producer_unit") // đơn vị quân ngũ cũ
   producerContribution Int?    @map("producer_contribution") // ₫ góp quỹ "Vì đồng đội" mỗi đơn
+  producerPhotoUrl     String? @map("producer_photo_url") // chân dung CCB cho khối "Bàn tay lính"
   isActive       Boolean  @default(true) @map("is_active")
   displayOrder   Int      @default(0) @map("display_order")
   createdAt      DateTime @default(now()) @map("created_at")

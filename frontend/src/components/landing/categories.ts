@@ -242,6 +242,7 @@ export type DbCatalogProduct = {
   producerHometown?: string | null;
   producerUnit?: string | null;
   producerContribution?: number | null;
+  producerPhotoUrl?: string | null;
   isActive: boolean;
   displayOrder: number;
 };
@@ -305,6 +306,7 @@ export function mergeWithDb(dbProducts: DbCatalogProduct[]): ProductDetail[] {
       producerHometown: dp.producerHometown ?? null,
       producerUnit: dp.producerUnit ?? null,
       producerContribution: dp.producerContribution ?? null,
+      producerPhotoUrl: dp.producerPhotoUrl ?? null,
     };
     bySlug.set(dp.slug, merged);
   }

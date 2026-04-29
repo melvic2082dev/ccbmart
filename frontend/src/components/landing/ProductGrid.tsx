@@ -24,6 +24,7 @@ export type Product = {
   producerHometown?: string | null;
   producerUnit?: string | null;
   producerContribution?: number | null;
+  producerPhotoUrl?: string | null;
 };
 
 export function ProductGrid({

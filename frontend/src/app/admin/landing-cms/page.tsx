@@ -853,6 +853,7 @@ type CatalogProduct = {
   producerHometown: string | null;
   producerUnit: string | null;
   producerContribution: number | null;
+  producerPhotoUrl: string | null;
   isActive: boolean;
   displayOrder: number;
 };
@@ -870,6 +871,7 @@ function emptyProduct(): CatalogProduct {
     brand: '—', origin: '—', weight: '—', certifications: '—', distributor: '—',
     description: '', thumbs: DEFAULT_THUMBS,
     producerName: null, producerHometown: null, producerUnit: null, producerContribution: null,
+    producerPhotoUrl: null,
     isActive: true, displayOrder: 0,
   };
 }
@@ -1061,6 +1063,7 @@ function ProductEditDialog({ product, onClose, onSaved, onError }: {
         description: form.description, thumbs: form.thumbs,
         producerName: form.producerName, producerHometown: form.producerHometown,
         producerUnit: form.producerUnit, producerContribution: form.producerContribution,
+        producerPhotoUrl: form.producerPhotoUrl,
         isActive: form.isActive, displayOrder: form.displayOrder,
       };
       if (isNew) await api.adminLandingCreateProduct(payload);
@@ -1223,15 +1226,24 @@ function ProductEditDialog({ product, onClose, onSaved, onError }: {
           <div className="border-t pt-4 mt-3">
             <h4 className="text-sm font-semibold mb-1">Người lính sản xuất</h4>
             <p className="text-[11px] text-muted-foreground mb-3">
-              Thông tin CCB đứng sau sản phẩm — hiển thị trên thẻ và trang chi tiết.
+              Thông tin CCB đứng sau sản phẩm — hiển thị trên thẻ, khối "Bàn tay lính" và trang chi tiết.
+              Sản phẩm có ảnh chân dung sẽ được pick vào khối "Bàn tay lính" trên trang chủ.
             </p>
-            <div className="grid lg:grid-cols-2 gap-3">
-              <Field label="Tên CCB"><Input value={form.producerName ?? ''} onChange={(e) => set('producerName', e.target.value || null)} placeholder="vd: Ông Hồ Quang Cua" /></Field>
-              <Field label="Quê quán"><Input value={form.producerHometown ?? ''} onChange={(e) => set('producerHometown', e.target.value || null)} placeholder="vd: Sóc Trăng" /></Field>
-              <Field label="Đơn vị quân ngũ cũ"><Input value={form.producerUnit ?? ''} onChange={(e) => set('producerUnit', e.target.value || null)} placeholder="vd: CCB Quân khu 9" /></Field>
-              <Field label="Trích quỹ Vì đồng đội (₫/đơn)">
-                <Input type="number" value={form.producerContribution ?? ''} onChange={(e) => set('producerContribution', e.target.value ? parseInt(e.target.value, 10) : null)} placeholder="vd: 1870" />
-              </Field>
+            <div className="grid lg:grid-cols-2 gap-4">
+              <ImageUpload
+                value={form.producerPhotoUrl}
+                onChange={(u) => set('producerPhotoUrl', u)}
+                onError={onError}
+                label="Ảnh chân dung CCB (vuông)"
+              />
+              <div className="grid gap-3">
+                <Field label="Tên CCB"><Input value={form.producerName ?? ''} onChange={(e) => set('producerName', e.target.value || null)} placeholder="vd: Ông Hồ Quang Cua" /></Field>
+                <Field label="Quê quán"><Input value={form.producerHometown ?? ''} onChange={(e) => set('producerHometown', e.target.value || null)} placeholder="vd: Sóc Trăng" /></Field>
+                <Field label="Đơn vị quân ngũ cũ"><Input value={form.producerUnit ?? ''} onChange={(e) => set('producerUnit', e.target.value || null)} placeholder="vd: CCB Quân khu 9" /></Field>
+                <Field label="Trích quỹ Vì đồng đội (₫/đơn)">
+                  <Input type="number" value={form.producerContribution ?? ''} onChange={(e) => set('producerContribution', e.target.value ? parseInt(e.target.value, 10) : null)} placeholder="vd: 1870" />
+                </Field>
+              </div>
             </div>
           </div>
         </div>

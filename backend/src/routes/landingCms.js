@@ -32,12 +32,11 @@ const cmsUpload = multer({
 // ---- Defaults so first GET has content even before any admin edit ----
 const DEFAULT_HERO = {
   eyebrow: 'Hệ thống bán lẻ · Cựu Chiến Binh Việt Nam',
-  title: 'Hàng Việt chất lượng — Từ Cựu Chiến Binh vì Cựu Chiến Binh',
-  subtitle:
-    'Mỗi sản phẩm là một câu chuyện, mỗi đơn hàng là một nghĩa cử. CCB Mart kết nối đặc sản từ chính tay đồng đội năm xưa tới gia đình bạn — và trích 1% doanh thu vào quỹ "Vì đồng đội".',
+  title: 'CCB Mart — Nơi đồng đội gửi gắm tâm huyết',
+  subtitle: 'Đặc sản từ tay lính — Mỗi đơn hàng là một nghĩa cử',
   imageUrl: null,
-  primaryCtaText: 'Xem sản phẩm — Góp nghĩa tình',
-  primaryCtaHref: '#featured',
+  primaryCtaText: 'Xem sản phẩm — Ủng hộ đồng đội',
+  primaryCtaHref: '#san-pham',
   secondaryCtaText: 'Câu chuyện dự án',
   secondaryCtaHref: '/about',
   stat1Value: '2.400+',
@@ -556,7 +555,7 @@ const PRODUCT_FIELDS = [
   'slug', 'categorySlug', 'name', 'art', 'tone', 'price', 'was',
   'rating', 'sold', 'region', 'verified', 'badges', 'imageUrl',
   'brand', 'origin', 'weight', 'certifications', 'distributor', 'description', 'thumbs',
-  'producerName', 'producerHometown', 'producerUnit', 'producerContribution',
+  'producerName', 'producerHometown', 'producerUnit', 'producerContribution', 'producerPhotoUrl',
   'isActive', 'displayOrder',
 ];
 const VALID_TONES = new Set(['paper', 'red', 'olive', 'gold']);
