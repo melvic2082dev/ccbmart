@@ -210,6 +210,21 @@
   border-color: #FFFFFF !important;
 }
 
+/* Dual-model explainer — stack on mobile */
+@media (max-width: 880px) {
+  .ccb-landing .ccb-dual-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+.ccb-landing .ccb-dual-cta-olive:hover {
+  background: #3F4F23 !important;
+  transform: translateY(-2px);
+}
+.ccb-landing .ccb-dual-cta-zalo:hover {
+  background: #0050C8 !important;
+  transform: translateY(-2px);
+}
+
 /* Body min font 18px throughout the senior landing — already mostly done inline,
    but enforce as a safety net for any inherited content */
 .ccb-landing { font-size: 18px; line-height: 1.55; }

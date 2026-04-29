@@ -19,6 +19,7 @@ import {
   type FooterData,
 } from './SeniorSections';
 import { ConnectListingsSection } from './ConnectListings';
+import { DualModelExplainer } from './DualModelExplainer';
 import { StickyFundBanner, SocialProofTicker } from './LandingExtras';
 import {
   CATEGORIES, PRODUCTS,
@@ -111,6 +112,9 @@ export function LandingPage() {
 
       {/* 1. Hero — full-width portrait + overlay + big CTA */}
       <SeniorHero data={content?.hero} />
+
+      {/* 1.5. Mô hình kép — giải thích trong 3 giây trước khi xem sản phẩm */}
+      <DualModelExplainer />
 
       {/* 2. Bàn tay lính — 3 chân dung */}
       <ProducerPortraitsSection products={producerProducts as never} />
