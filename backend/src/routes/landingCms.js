@@ -105,8 +105,8 @@ const DEFAULT_HEADER = {
 const DEFAULT_FOOTER = {
   hotline: '1900 6868',
   hotlineNote: 'Đường dây ưu tiên dành cho Cựu Chiến Binh — 7:00 đến 21:00 mỗi ngày.',
-  addressLine1: 'Số 19 đường Lê Đức Thọ',
-  addressLine2: 'Mỹ Đình 2, Nam Từ Liêm, Hà Nội',
+  addressLine1: 'Số 555 Lạc Long Quân',
+  addressLine2: 'Tây Hồ, Hà Nội',
   addressHours: 'Mở cửa 8:00 — 20:00',
   commitments: [
     { icon: 'RefreshCcw', label: 'Đổi trả vì nghĩa tình' },

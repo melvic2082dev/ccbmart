@@ -27,13 +27,16 @@ import {
   type DbCatalogProduct, type DbCategory,
 } from './categories';
 
+// 8 sản phẩm featured để chia 2 grid (mỗi grid 4 sản phẩm = 2x2 cân đối)
 const defaultFeaturedSlugs = [
   'gao-st25-soc-trang',
   'nuoc-mam-phu-quoc',
   'tra-shan-tuyet-ha-giang',
-  'ca-phe-buon-ma-thuot',
   'mat-ong-rung-u-minh',
+  'ca-phe-buon-ma-thuot',
   'tom-kho-bac-lieu',
+  'che-tan-cuong-thai-nguyen',
+  'gao-seng-cu-muong-lo',
 ];
 
 type CmsContent = {
@@ -119,9 +122,9 @@ export function LandingPage() {
       {/* 2. Bàn tay lính — 3 chân dung */}
       <ProducerPortraitsSection products={producerProducts as never} />
 
-      {/* 3a. Sản phẩm chọn lọc — đợt 1 (3 sản phẩm) */}
+      {/* 3a. Sản phẩm chọn lọc — đợt 1 (4 sản phẩm — 2x2 cân đối) */}
       <SeniorProductGrid
-        products={featured.slice(0, 3) as never}
+        products={featured.slice(0, 4) as never}
         eyebrow="Hàng tuyển chọn"
         title="Tâm huyết từ những người lính già"
         subtitle="Mỗi sản phẩm là một câu chuyện. Mỗi đơn hàng là một nghĩa cử."
@@ -131,9 +134,9 @@ export function LandingPage() {
       {/* 4. Quỹ nghĩa tình — chen giữa hai đợt sản phẩm */}
       <FundHeadlineSection entries={content?.fundEntries} />
 
-      {/* 3b. Sản phẩm chọn lọc — đợt 2 (3 sản phẩm còn lại) */}
+      {/* 3b. Sản phẩm chọn lọc — đợt 2 (4 sản phẩm còn lại — 2x2) */}
       <SeniorProductGrid
-        products={featured.slice(3, 6) as never}
+        products={featured.slice(4, 8) as never}
         eyebrow="Đặc sản tiếp theo"
         title="Đồng đội từ khắp ba miền"
         subtitle="Tiếp tục câu chuyện — sản vật từ những vùng đất nghĩa tình."

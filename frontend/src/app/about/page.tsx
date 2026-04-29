@@ -26,9 +26,9 @@ export default function AboutPage() {
               <span style={{ color: 'var(--ccb-red)' }}>do Cựu Chiến Binh</span> cung cấp.
             </h1>
             <p style={{ fontSize: 17, lineHeight: 1.7, maxWidth: 540, color: 'var(--ink-2)' }}>
-              CCB Mart là một dự án của <strong>Ban liên lạc Trung đoàn E29</strong> — đồng hành cùng
-              người lính làm kinh tế, kết nối người tiêu dùng với nông sản và đặc sản vùng miền do chính
-              các Cựu Chiến Binh canh tác trên khắp cả nước.
+              CCB Mart là một dự án của{' '}
+              <strong>Ban liên lạc Trung đoàn E29</strong>
+              {' '}— đồng hành cùng người lính làm kinh tế, kết nối người tiêu dùng với nông sản và đặc sản vùng miền do chính các Cựu Chiến Binh canh tác trên khắp cả nước.
             </p>
             <p style={{ fontSize: 16, lineHeight: 1.7, maxWidth: 540, color: 'var(--ink-2)', marginTop: 12 }}>
               Chúng tôi tin rằng những người lính năm xưa — với tinh thần kỷ luật, trung thực và trách nhiệm —
@@ -70,14 +70,16 @@ export default function AboutPage() {
             Ban liên lạc Trung đoàn E29
           </h2>
           <p style={{ fontSize: 16, lineHeight: 1.7, color: 'var(--ink-2)', margin: 0 }}>
-            CCB Mart do <strong>Ban liên lạc Trung đoàn E29</strong> sáng lập và vận hành — một tập thể
-            các Cựu Chiến Binh từng cùng đơn vị, nay đồng lòng đi tiếp một &ldquo;mặt trận&rdquo; mới: giúp đồng đội
-            phát triển kinh tế, có thu nhập ổn định trên chính mảnh đất quê hương.
+            CCB Mart do{' '}
+            <strong>Ban liên lạc Trung đoàn E29</strong>
+            {' '}sáng lập và vận hành — một tập thể các Cựu Chiến Binh từng cùng đơn vị, nay đồng lòng đi tiếp một &ldquo;mặt trận&rdquo; mới: giúp đồng đội phát triển kinh tế, có thu nhập ổn định trên chính mảnh đất quê hương.
           </p>
           <p style={{ fontSize: 16, lineHeight: 1.7, color: 'var(--ink-2)', margin: '12px 0 0' }}>
-            CCB Mart <strong>không phải là Hội Cựu Chiến Binh Việt Nam</strong> và <strong>không được Hội CCB Việt Nam
-            xác nhận chính thức</strong>. Chúng tôi là một sáng kiến độc lập của Ban liên lạc E29, hoạt động
-            song song và sẵn sàng đóng góp cho các hoạt động của Hội CCB ở mọi cấp khi được mời.
+            CCB Mart{' '}
+            <strong>không phải là Hội Cựu Chiến Binh Việt Nam</strong>
+            {' '}và{' '}
+            <strong>không được Hội CCB Việt Nam xác nhận chính thức</strong>
+            . Chúng tôi là một sáng kiến độc lập của Ban liên lạc E29, hoạt động song song và sẵn sàng đóng góp cho các hoạt động của Hội CCB ở mọi cấp khi được mời.
           </p>
         </section>
 

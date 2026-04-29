@@ -139,6 +139,24 @@
   box-shadow: 0 12px 32px rgba(44, 34, 12, 0.12), 0 2px 8px rgba(44, 34, 12, 0.06);
   border-color: var(--ccb-olive) !important;
 }
+
+/* Safety net for odd-count senior product grids — center the lonely trailing card */
+.ccb-landing .ccb-senior-product-grid > .ccb-big-product-card:nth-child(3):last-child,
+.ccb-landing .ccb-senior-product-grid > .ccb-big-product-card:nth-child(5):last-child,
+.ccb-landing .ccb-senior-product-grid > .ccb-big-product-card:nth-child(7):last-child {
+  grid-column: 1 / -1;
+  max-width: calc(50% - 16px);
+  justify-self: center;
+}
+@media (max-width: 880px) {
+  .ccb-landing .ccb-senior-product-grid > .ccb-big-product-card:nth-child(3):last-child,
+  .ccb-landing .ccb-senior-product-grid > .ccb-big-product-card:nth-child(5):last-child,
+  .ccb-landing .ccb-senior-product-grid > .ccb-big-product-card:nth-child(7):last-child {
+    grid-column: auto;
+    max-width: none;
+    justify-self: stretch;
+  }
+}
 .ccb-landing .ccb-big-product-card:hover .ccb-cert-overlay {
   transform: translateY(0) !important;
   opacity: 1 !important;

@@ -691,8 +691,8 @@ export function SeniorFooter({ data }: { data?: FooterData } = {}) {
   if (data && data.isActive === false) return null;
   const hotline = data?.hotline ?? '1900 6868';
   const hotlineNote = data?.hotlineNote ?? 'Đường dây ưu tiên dành cho Cựu Chiến Binh — 7:00 đến 21:00 mỗi ngày.';
-  const addr1 = data?.addressLine1 ?? 'Số 19 đường Lê Đức Thọ';
-  const addr2 = data?.addressLine2 ?? 'Mỹ Đình 2, Nam Từ Liêm, Hà Nội';
+  const addr1 = data?.addressLine1 ?? 'Số 555 Lạc Long Quân';
+  const addr2 = data?.addressLine2 ?? 'Tây Hồ, Hà Nội';
   const addrHours = data?.addressHours ?? 'Mở cửa 8:00 — 20:00';
   const copyright = data?.copyright ?? '© 2026 CCB Mart — Một dự án của Ban liên lạc Trung đoàn E29';
   const verifiedBadge = data?.verifiedBadge ?? 'Ban liên lạc Trung đoàn E29 vận hành';
