@@ -636,7 +636,7 @@ export function JourneyGallerySection({ photos, children }: { photos?: Community
         </div>
 
         <div style={{ textAlign: 'center', marginTop: 48 }}>
-          <Link href="/about" style={{
+          <Link href="/journey" style={{
             display: 'inline-flex', alignItems: 'center', gap: 8,
             fontFamily: 'var(--font-body)', fontSize: 20, fontWeight: 700,
             color: olive, padding: '14px 28px', borderRadius: 8,

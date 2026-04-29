@@ -113,7 +113,7 @@ export function ConnectListingsSection({ listings = DEFAULT_LISTINGS }: { listin
 
         {/* See more */}
         <div style={{ textAlign: 'center', marginTop: 48 }}>
-          <a href="#" style={{
+          <a href="/connect" style={{
             color: ZALO_DARK, fontWeight: 700, fontSize: 18,
             borderBottom: '2px solid currentColor', paddingBottom: 4,
           }}>
