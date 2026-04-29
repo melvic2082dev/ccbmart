@@ -238,6 +238,10 @@ export type DbCatalogProduct = {
   distributor?: string;
   description?: string;
   thumbs?: string[] | null;
+  producerName?: string | null;
+  producerHometown?: string | null;
+  producerUnit?: string | null;
+  producerContribution?: number | null;
   isActive: boolean;
   displayOrder: number;
 };
@@ -297,6 +301,10 @@ export function mergeWithDb(dbProducts: DbCatalogProduct[]): ProductDetail[] {
       distributor: dp.distributor && dp.distributor !== '—' ? dp.distributor : (base?.distributor ?? '—'),
       description: dp.description || base?.description || '',
       thumbs: (dp.thumbs && dp.thumbs.length > 0) ? dp.thumbs : (base?.thumbs ?? ['Mặt trước', 'Đóng gói', 'Cận cảnh', 'Vùng nguyên liệu']),
+      producerName: dp.producerName ?? null,
+      producerHometown: dp.producerHometown ?? null,
+      producerUnit: dp.producerUnit ?? null,
+      producerContribution: dp.producerContribution ?? null,
     };
     bySlug.set(dp.slug, merged);
   }

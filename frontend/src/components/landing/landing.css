@@ -4,20 +4,25 @@
 @import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&family=Bitter:ital,wght@0,400;0,600;0,700;0,800;1,400&display=swap');
 
 .ccb-landing {
-  --ccb-red:        #A91E24;
-  --ccb-red-dark:   #821418;
-  --ccb-red-deep:   #5E0F12;
-  --ccb-red-tint:   #FBE9EA;
+  /* Brief: olive (#556B2F) + nâu đất (#8B5A2B) + đỏ trầm (#8B0000) — chất lính */
+  --ccb-red:        #8B0000;  /* deep red — accent kỷ luật */
+  --ccb-red-dark:   #6B0000;
+  --ccb-red-deep:   #4A0000;
+  --ccb-red-tint:   #F5E1E1;
 
-  --ccb-olive:      #445626;
-  --ccb-olive-dark: #2F3D1A;
-  --ccb-olive-mid:  #5E7435;
-  --ccb-olive-tint: #ECEFE0;
+  --ccb-olive:      #556B2F;  /* dark olive — primary identity */
+  --ccb-olive-dark: #3F4F22;
+  --ccb-olive-mid:  #6E8C3D;
+  --ccb-olive-tint: #E8EEDA;
 
-  --ccb-gold:       #C9A24B;
+  --ccb-brown:      #8B5A2B;  /* earth brown — secondary identity */
+  --ccb-brown-dark: #6B4520;
+  --ccb-brown-tint: #F0E6D7;
+
+  --ccb-gold:       #C9A24B;  /* honor accent (kept) */
   --ccb-gold-dark:  #9F7D33;
 
-  --paper-0:  #FBF7EE;
+  --paper-0:  #FBF7EE;        /* paper backgrounds (kept) */
   --paper-1:  #F4EEDF;
   --paper-2:  #E8DFC9;
   --ink-1:    #1C1A14;

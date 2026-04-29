@@ -925,6 +925,11 @@ model LandingProduct {
   distributor    String   @default("—")
   description    String   @default("") @db.Text
   thumbs         Json? // string[] — labels for the 4 thumb buttons
+  // Producer info — CCB member behind this product (storytelling)
+  producerName         String? @map("producer_name")
+  producerHometown     String? @map("producer_hometown")
+  producerUnit         String? @map("producer_unit") // đơn vị quân ngũ cũ
+  producerContribution Int?    @map("producer_contribution") // ₫ góp quỹ "Vì đồng đội" mỗi đơn
   isActive       Boolean  @default(true) @map("is_active")
   displayOrder   Int      @default(0) @map("display_order")
   createdAt      DateTime @default(now()) @map("created_at")
@@ -933,4 +938,70 @@ model LandingProduct {
   @@index([categorySlug, isActive, displayOrder])
   @@index([isActive])
   @@map("landing_products")
+}
+
+// ---- Community-focused content blocks (60% homepage real estate) ----
+
+// Singleton "Tại sao chúng tôi làm dự án này?"
+model LandingWhyUs {
+  id        Int      @id @default(autoincrement())
+  eyebrow   String   @default("Câu chuyện CCB Mart")
+  title     String   @default("Tại sao chúng tôi làm dự án này?")
+  body      String   @db.Text
+  imageUrl  String?  @map("image_url")
+  isActive  Boolean  @default(true) @map("is_active")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("landing_why_us")
+}
+
+// "Hành trình kết nối — Hoạt động cộng đồng" — 3-4 photos with caption + impact
+model LandingCommunityPhoto {
+  id           Int      @id @default(autoincrement())
+  imageUrl     String?  @map("image_url")
+  caption      String
+  impactValue  String?  @map("impact_value") // e.g. "123.000.000 ₫" or "47"
+  impactLabel  String?  @map("impact_label") // e.g. "Đã hỗ trợ" or "Gia đình CCB"
+  displayOrder Int      @default(0) @map("display_order")
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@index([isActive, displayOrder])
+  @@map("landing_community_photos")
+}
+
+// "Bảng minh bạch quỹ Vì đồng đội" — chronological in/out flow
+model LandingFundEntry {
+  id           Int      @id @default(autoincrement())
+  occurredAt   DateTime @map("occurred_at")
+  type         String // 'in' (thu) | 'out' (chi)
+  amount       Int // VND
+  description  String
+  balance      Int? // running balance after this entry; null = compute on read
+  displayOrder Int      @default(0) @map("display_order")
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@index([isActive, occurredAt])
+  @@map("landing_fund_entries")
+}
+
+// "Tiếng nói chiến hữu" — real CCB testimonials with photo + verified badge
+model LandingTestimonial {
+  id           Int      @id @default(autoincrement())
+  name         String
+  location     String   @default("") // tỉnh / quê quán
+  unit         String   @default("") // đơn vị quân ngũ cũ
+  body         String   @db.Text
+  photoUrl     String?  @map("photo_url")
+  verified     Boolean  @default(true) // CCB Mart đã xác minh
+  displayOrder Int      @default(0) @map("display_order")
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@index([isActive, displayOrder])
+  @@map("landing_testimonials")
 }

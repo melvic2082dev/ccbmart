@@ -4,11 +4,15 @@ import { useEffect, useState } from 'react';
 import { LandingShell } from './LandingShell';
 import { Hero, type HeroData } from './Hero';
 import { ProductGrid, type Product } from './ProductGrid';
-import {
-  CategoryStrip, CommunityVoices, PromoBanner, RegionStrip, TrustBar,
-  type PromoData,
-} from './Sections';
+import { CategoryStrip, PromoBanner, type PromoData } from './Sections';
 import type { TrustItemData } from './Sections';
+import {
+  WhyUsSection, type WhyUsData,
+  CoreValuesSection,
+  CommunityJourneySection, type CommunityPhotoData,
+  TransparencyFundSection, type FundEntryData,
+  CCBTestimonialsSection, type TestimonialData,
+} from './CommunitySections';
 import { CATEGORIES, PRODUCTS, mergeWithDb, mergeCategoriesWithDb, type DbCatalogProduct, type DbCategory } from './categories';
 
 const defaultFeaturedSlugs = [
@@ -32,10 +36,14 @@ const defaultDealSlugs = [
 type CmsContent = {
   hero: HeroData;
   promo: PromoData;
+  whyUs: WhyUsData;
   trustItems: TrustItemData[];
   featured: { id: number; section: 'featured' | 'deals'; productSlug: string; displayOrder: number; isActive: boolean }[];
   products: DbCatalogProduct[];
   categories: DbCategory[];
+  communityPhotos: CommunityPhotoData[];
+  fundEntries: FundEntryData[];
+  testimonials: TestimonialData[];
 };
 
 function pickFrom(catalog: Product[], slugs: string[]): Product[] {
@@ -56,32 +64,49 @@ export function LandingPage() {
     return () => { cancelled = true; };
   }, []);
 
-  // Catalog = hardcoded PRODUCTS overlaid with DB rows (active only).
+  // Catalog & categories overlay (DB → hardcoded fallback)
   const catalog = content?.products ? mergeWithDb(content.products) : PRODUCTS;
   const allCategories = content?.categories && content.categories.length > 0
     ? mergeCategoriesWithDb(content.categories)
     : CATEGORIES;
 
-  const cmsFeaturedSlugs = content?.featured
-    ?.filter((it) => it.section === 'featured' && it.isActive)
-    .map((it) => it.productSlug) ?? [];
-  const cmsDealSlugs = content?.featured
-    ?.filter((it) => it.section === 'deals' && it.isActive)
-    .map((it) => it.productSlug) ?? [];
-
+  // Featured / deals selection
+  const cmsFeaturedSlugs = content?.featured?.filter((it) => it.section === 'featured' && it.isActive).map((it) => it.productSlug) ?? [];
+  const cmsDealSlugs = content?.featured?.filter((it) => it.section === 'deals' && it.isActive).map((it) => it.productSlug) ?? [];
   const featured = pickFrom(catalog, cmsFeaturedSlugs.length > 0 ? cmsFeaturedSlugs : defaultFeaturedSlugs);
   const deals = pickFrom(catalog, cmsDealSlugs.length > 0 ? cmsDealSlugs : defaultDealSlugs);
 
   return (
     <LandingShell>
+      {/* 1. Hero */}
       {(!content || content.hero.isActive !== false) && <Hero data={content?.hero} />}
-      <TrustBar items={content?.trustItems} />
-      <CategoryStrip categories={allCategories} />
-      <ProductGrid id="featured" eyebrow="Hàng tuyển chọn" title="Sản phẩm nổi bật" products={featured} link="Xem tất cả" linkHref="/category/dac-san-vung-mien" />
+
+      {/* 2. Tại sao chúng tôi làm dự án này */}
+      <WhyUsSection data={content?.whyUs} />
+
+      {/* 3. Giá trị cốt lõi (replaces TrustBar) */}
+      <CoreValuesSection items={content?.trustItems} />
+
+      {/* 4. Sản phẩm tiêu biểu — kèm tên + quê CCB sản xuất */}
+      <ProductGrid id="featured" eyebrow="Sản phẩm từ tâm huyết người lính" title="Hàng tuyển chọn — Mỗi món một câu chuyện" products={featured} link="Xem tất cả sản phẩm" linkHref="/category/dac-san-vung-mien" />
+
+      {/* 5. Hành trình kết nối — hoạt động cộng đồng */}
+      <CommunityJourneySection photos={content?.communityPhotos} />
+
+      {/* 6. Promo banner (interlude — chương trình ngắn hạn nếu có) */}
       {(!content || content.promo.isActive !== false) && <PromoBanner data={content?.promo} />}
-      <ProductGrid eyebrow="Giảm giá tuần này" title="Ưu đãi đặc biệt" products={deals} link="Xem khuyến mãi" linkHref="/category/hang-khuyen-mai" />
-      <RegionStrip />
-      <CommunityVoices />
+
+      {/* 7. Deals */}
+      <ProductGrid eyebrow="Ưu đãi tuần này" title="Hàng giảm giá — vẫn đảm bảo nghĩa tình" products={deals} link="Xem khuyến mãi" linkHref="/category/hang-khuyen-mai" />
+
+      {/* 8. Categories navigation strip */}
+      <CategoryStrip categories={allCategories} />
+
+      {/* 9. Bảng minh bạch quỹ Vì đồng đội */}
+      <TransparencyFundSection entries={content?.fundEntries} />
+
+      {/* 10. Tiếng nói chiến hữu */}
+      <CCBTestimonialsSection items={content?.testimonials} />
     </LandingShell>
   );
 }

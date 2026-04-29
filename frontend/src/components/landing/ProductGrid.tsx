@@ -1,6 +1,6 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import { ShoppingCart } from 'lucide-react';
+import { ShoppingCart, BadgeCheck, MapPin } from 'lucide-react';
 import { Badge, formatVnd, ProductArt, SectionHead, Star } from './primitives';
 
 type Tone = 'paper' | 'red' | 'olive' | 'gold';
@@ -20,6 +20,10 @@ export type Product = {
   badges?: { label: string; variant: BadgeVariant }[];
   verified?: boolean;
   imageUrl?: string | null;
+  producerName?: string | null;
+  producerHometown?: string | null;
+  producerUnit?: string | null;
+  producerContribution?: number | null;
 };
 
 export function ProductGrid({
@@ -54,7 +58,7 @@ export function ProductGrid({
 }
 
 export function ProductCard({ product }: { product: Product }) {
-  const { slug, name, art, tone, price, was, rating, sold, region, badges = [], verified, imageUrl } = product;
+  const { slug, name, art, tone, price, was, rating, sold, region, badges = [], verified, imageUrl, producerName, producerHometown } = product;
   const href = slug ? `/product/${slug}` : '#';
   return (
     <Link href={href} style={{
@@ -82,7 +86,7 @@ export function ProductCard({ product }: { product: Product }) {
             color: 'var(--ccb-olive-dark)',
             display: 'inline-flex', alignItems: 'center', gap: 4,
           }}>
-            <Star size={10} /> CCB
+            <BadgeCheck size={11} /> Hội CCB xác nhận
           </div>
         )}
       </div>
@@ -91,11 +95,25 @@ export function ProductCard({ product }: { product: Product }) {
           fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 14,
           color: 'var(--ink-1)', lineHeight: 1.3, minHeight: 36,
         }}>{name}</div>
+        {producerName && (
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 5, marginTop: 6,
+            padding: '5px 8px', background: 'var(--ccb-olive-tint)',
+            borderRadius: 4, color: 'var(--ccb-olive-dark)',
+            fontFamily: 'var(--font-body)', fontSize: 11, fontWeight: 600, lineHeight: 1.3,
+          }}>
+            <MapPin size={11} />
+            <span style={{ flex: 1, minWidth: 0 }}>
+              <span style={{ fontWeight: 700 }}>{producerName}</span>
+              {producerHometown && <span style={{ opacity: 0.85 }}> · {producerHometown}</span>}
+            </span>
+          </div>
+        )}
         <div style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 11, color: 'var(--ink-3)', marginTop: 6, flexWrap: 'wrap' }}>
           <span style={{ color: 'var(--ccb-gold-dark)' }}>★ {rating}</span>
           <span>·</span>
           <span>Đã bán {sold}</span>
-          {region && <><span>·</span><span>{region}</span></>}
+          {region && !producerHometown && <><span>·</span><span>{region}</span></>}
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'baseline', marginTop: 10 }}>
           <span style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 20, color: 'var(--ccb-red)' }}>

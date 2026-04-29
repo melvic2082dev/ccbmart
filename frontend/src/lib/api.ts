@@ -459,6 +459,37 @@ export const api = {
     fetchAPI(`/admin/landing-cms/categories/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   adminLandingDeleteCategory: (id: number) =>
     fetchAPI(`/admin/landing-cms/categories/${id}`, { method: 'DELETE' }),
+
+  // Why-Us
+  adminLandingUpdateWhyUs: (data: Record<string, unknown>) =>
+    fetchAPI('/admin/landing-cms/why-us', { method: 'PUT', body: JSON.stringify(data) }),
+
+  // Community photos
+  adminLandingCommunityPhotos: () => fetchAPI('/admin/landing-cms/community-photos'),
+  adminLandingCreateCommunityPhoto: (data: Record<string, unknown>) =>
+    fetchAPI('/admin/landing-cms/community-photos', { method: 'POST', body: JSON.stringify(data) }),
+  adminLandingUpdateCommunityPhoto: (id: number, data: Record<string, unknown>) =>
+    fetchAPI(`/admin/landing-cms/community-photos/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  adminLandingDeleteCommunityPhoto: (id: number) =>
+    fetchAPI(`/admin/landing-cms/community-photos/${id}`, { method: 'DELETE' }),
+
+  // Fund entries
+  adminLandingFundEntries: () => fetchAPI('/admin/landing-cms/fund-entries'),
+  adminLandingCreateFundEntry: (data: Record<string, unknown>) =>
+    fetchAPI('/admin/landing-cms/fund-entries', { method: 'POST', body: JSON.stringify(data) }),
+  adminLandingUpdateFundEntry: (id: number, data: Record<string, unknown>) =>
+    fetchAPI(`/admin/landing-cms/fund-entries/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  adminLandingDeleteFundEntry: (id: number) =>
+    fetchAPI(`/admin/landing-cms/fund-entries/${id}`, { method: 'DELETE' }),
+
+  // Testimonials
+  adminLandingTestimonials: () => fetchAPI('/admin/landing-cms/testimonials'),
+  adminLandingCreateTestimonial: (data: Record<string, unknown>) =>
+    fetchAPI('/admin/landing-cms/testimonials', { method: 'POST', body: JSON.stringify(data) }),
+  adminLandingUpdateTestimonial: (id: number, data: Record<string, unknown>) =>
+    fetchAPI(`/admin/landing-cms/testimonials/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  adminLandingDeleteTestimonial: (id: number) =>
+    fetchAPI(`/admin/landing-cms/testimonials/${id}`, { method: 'DELETE' }),
 };
 
 export function formatVND(amount: number): string {

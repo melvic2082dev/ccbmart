@@ -21,17 +21,17 @@ export type HeroData = {
 export function Hero({ data }: { data?: HeroData } = {}) {
   const eyebrow = data?.eyebrow ?? 'Hệ thống bán lẻ · Cựu Chiến Binh Việt Nam';
   const titleText = data?.title;
-  const subtitle = data?.subtitle ?? 'CCB Mart mang đặc sản và nhu yếu phẩm từ khắp mọi miền đất nước về tận nhà quý khách — được tuyển chọn, đóng gói và phân phối bởi mạng lưới hội viên Cựu Chiến Binh trên toàn quốc.';
-  const primaryCtaText = data?.primaryCtaText ?? 'Mua sắm ngay';
+  const subtitle = data?.subtitle ?? 'Mỗi sản phẩm là một câu chuyện, mỗi đơn hàng là một nghĩa cử. CCB Mart kết nối đặc sản từ chính tay đồng đội năm xưa tới gia đình bạn — và trích 1% doanh thu vào quỹ "Vì đồng đội".';
+  const primaryCtaText = data?.primaryCtaText ?? 'Xem sản phẩm — Góp nghĩa tình';
   const primaryCtaHref = data?.primaryCtaHref ?? '#featured';
-  const secondaryCtaText = data?.secondaryCtaText ?? 'Đăng nhập / Đăng ký →';
-  const secondaryCtaHref = data?.secondaryCtaHref ?? '/login';
+  const secondaryCtaText = data?.secondaryCtaText ?? 'Câu chuyện dự án';
+  const secondaryCtaHref = data?.secondaryCtaHref ?? '/about';
   const stat1V = data?.stat1Value ?? '2.400+';
   const stat1L = data?.stat1Label ?? 'Nhà cung cấp Cựu Chiến Binh';
-  const stat2V = data?.stat2Value ?? '63';
-  const stat2L = data?.stat2Label ?? 'Tỉnh / thành phố có mặt';
-  const stat3V = data?.stat3Value ?? '180k+';
-  const stat3L = data?.stat3Label ?? 'Đơn hàng đã giao';
+  const stat2V = data?.stat2Value ?? '47';
+  const stat2L = data?.stat2Label ?? 'Gia đình CCB đã được hỗ trợ';
+  const stat3V = data?.stat3Value ?? '123 tr';
+  const stat3L = data?.stat3Label ?? 'Quỹ Vì đồng đội đã chi';
 
   return (
     <section style={{
@@ -60,9 +60,9 @@ export function Hero({ data }: { data?: HeroData } = {}) {
               titleText
             ) : (
               <>
-                Hàng Việt chất lượng,<br />
-                <span style={{ color: 'var(--ccb-red)' }}>do Cựu Chiến Binh</span><br />
-                cung cấp.
+                Hàng Việt chất lượng —<br />
+                <span style={{ color: 'var(--ccb-red)' }}>Từ Cựu Chiến Binh</span><br />
+                vì Cựu Chiến Binh.
               </>
             )}
           </h1>

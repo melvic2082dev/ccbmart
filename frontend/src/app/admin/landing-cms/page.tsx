@@ -68,9 +68,19 @@ type FeaturedProduct = {
   displayOrder: number; isActive: boolean;
 };
 
+type WhyUs = {
+  id: number;
+  eyebrow: string;
+  title: string;
+  body: string;
+  imageUrl: string | null;
+  isActive: boolean;
+};
+
 type CmsResponse = {
   hero: Hero;
   promo: Promo;
+  whyUs: WhyUs;
   trustItems: TrustItem[];
   featured: FeaturedProduct[];
 };
@@ -81,7 +91,7 @@ export default function AdminLandingCmsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [toast, setToast] = useState<{ kind: 'ok' | 'err'; msg: string } | null>(null);
-  const [tab, setTab] = useState<'hero' | 'promo' | 'trust' | 'featured' | 'catalog' | 'categories'>('hero');
+  const [tab, setTab] = useState<'hero' | 'promo' | 'whyUs' | 'trust' | 'featured' | 'catalog' | 'categories' | 'community' | 'fund' | 'testimonials'>('hero');
 
   useEffect(() => {
     const u = getUser();
@@ -134,17 +144,25 @@ export default function AdminLandingCmsPage() {
       )}
 
       <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)}>
-        <TabsList>
+        <TabsList className="flex-wrap h-auto">
           <TabsTrigger value="hero">Hero</TabsTrigger>
-          <TabsTrigger value="promo">Promo Banner</TabsTrigger>
-          <TabsTrigger value="trust">Trust Bar</TabsTrigger>
+          <TabsTrigger value="whyUs">Tại sao</TabsTrigger>
+          <TabsTrigger value="trust">Giá trị cốt lõi</TabsTrigger>
           <TabsTrigger value="featured">Sản phẩm nổi bật</TabsTrigger>
+          <TabsTrigger value="community">Hành trình kết nối</TabsTrigger>
+          <TabsTrigger value="fund">Quỹ Vì đồng đội</TabsTrigger>
+          <TabsTrigger value="testimonials">Tiếng nói chiến hữu</TabsTrigger>
+          <TabsTrigger value="promo">Promo Banner</TabsTrigger>
           <TabsTrigger value="catalog">Catalog sản phẩm</TabsTrigger>
           <TabsTrigger value="categories">Danh mục</TabsTrigger>
         </TabsList>
 
         <TabsContent value="hero">
           <HeroEditor hero={data.hero} onSaved={(h) => { setData({ ...data, hero: h }); flash('ok', 'Đã lưu Hero'); }} onError={(m) => flash('err', m)} />
+        </TabsContent>
+
+        <TabsContent value="whyUs">
+          <WhyUsEditor whyUs={data.whyUs} onSaved={(w) => { setData({ ...data, whyUs: w }); flash('ok', 'Đã lưu khối Tại sao'); }} onError={(m) => flash('err', m)} />
         </TabsContent>
 
         <TabsContent value="promo">
@@ -165,6 +183,18 @@ export default function AdminLandingCmsPage() {
 
         <TabsContent value="categories">
           <CategoriesEditor onError={(m) => flash('err', m)} onSuccess={(m) => flash('ok', m)} />
+        </TabsContent>
+
+        <TabsContent value="community">
+          <CommunityPhotosEditor onError={(m) => flash('err', m)} onSuccess={(m) => flash('ok', m)} />
+        </TabsContent>
+
+        <TabsContent value="fund">
+          <FundEntriesEditor onError={(m) => flash('err', m)} onSuccess={(m) => flash('ok', m)} />
+        </TabsContent>
+
+        <TabsContent value="testimonials">
+          <TestimonialsEditor onError={(m) => flash('err', m)} onSuccess={(m) => flash('ok', m)} />
         </TabsContent>
       </Tabs>
     </div>
@@ -819,6 +849,10 @@ type CatalogProduct = {
   distributor: string;
   description: string;
   thumbs: string[] | null;
+  producerName: string | null;
+  producerHometown: string | null;
+  producerUnit: string | null;
+  producerContribution: number | null;
   isActive: boolean;
   displayOrder: number;
 };
@@ -835,6 +869,7 @@ function emptyProduct(): CatalogProduct {
     region: '', verified: false, badges: null, imageUrl: null,
     brand: '—', origin: '—', weight: '—', certifications: '—', distributor: '—',
     description: '', thumbs: DEFAULT_THUMBS,
+    producerName: null, producerHometown: null, producerUnit: null, producerContribution: null,
     isActive: true, displayOrder: 0,
   };
 }
@@ -1024,6 +1059,8 @@ function ProductEditDialog({ product, onClose, onSaved, onError }: {
         brand: form.brand, origin: form.origin, weight: form.weight,
         certifications: form.certifications, distributor: form.distributor,
         description: form.description, thumbs: form.thumbs,
+        producerName: form.producerName, producerHometown: form.producerHometown,
+        producerUnit: form.producerUnit, producerContribution: form.producerContribution,
         isActive: form.isActive, displayOrder: form.displayOrder,
       };
       if (isNew) await api.adminLandingCreateProduct(payload);
@@ -1179,6 +1216,22 @@ function ProductEditDialog({ product, onClose, onSaved, onError }: {
                   placeholder={DEFAULT_THUMBS[i]}
                 />
               ))}
+            </div>
+          </div>
+
+          {/* ---- Producer info (tên + quê CCB sản xuất) ---- */}
+          <div className="border-t pt-4 mt-3">
+            <h4 className="text-sm font-semibold mb-1">Người lính sản xuất</h4>
+            <p className="text-[11px] text-muted-foreground mb-3">
+              Thông tin CCB đứng sau sản phẩm — hiển thị trên thẻ và trang chi tiết.
+            </p>
+            <div className="grid lg:grid-cols-2 gap-3">
+              <Field label="Tên CCB"><Input value={form.producerName ?? ''} onChange={(e) => set('producerName', e.target.value || null)} placeholder="vd: Ông Hồ Quang Cua" /></Field>
+              <Field label="Quê quán"><Input value={form.producerHometown ?? ''} onChange={(e) => set('producerHometown', e.target.value || null)} placeholder="vd: Sóc Trăng" /></Field>
+              <Field label="Đơn vị quân ngũ cũ"><Input value={form.producerUnit ?? ''} onChange={(e) => set('producerUnit', e.target.value || null)} placeholder="vd: CCB Quân khu 9" /></Field>
+              <Field label="Trích quỹ Vì đồng đội (₫/đơn)">
+                <Input type="number" value={form.producerContribution ?? ''} onChange={(e) => set('producerContribution', e.target.value ? parseInt(e.target.value, 10) : null)} placeholder="vd: 1870" />
+              </Field>
             </div>
           </div>
         </div>
@@ -1453,6 +1506,628 @@ function CategoryEditDialog({ category, onClose, onSaved, onError }: {
             <Save size={14} className="mr-2" />
             {saving ? 'Đang lưu…' : 'Lưu'}
           </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ============================================================
+// Why-Us editor (singleton)
+// ============================================================
+function WhyUsEditor({ whyUs, onSaved, onError }: {
+  whyUs: WhyUs;
+  onSaved: (w: WhyUs) => void;
+  onError: (msg: string) => void;
+}) {
+  const [form, setForm] = useState<WhyUs>(whyUs);
+  const [saving, setSaving] = useState(false);
+  const set = <K extends keyof WhyUs>(k: K, v: WhyUs[K]) => setForm((f) => ({ ...f, [k]: v }));
+
+  const save = async () => {
+    setSaving(true);
+    try {
+      const updated = await api.adminLandingUpdateWhyUs(form as unknown as Record<string, unknown>);
+      onSaved(updated);
+    } catch (e) {
+      onError((e as Error).message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Card className="mt-4">
+      <CardHeader>
+        <CardTitle>Tại sao chúng tôi làm dự án này?</CardTitle>
+        <p className="text-xs text-muted-foreground mt-1">
+          Khối storytelling sau Hero — kể lý do dự án ra đời. Tối đa ~150 chữ cho phần body.
+        </p>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid lg:grid-cols-2 gap-4">
+          <div className="space-y-3">
+            <Field label="Eyebrow">
+              <Input value={form.eyebrow} onChange={(e) => set('eyebrow', e.target.value)} />
+            </Field>
+            <Field label="Tiêu đề">
+              <Input value={form.title} onChange={(e) => set('title', e.target.value)} />
+            </Field>
+            <Field label="Body (mô tả)">
+              <textarea
+                className="w-full min-h-[160px] rounded-md border bg-background px-3 py-2 text-sm"
+                value={form.body}
+                onChange={(e) => set('body', e.target.value)}
+              />
+              <p className="text-[11px] text-muted-foreground mt-1">{form.body.length} ký tự (gợi ý ~150 chữ ≈ 800-1000 ký tự)</p>
+            </Field>
+            <div className="flex items-center gap-2">
+              <input id="why-active" type="checkbox" checked={form.isActive} onChange={(e) => set('isActive', e.target.checked)} />
+              <Label htmlFor="why-active">Hiển thị trên trang chủ</Label>
+            </div>
+          </div>
+          <ImageUpload
+            value={form.imageUrl}
+            onChange={(u) => set('imageUrl', u)}
+            onError={onError}
+            label="Ảnh kèm (optional, ưu tiên ảnh thật)"
+          />
+        </div>
+        <div className="flex justify-end pt-4 border-t">
+          <Button onClick={save} disabled={saving}>
+            <Save size={14} className="mr-2" />
+            {saving ? 'Đang lưu…' : 'Lưu khối Tại sao'}
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+// ============================================================
+// Community photos editor (Hành trình kết nối)
+// ============================================================
+type CommunityPhoto = {
+  id: number;
+  imageUrl: string | null;
+  caption: string;
+  impactValue: string | null;
+  impactLabel: string | null;
+  displayOrder: number;
+  isActive: boolean;
+};
+
+function emptyCommunityPhoto(): CommunityPhoto {
+  return { id: 0, imageUrl: null, caption: '', impactValue: '', impactLabel: '', displayOrder: 0, isActive: true };
+}
+
+function CommunityPhotosEditor({ onError, onSuccess }: {
+  onError: (msg: string) => void;
+  onSuccess: (msg: string) => void;
+}) {
+  const [items, setItems] = useState<CommunityPhoto[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [editing, setEditing] = useState<CommunityPhoto | null>(null);
+
+  const load = () => {
+    setLoading(true);
+    api.adminLandingCommunityPhotos()
+      .then(setItems)
+      .catch((e) => onError((e as Error).message))
+      .finally(() => setLoading(false));
+  };
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps, react-hooks/set-state-in-effect
+  useEffect(load, []);
+
+  const remove = async (p: CommunityPhoto) => {
+    if (!confirm(`Xoá "${p.caption}"?`)) return;
+    try {
+      await api.adminLandingDeleteCommunityPhoto(p.id);
+      onSuccess('Đã xoá');
+      load();
+    } catch (e) { onError((e as Error).message); }
+  };
+
+  return (
+    <Card className="mt-4">
+      <CardHeader>
+        <CardTitle>Hành trình kết nối ({items.length})</CardTitle>
+        <p className="text-xs text-muted-foreground mt-1">
+          Ảnh thật hoạt động cộng đồng + caption + chỉ số tác động (vd: "47" / "Gia đình CCB"). Hiển thị 3-4 cái trên trang chủ là đẹp.
+        </p>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <div className="flex justify-end">
+          <Button onClick={() => setEditing(emptyCommunityPhoto())}>
+            <Plus size={14} className="mr-2" />Thêm ảnh
+          </Button>
+        </div>
+        {loading ? (
+          <p className="text-sm text-muted-foreground py-8 text-center">Đang tải…</p>
+        ) : items.length === 0 ? (
+          <p className="text-sm text-muted-foreground py-8 text-center">Chưa có ảnh.</p>
+        ) : (
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {items.map((p) => (
+              <div key={p.id} className="rounded-lg border bg-card overflow-hidden">
+                <div className="relative aspect-[4/3] bg-muted">
+                  {p.imageUrl ? (
+                    <Image src={absoluteUrl(p.imageUrl)!} alt={p.caption} fill sizes="320px" className="object-cover" unoptimized />
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center text-xs text-muted-foreground">Chưa có ảnh</div>
+                  )}
+                  {!p.isActive && <span className="absolute top-2 right-2 text-[10px] px-2 py-0.5 rounded bg-amber-100 text-amber-700">Ẩn</span>}
+                </div>
+                <div className="p-3 space-y-1">
+                  <p className="text-sm font-medium line-clamp-2">{p.caption}</p>
+                  {(p.impactValue || p.impactLabel) && (
+                    <p className="text-xs text-muted-foreground">
+                      <span className="font-semibold">{p.impactValue}</span> {p.impactLabel}
+                    </p>
+                  )}
+                  <div className="flex gap-2 pt-2">
+                    <Button variant="outline" size="sm" onClick={() => setEditing(p)}>
+                      <Pencil size={12} className="mr-1" />Sửa
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => remove(p)} className="text-red-600">
+                      <Trash2 size={12} />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+      {editing && (
+        <CommunityPhotoDialog
+          photo={editing}
+          onClose={() => setEditing(null)}
+          onSaved={() => { setEditing(null); onSuccess('Đã lưu'); load(); }}
+          onError={onError}
+        />
+      )}
+    </Card>
+  );
+}
+
+function CommunityPhotoDialog({ photo, onClose, onSaved, onError }: {
+  photo: CommunityPhoto;
+  onClose: () => void;
+  onSaved: () => void;
+  onError: (msg: string) => void;
+}) {
+  const isNew = photo.id === 0;
+  const [form, setForm] = useState<CommunityPhoto>(photo);
+  const [saving, setSaving] = useState(false);
+  const set = <K extends keyof CommunityPhoto>(k: K, v: CommunityPhoto[K]) => setForm((f) => ({ ...f, [k]: v }));
+
+  const save = async () => {
+    if (!form.caption) { onError('Cần caption'); return; }
+    setSaving(true);
+    try {
+      const payload = { imageUrl: form.imageUrl, caption: form.caption, impactValue: form.impactValue, impactLabel: form.impactLabel, displayOrder: form.displayOrder, isActive: form.isActive };
+      if (isNew) await api.adminLandingCreateCommunityPhoto(payload);
+      else await api.adminLandingUpdateCommunityPhoto(form.id, payload);
+      onSaved();
+    } catch (e) {
+      onError((e as Error).message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Dialog open onOpenChange={(o) => { if (!o) onClose(); }}>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>{isNew ? 'Thêm ảnh hoạt động' : 'Sửa ảnh hoạt động'}</DialogTitle>
+        </DialogHeader>
+        <div className="grid lg:grid-cols-2 gap-4 py-2">
+          <ImageUpload value={form.imageUrl} onChange={(u) => set('imageUrl', u)} onError={onError} label="Ảnh hoạt động" />
+          <div className="space-y-3">
+            <Field label="Caption">
+              <textarea className="w-full min-h-[80px] rounded-md border bg-background px-3 py-2 text-sm" value={form.caption} onChange={(e) => set('caption', e.target.value)} />
+            </Field>
+            <div className="grid grid-cols-2 gap-2">
+              <Field label="Impact value"><Input value={form.impactValue ?? ''} onChange={(e) => set('impactValue', e.target.value || null)} placeholder="vd: 47 hoặc 12.000.000 ₫" /></Field>
+              <Field label="Impact label"><Input value={form.impactLabel ?? ''} onChange={(e) => set('impactLabel', e.target.value || null)} placeholder="vd: Gia đình CCB" /></Field>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <Field label="Order"><Input type="number" value={form.displayOrder} onChange={(e) => set('displayOrder', parseInt(e.target.value, 10) || 0)} /></Field>
+              <div className="flex items-end">
+                <label className="flex items-center gap-2 text-sm">
+                  <input type="checkbox" checked={form.isActive} onChange={(e) => set('isActive', e.target.checked)} />
+                  Hiển thị
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Huỷ</Button>
+          <Button onClick={save} disabled={saving}><Save size={14} className="mr-2" />{saving ? 'Đang lưu…' : 'Lưu'}</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ============================================================
+// Fund entries editor (Quỹ Vì đồng đội)
+// ============================================================
+type FundEntry = {
+  id: number;
+  occurredAt: string;
+  type: 'in' | 'out';
+  amount: number;
+  description: string;
+  balance: number | null;
+  displayOrder: number;
+  isActive: boolean;
+};
+
+function emptyFundEntry(): FundEntry {
+  return { id: 0, occurredAt: new Date().toISOString(), type: 'in', amount: 0, description: '', balance: null, displayOrder: 0, isActive: true };
+}
+
+function FundEntriesEditor({ onError, onSuccess }: {
+  onError: (msg: string) => void;
+  onSuccess: (msg: string) => void;
+}) {
+  const [items, setItems] = useState<FundEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [editing, setEditing] = useState<FundEntry | null>(null);
+
+  const load = () => {
+    setLoading(true);
+    api.adminLandingFundEntries()
+      .then(setItems)
+      .catch((e) => onError((e as Error).message))
+      .finally(() => setLoading(false));
+  };
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps, react-hooks/set-state-in-effect
+  useEffect(load, []);
+
+  const remove = async (e: FundEntry) => {
+    if (!confirm(`Xoá khoản "${e.description}"?`)) return;
+    try {
+      await api.adminLandingDeleteFundEntry(e.id);
+      onSuccess('Đã xoá');
+      load();
+    } catch (err) { onError((err as Error).message); }
+  };
+
+  const totals = items.filter((e) => e.isActive).reduce((acc, e) => {
+    if (e.type === 'in') acc.in += e.amount;
+    else acc.out += e.amount;
+    return acc;
+  }, { in: 0, out: 0 });
+  const fmt = (n: number) => n.toLocaleString('vi-VN');
+
+  return (
+    <Card className="mt-4">
+      <CardHeader>
+        <CardTitle>Quỹ Vì đồng đội ({items.length})</CardTitle>
+        <p className="text-xs text-muted-foreground mt-1">
+          Lịch sử thu/chi theo thời gian. Hiển thị 12 entries gần nhất trên trang chủ.
+        </p>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <div className="flex flex-wrap gap-3 text-sm bg-muted/30 rounded-lg p-3">
+          <div>
+            <span className="text-xs text-muted-foreground">Tổng thu (active): </span>
+            <span className="font-semibold text-emerald-700">{fmt(totals.in)} ₫</span>
+          </div>
+          <div>
+            <span className="text-xs text-muted-foreground">Tổng chi (active): </span>
+            <span className="font-semibold text-red-700">{fmt(totals.out)} ₫</span>
+          </div>
+          <div className="ml-auto">
+            <Button onClick={() => setEditing(emptyFundEntry())} size="sm">
+              <Plus size={14} className="mr-2" />Thêm khoản
+            </Button>
+          </div>
+        </div>
+        {loading ? (
+          <p className="text-sm text-muted-foreground py-8 text-center">Đang tải…</p>
+        ) : items.length === 0 ? (
+          <p className="text-sm text-muted-foreground py-8 text-center">Chưa có khoản nào.</p>
+        ) : (
+          <div className="border rounded-lg overflow-hidden">
+            <table className="w-full text-sm">
+              <thead className="bg-muted/50">
+                <tr>
+                  <th className="text-left p-2 font-medium">Ngày</th>
+                  <th className="text-left p-2 font-medium">Loại</th>
+                  <th className="text-right p-2 font-medium">Số tiền</th>
+                  <th className="text-left p-2 font-medium">Mô tả</th>
+                  <th className="text-right p-2 font-medium">Số dư</th>
+                  <th className="text-center p-2 font-medium">Active</th>
+                  <th className="p-2"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {items.map((e) => (
+                  <tr key={e.id} className="border-t hover:bg-muted/30">
+                    <td className="p-2 text-xs whitespace-nowrap">{new Date(e.occurredAt).toLocaleDateString('vi-VN')}</td>
+                    <td className="p-2">
+                      <Badge className={e.type === 'in' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}>
+                        {e.type === 'in' ? 'Thu' : 'Chi'}
+                      </Badge>
+                    </td>
+                    <td className={`p-2 text-right tabular-nums ${e.type === 'in' ? 'text-emerald-700' : 'text-red-700'}`}>
+                      {e.type === 'in' ? '+' : '−'}{fmt(e.amount)}
+                    </td>
+                    <td className="p-2">{e.description}</td>
+                    <td className="p-2 text-right tabular-nums text-muted-foreground">{e.balance != null ? fmt(e.balance) : '—'}</td>
+                    <td className="p-2 text-center">
+                      {e.isActive ? <Badge className="bg-emerald-100 text-emerald-700 text-[10px]">Hiện</Badge> : <Badge className="bg-amber-100 text-amber-700 text-[10px]">Ẩn</Badge>}
+                    </td>
+                    <td className="p-2 text-right whitespace-nowrap">
+                      <Button variant="outline" size="sm" onClick={() => setEditing(e)}><Pencil size={12} /></Button>
+                      <Button variant="outline" size="sm" onClick={() => remove(e)} className="text-red-600 ml-1"><Trash2 size={12} /></Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </CardContent>
+      {editing && (
+        <FundEntryDialog
+          entry={editing}
+          onClose={() => setEditing(null)}
+          onSaved={() => { setEditing(null); onSuccess('Đã lưu'); load(); }}
+          onError={onError}
+        />
+      )}
+    </Card>
+  );
+}
+
+function FundEntryDialog({ entry, onClose, onSaved, onError }: {
+  entry: FundEntry;
+  onClose: () => void;
+  onSaved: () => void;
+  onError: (msg: string) => void;
+}) {
+  const isNew = entry.id === 0;
+  const [form, setForm] = useState<FundEntry>(entry);
+  const [saving, setSaving] = useState(false);
+  const set = <K extends keyof FundEntry>(k: K, v: FundEntry[K]) => setForm((f) => ({ ...f, [k]: v }));
+
+  const save = async () => {
+    if (!form.description) { onError('Cần mô tả'); return; }
+    setSaving(true);
+    try {
+      const payload = { occurredAt: form.occurredAt, type: form.type, amount: form.amount, description: form.description, balance: form.balance, displayOrder: form.displayOrder, isActive: form.isActive };
+      if (isNew) await api.adminLandingCreateFundEntry(payload);
+      else await api.adminLandingUpdateFundEntry(form.id, payload);
+      onSaved();
+    } catch (e) {
+      onError((e as Error).message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Dialog open onOpenChange={(o) => { if (!o) onClose(); }}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{isNew ? 'Thêm khoản thu/chi' : 'Sửa khoản'}</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-3 py-2">
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Ngày">
+              <Input type="date" value={form.occurredAt.slice(0, 10)} onChange={(e) => set('occurredAt', new Date(e.target.value).toISOString())} />
+            </Field>
+            <Field label="Loại">
+              <Select value={form.type} onValueChange={(v) => set('type', v as 'in' | 'out')}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="in">Thu</SelectItem>
+                  <SelectItem value="out">Chi</SelectItem>
+                </SelectContent>
+              </Select>
+            </Field>
+            <Field label="Số tiền (₫)"><Input type="number" value={form.amount} onChange={(e) => set('amount', parseInt(e.target.value, 10) || 0)} /></Field>
+            <Field label="Số dư sau khoản (tuỳ chọn)"><Input type="number" value={form.balance ?? ''} onChange={(e) => set('balance', e.target.value ? parseInt(e.target.value, 10) : null)} /></Field>
+          </div>
+          <Field label="Mô tả">
+            <Input value={form.description} onChange={(e) => set('description', e.target.value)} placeholder="vd: Trao 12 phần quà CCB Hà Giang" />
+          </Field>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Order"><Input type="number" value={form.displayOrder} onChange={(e) => set('displayOrder', parseInt(e.target.value, 10) || 0)} /></Field>
+            <div className="flex items-end">
+              <label className="flex items-center gap-2 text-sm">
+                <input type="checkbox" checked={form.isActive} onChange={(e) => set('isActive', e.target.checked)} />
+                Hiển thị
+              </label>
+            </div>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Huỷ</Button>
+          <Button onClick={save} disabled={saving}><Save size={14} className="mr-2" />{saving ? 'Đang lưu…' : 'Lưu'}</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ============================================================
+// Testimonials editor (Tiếng nói chiến hữu)
+// ============================================================
+type Testimonial = {
+  id: number;
+  name: string;
+  location: string;
+  unit: string;
+  body: string;
+  photoUrl: string | null;
+  verified: boolean;
+  displayOrder: number;
+  isActive: boolean;
+};
+
+function emptyTestimonial(): Testimonial {
+  return { id: 0, name: '', location: '', unit: '', body: '', photoUrl: null, verified: true, displayOrder: 0, isActive: true };
+}
+
+function TestimonialsEditor({ onError, onSuccess }: {
+  onError: (msg: string) => void;
+  onSuccess: (msg: string) => void;
+}) {
+  const [items, setItems] = useState<Testimonial[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [editing, setEditing] = useState<Testimonial | null>(null);
+
+  const load = () => {
+    setLoading(true);
+    api.adminLandingTestimonials()
+      .then(setItems)
+      .catch((e) => onError((e as Error).message))
+      .finally(() => setLoading(false));
+  };
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps, react-hooks/set-state-in-effect
+  useEffect(load, []);
+
+  const remove = async (t: Testimonial) => {
+    if (!confirm(`Xoá lời cảm ơn từ "${t.name}"?`)) return;
+    try {
+      await api.adminLandingDeleteTestimonial(t.id);
+      onSuccess('Đã xoá');
+      load();
+    } catch (e) { onError((e as Error).message); }
+  };
+
+  return (
+    <Card className="mt-4">
+      <CardHeader>
+        <CardTitle>Tiếng nói chiến hữu ({items.length})</CardTitle>
+        <p className="text-xs text-muted-foreground mt-1">
+          Lời cảm ơn thật từ CCB / khách hàng được hỗ trợ. Nên có ảnh chân dung để tăng tin cậy.
+        </p>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <div className="flex justify-end">
+          <Button onClick={() => setEditing(emptyTestimonial())}>
+            <Plus size={14} className="mr-2" />Thêm lời cảm ơn
+          </Button>
+        </div>
+        {loading ? (
+          <p className="text-sm text-muted-foreground py-8 text-center">Đang tải…</p>
+        ) : items.length === 0 ? (
+          <p className="text-sm text-muted-foreground py-8 text-center">Chưa có testimonial.</p>
+        ) : (
+          <div className="space-y-2">
+            {items.map((t) => (
+              <div key={t.id} className="rounded-lg border bg-card p-3 flex gap-3">
+                <div className="relative w-14 h-14 rounded-full bg-muted overflow-hidden flex-none">
+                  {t.photoUrl ? (
+                    <Image src={absoluteUrl(t.photoUrl)!} alt={t.name} fill sizes="56px" className="object-cover" unoptimized />
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center text-base font-semibold text-muted-foreground">
+                      {t.name.split(' ').pop()?.[0]?.toUpperCase()}
+                    </div>
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-medium text-sm">{t.name}</span>
+                    {t.verified && <Badge className="bg-emerald-100 text-emerald-700 text-[10px]">Đã xác minh</Badge>}
+                    {!t.isActive && <Badge className="bg-amber-100 text-amber-700 text-[10px]">Ẩn</Badge>}
+                    {(t.location || t.unit) && (
+                      <span className="text-xs text-muted-foreground">{[t.unit, t.location].filter(Boolean).join(' · ')}</span>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1 line-clamp-2 italic">&ldquo;{t.body}&rdquo;</p>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <Button variant="outline" size="sm" onClick={() => setEditing(t)}><Pencil size={12} /></Button>
+                  <Button variant="outline" size="sm" onClick={() => remove(t)} className="text-red-600"><Trash2 size={12} /></Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+      {editing && (
+        <TestimonialDialog
+          testimonial={editing}
+          onClose={() => setEditing(null)}
+          onSaved={() => { setEditing(null); onSuccess('Đã lưu'); load(); }}
+          onError={onError}
+        />
+      )}
+    </Card>
+  );
+}
+
+function TestimonialDialog({ testimonial, onClose, onSaved, onError }: {
+  testimonial: Testimonial;
+  onClose: () => void;
+  onSaved: () => void;
+  onError: (msg: string) => void;
+}) {
+  const isNew = testimonial.id === 0;
+  const [form, setForm] = useState<Testimonial>(testimonial);
+  const [saving, setSaving] = useState(false);
+  const set = <K extends keyof Testimonial>(k: K, v: Testimonial[K]) => setForm((f) => ({ ...f, [k]: v }));
+
+  const save = async () => {
+    if (!form.name || !form.body) { onError('Cần tên và nội dung'); return; }
+    setSaving(true);
+    try {
+      const payload = { name: form.name, location: form.location, unit: form.unit, body: form.body, photoUrl: form.photoUrl, verified: form.verified, displayOrder: form.displayOrder, isActive: form.isActive };
+      if (isNew) await api.adminLandingCreateTestimonial(payload);
+      else await api.adminLandingUpdateTestimonial(form.id, payload);
+      onSaved();
+    } catch (e) {
+      onError((e as Error).message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Dialog open onOpenChange={(o) => { if (!o) onClose(); }}>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>{isNew ? 'Thêm lời cảm ơn' : `Sửa: ${testimonial.name}`}</DialogTitle>
+        </DialogHeader>
+        <div className="grid lg:grid-cols-2 gap-4 py-2">
+          <ImageUpload value={form.photoUrl} onChange={(u) => set('photoUrl', u)} onError={onError} label="Ảnh chân dung" />
+          <div className="space-y-3">
+            <Field label="Tên (vd: Ông Trần Văn Hùng)"><Input value={form.name} onChange={(e) => set('name', e.target.value)} /></Field>
+            <Field label="Đơn vị / vai trò (vd: CCB Quân khu 3)"><Input value={form.unit} onChange={(e) => set('unit', e.target.value)} /></Field>
+            <Field label="Quê quán / tỉnh"><Input value={form.location} onChange={(e) => set('location', e.target.value)} /></Field>
+            <div className="grid grid-cols-2 gap-2">
+              <Field label="Order"><Input type="number" value={form.displayOrder} onChange={(e) => set('displayOrder', parseInt(e.target.value, 10) || 0)} /></Field>
+              <div className="flex items-end gap-3">
+                <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={form.verified} onChange={(e) => set('verified', e.target.checked)} />Xác minh</label>
+                <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={form.isActive} onChange={(e) => set('isActive', e.target.checked)} />Hiển thị</label>
+              </div>
+            </div>
+          </div>
+        </div>
+        <Field label="Nội dung lời cảm ơn">
+          <textarea
+            className="w-full min-h-[120px] rounded-md border bg-background px-3 py-2 text-sm"
+            value={form.body}
+            onChange={(e) => set('body', e.target.value)}
+            placeholder="Cảm ơn đồng đội đã giúp gia đình tôi…"
+          />
+        </Field>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Huỷ</Button>
+          <Button onClick={save} disabled={saving}><Save size={14} className="mr-2" />{saving ? 'Đang lưu…' : 'Lưu'}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

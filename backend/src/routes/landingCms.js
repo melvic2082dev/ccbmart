@@ -32,20 +32,20 @@ const cmsUpload = multer({
 // ---- Defaults so first GET has content even before any admin edit ----
 const DEFAULT_HERO = {
   eyebrow: 'Hệ thống bán lẻ · Cựu Chiến Binh Việt Nam',
-  title: 'Hàng Việt chất lượng, do Cựu Chiến Binh cung cấp.',
+  title: 'Hàng Việt chất lượng — Từ Cựu Chiến Binh vì Cựu Chiến Binh',
   subtitle:
-    'CCB Mart mang đặc sản và nhu yếu phẩm từ khắp mọi miền đất nước về tận nhà quý khách — được tuyển chọn, đóng gói và phân phối bởi mạng lưới hội viên Cựu Chiến Binh trên toàn quốc.',
+    'Mỗi sản phẩm là một câu chuyện, mỗi đơn hàng là một nghĩa cử. CCB Mart kết nối đặc sản từ chính tay đồng đội năm xưa tới gia đình bạn — và trích 1% doanh thu vào quỹ "Vì đồng đội".',
   imageUrl: null,
-  primaryCtaText: 'Mua sắm ngay',
+  primaryCtaText: 'Xem sản phẩm — Góp nghĩa tình',
   primaryCtaHref: '#featured',
-  secondaryCtaText: 'Đăng nhập / Đăng ký →',
-  secondaryCtaHref: '/login',
+  secondaryCtaText: 'Câu chuyện dự án',
+  secondaryCtaHref: '/about',
   stat1Value: '2.400+',
   stat1Label: 'Nhà cung cấp Cựu Chiến Binh',
-  stat2Value: '63',
-  stat2Label: 'Tỉnh / thành phố có mặt',
-  stat3Value: '180k+',
-  stat3Label: 'Đơn hàng đã giao',
+  stat2Value: '47',
+  stat2Label: 'Gia đình CCB đã được hỗ trợ',
+  stat3Value: '123 tr',
+  stat3Label: 'Quỹ Vì đồng đội đã chi',
   isActive: true,
 };
 
@@ -74,12 +74,29 @@ async function getOrInitPromo() {
   return row;
 }
 
+// ---- Defaults for new singleton/list blocks ----
+const DEFAULT_WHY_US = {
+  eyebrow: 'Câu chuyện CCB Mart',
+  title: 'Tại sao chúng tôi làm dự án này?',
+  body:
+    'CCB Mart sinh ra từ trăn trở của những người lính trở về đời thường: nhiều đồng đội năm xưa nay tuổi đã cao, vẫn miệt mài làm nông, chăn nuôi, sản xuất đặc sản quê hương — nhưng đầu ra lại bấp bênh. Mỗi sản phẩm trên kệ hàng là một câu chuyện, mỗi đơn hàng là một nghĩa cử: 1% doanh thu được trích vào quỹ "Vì đồng đội" để hỗ trợ Cựu Chiến Binh khó khăn trên toàn quốc.',
+  imageUrl: null,
+  isActive: true,
+};
+
+async function getOrInitWhyUs() {
+  let row = await prisma.landingWhyUs.findFirst({ orderBy: { id: 'asc' } });
+  if (!row) row = await prisma.landingWhyUs.create({ data: DEFAULT_WHY_US });
+  return row;
+}
+
 // ---- Public: GET full landing content ----
 publicRouter.get('/content', async (_req, res, next) => {
   try {
-    const [hero, promo, trustItems, featured, products, categories] = await Promise.all([
+    const [hero, promo, whyUs, trustItems, featured, products, categories, communityPhotos, fundEntries, testimonials] = await Promise.all([
       getOrInitHero(),
       getOrInitPromo(),
+      getOrInitWhyUs(),
       prisma.landingTrustItem.findMany({
         where: { isActive: true },
         orderBy: { displayOrder: 'asc' },
@@ -96,8 +113,21 @@ publicRouter.get('/content', async (_req, res, next) => {
         where: { isActive: true },
         orderBy: { displayOrder: 'asc' },
       }),
+      prisma.landingCommunityPhoto.findMany({
+        where: { isActive: true },
+        orderBy: { displayOrder: 'asc' },
+      }),
+      prisma.landingFundEntry.findMany({
+        where: { isActive: true },
+        orderBy: { occurredAt: 'desc' },
+        take: 12,
+      }),
+      prisma.landingTestimonial.findMany({
+        where: { isActive: true },
+        orderBy: { displayOrder: 'asc' },
+      }),
     ]);
-    res.json({ hero, promo, trustItems, featured, products, categories });
+    res.json({ hero, promo, whyUs, trustItems, featured, products, categories, communityPhotos, fundEntries, testimonials });
   } catch (err) {
     next(err);
   }
@@ -143,15 +173,16 @@ adminRouter.post('/upload', cmsUpload.single('file'), (req, res) => {
 // ---- Admin: full content (same as public + inactive items) ----
 adminRouter.get('/', async (_req, res, next) => {
   try {
-    const [hero, promo, trustItems, featured] = await Promise.all([
+    const [hero, promo, whyUs, trustItems, featured] = await Promise.all([
       getOrInitHero(),
       getOrInitPromo(),
+      getOrInitWhyUs(),
       prisma.landingTrustItem.findMany({ orderBy: { displayOrder: 'asc' } }),
       prisma.landingFeaturedProduct.findMany({
         orderBy: [{ section: 'asc' }, { displayOrder: 'asc' }],
       }),
     ]);
-    res.json({ hero, promo, trustItems, featured });
+    res.json({ hero, promo, whyUs, trustItems, featured });
   } catch (err) {
     next(err);
   }
@@ -362,11 +393,170 @@ adminRouter.delete('/categories/:id', async (req, res, next) => {
   }
 });
 
+// ---- Why-Us singleton ----
+const WHY_US_FIELDS = ['eyebrow', 'title', 'body', 'imageUrl', 'isActive'];
+adminRouter.put('/why-us', async (req, res, next) => {
+  try {
+    const current = await getOrInitWhyUs();
+    const data = pick(req.body, WHY_US_FIELDS);
+    const updated = await prisma.landingWhyUs.update({ where: { id: current.id }, data });
+    res.json(updated);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ---- Community photos CRUD ----
+const COMMUNITY_PHOTO_FIELDS = ['imageUrl', 'caption', 'impactValue', 'impactLabel', 'displayOrder', 'isActive'];
+
+adminRouter.get('/community-photos', async (_req, res, next) => {
+  try {
+    const items = await prisma.landingCommunityPhoto.findMany({ orderBy: { displayOrder: 'asc' } });
+    res.json(items);
+  } catch (err) { next(err); }
+});
+
+adminRouter.post('/community-photos', async (req, res, next) => {
+  try {
+    const data = pick(req.body, COMMUNITY_PHOTO_FIELDS);
+    if (!data.caption) return res.status(400).json({ error: 'caption is required' });
+    if ('displayOrder' in data) data.displayOrder = parseInt(data.displayOrder, 10) || 0;
+    const item = await prisma.landingCommunityPhoto.create({ data });
+    res.json(item);
+  } catch (err) { next(err); }
+});
+
+adminRouter.put('/community-photos/:id', async (req, res, next) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    const data = pick(req.body, COMMUNITY_PHOTO_FIELDS);
+    if ('displayOrder' in data) data.displayOrder = parseInt(data.displayOrder, 10) || 0;
+    const item = await prisma.landingCommunityPhoto.update({ where: { id }, data });
+    res.json(item);
+  } catch (err) {
+    if (err.code === 'P2025') return res.status(404).json({ error: 'Photo not found' });
+    next(err);
+  }
+});
+
+adminRouter.delete('/community-photos/:id', async (req, res, next) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    await prisma.landingCommunityPhoto.delete({ where: { id } });
+    res.json({ ok: true });
+  } catch (err) {
+    if (err.code === 'P2025') return res.status(404).json({ error: 'Photo not found' });
+    next(err);
+  }
+});
+
+// ---- Fund entries CRUD ----
+const FUND_FIELDS = ['occurredAt', 'type', 'amount', 'description', 'balance', 'displayOrder', 'isActive'];
+const VALID_FUND_TYPES = new Set(['in', 'out']);
+
+adminRouter.get('/fund-entries', async (_req, res, next) => {
+  try {
+    const items = await prisma.landingFundEntry.findMany({ orderBy: { occurredAt: 'desc' } });
+    res.json(items);
+  } catch (err) { next(err); }
+});
+
+function normalizeFundPayload(body) {
+  const data = pick(body, FUND_FIELDS);
+  if ('occurredAt' in data && data.occurredAt) data.occurredAt = new Date(data.occurredAt);
+  if ('amount' in data) data.amount = parseInt(data.amount, 10) || 0;
+  if ('balance' in data) data.balance = data.balance === null || data.balance === '' ? null : parseInt(data.balance, 10);
+  if ('displayOrder' in data) data.displayOrder = parseInt(data.displayOrder, 10) || 0;
+  if (data.type && !VALID_FUND_TYPES.has(data.type)) return { error: 'type must be "in" or "out"' };
+  return { data };
+}
+
+adminRouter.post('/fund-entries', async (req, res, next) => {
+  try {
+    const r = normalizeFundPayload(req.body);
+    if (r.error) return res.status(400).json({ error: r.error });
+    if (!r.data.occurredAt || !r.data.type || !r.data.description) {
+      return res.status(400).json({ error: 'occurredAt, type, description are required' });
+    }
+    const item = await prisma.landingFundEntry.create({ data: r.data });
+    res.json(item);
+  } catch (err) { next(err); }
+});
+
+adminRouter.put('/fund-entries/:id', async (req, res, next) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    const r = normalizeFundPayload(req.body);
+    if (r.error) return res.status(400).json({ error: r.error });
+    const item = await prisma.landingFundEntry.update({ where: { id }, data: r.data });
+    res.json(item);
+  } catch (err) {
+    if (err.code === 'P2025') return res.status(404).json({ error: 'Entry not found' });
+    next(err);
+  }
+});
+
+adminRouter.delete('/fund-entries/:id', async (req, res, next) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    await prisma.landingFundEntry.delete({ where: { id } });
+    res.json({ ok: true });
+  } catch (err) {
+    if (err.code === 'P2025') return res.status(404).json({ error: 'Entry not found' });
+    next(err);
+  }
+});
+
+// ---- Testimonials CRUD ----
+const TESTIMONIAL_FIELDS = ['name', 'location', 'unit', 'body', 'photoUrl', 'verified', 'displayOrder', 'isActive'];
+
+adminRouter.get('/testimonials', async (_req, res, next) => {
+  try {
+    const items = await prisma.landingTestimonial.findMany({ orderBy: { displayOrder: 'asc' } });
+    res.json(items);
+  } catch (err) { next(err); }
+});
+
+adminRouter.post('/testimonials', async (req, res, next) => {
+  try {
+    const data = pick(req.body, TESTIMONIAL_FIELDS);
+    if (!data.name || !data.body) return res.status(400).json({ error: 'name and body are required' });
+    if ('displayOrder' in data) data.displayOrder = parseInt(data.displayOrder, 10) || 0;
+    const item = await prisma.landingTestimonial.create({ data });
+    res.json(item);
+  } catch (err) { next(err); }
+});
+
+adminRouter.put('/testimonials/:id', async (req, res, next) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    const data = pick(req.body, TESTIMONIAL_FIELDS);
+    if ('displayOrder' in data) data.displayOrder = parseInt(data.displayOrder, 10) || 0;
+    const item = await prisma.landingTestimonial.update({ where: { id }, data });
+    res.json(item);
+  } catch (err) {
+    if (err.code === 'P2025') return res.status(404).json({ error: 'Testimonial not found' });
+    next(err);
+  }
+});
+
+adminRouter.delete('/testimonials/:id', async (req, res, next) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    await prisma.landingTestimonial.delete({ where: { id } });
+    res.json({ ok: true });
+  } catch (err) {
+    if (err.code === 'P2025') return res.status(404).json({ error: 'Testimonial not found' });
+    next(err);
+  }
+});
+
 // ---- Catalog products CRUD ----
 const PRODUCT_FIELDS = [
   'slug', 'categorySlug', 'name', 'art', 'tone', 'price', 'was',
   'rating', 'sold', 'region', 'verified', 'badges', 'imageUrl',
   'brand', 'origin', 'weight', 'certifications', 'distributor', 'description', 'thumbs',
+  'producerName', 'producerHometown', 'producerUnit', 'producerContribution',
   'isActive', 'displayOrder',
 ];
 const VALID_TONES = new Set(['paper', 'red', 'olive', 'gold']);
@@ -377,6 +567,10 @@ function normalizeProductPayload(body) {
   if ('was' in data) data.was = data.was === null || data.was === '' ? null : Math.round(Number(data.was));
   if ('rating' in data) data.rating = Number(data.rating) || 0;
   if ('displayOrder' in data) data.displayOrder = parseInt(data.displayOrder, 10) || 0;
+  if ('producerContribution' in data) {
+    data.producerContribution = data.producerContribution === null || data.producerContribution === ''
+      ? null : Math.round(Number(data.producerContribution));
+  }
   if (data.tone && !VALID_TONES.has(data.tone)) {
     return { error: 'tone must be one of: paper, red, olive, gold' };
   }
