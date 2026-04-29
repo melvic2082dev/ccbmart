@@ -74,13 +74,6 @@ export default function AboutPage() {
             <strong>Ban liên lạc Trung đoàn E29</strong>
             {' '}sáng lập và vận hành — một tập thể các Cựu Chiến Binh từng cùng đơn vị, nay đồng lòng đi tiếp một &ldquo;mặt trận&rdquo; mới: giúp đồng đội phát triển kinh tế, có thu nhập ổn định trên chính mảnh đất quê hương.
           </p>
-          <p style={{ fontSize: 16, lineHeight: 1.7, color: 'var(--ink-2)', margin: '12px 0 0' }}>
-            CCB Mart{' '}
-            <strong>không phải là Hội Cựu Chiến Binh Việt Nam</strong>
-            {' '}và{' '}
-            <strong>không được Hội CCB Việt Nam xác nhận chính thức</strong>
-            . Chúng tôi là một sáng kiến độc lập của Ban liên lạc E29, hoạt động song song và sẵn sàng đóng góp cho các hoạt động của Hội CCB ở mọi cấp khi được mời.
-          </p>
         </section>
 
         <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 28, margin: '0 0 16px' }}>Ba giá trị cốt lõi</h2>
