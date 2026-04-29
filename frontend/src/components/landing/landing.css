@@ -139,6 +139,70 @@
   box-shadow: 0 12px 32px rgba(44, 34, 12, 0.12), 0 2px 8px rgba(44, 34, 12, 0.06);
   border-color: var(--ccb-olive) !important;
 }
+.ccb-landing .ccb-big-product-card:hover .ccb-cert-overlay {
+  transform: translateY(0) !important;
+  opacity: 1 !important;
+}
+
+/* Zalo button pulse animation — fires up to 3 times then stops */
+@keyframes ccb-zalo-pulse {
+  0%, 100% { box-shadow: 0 6px 18px rgba(0,104,255,0.30); }
+  50%      { box-shadow: 0 6px 22px rgba(0,104,255,0.65), 0 0 0 8px rgba(0,104,255,0.12); }
+}
+.ccb-landing .ccb-zalo-btn {
+  animation: ccb-zalo-pulse 1.8s ease-in-out 3;
+}
+.ccb-landing .ccb-zalo-btn:hover {
+  animation: none;
+}
+
+/* Pulse-dot indicator for sticky fund banner + ticker */
+@keyframes ccb-pulse-dot {
+  0%   { box-shadow: 0 0 0 0 rgba(139,0,0,0.55); }
+  70%  { box-shadow: 0 0 0 14px rgba(139,0,0,0);   }
+  100% { box-shadow: 0 0 0 0 rgba(139,0,0,0);     }
+}
+.ccb-landing .ccb-pulse-dot {
+  animation: ccb-pulse-dot 1.6s infinite;
+}
+
+/* Sticky fund banner slide-in */
+.ccb-landing .ccb-fund-sticky {
+  transform: translateX(120%);
+  opacity: 0;
+  transition: transform .35s ease, opacity .35s ease;
+}
+.ccb-landing .ccb-fund-sticky.show {
+  transform: translateX(0);
+  opacity: 1;
+}
+@media (max-width: 880px) {
+  .ccb-landing .ccb-fund-sticky {
+    top: auto !important;
+    bottom: 12px !important;
+    right: 12px !important;
+    left: 12px !important;
+    max-width: none !important;
+    transform: translateY(120%);
+  }
+  .ccb-landing .ccb-fund-sticky.show {
+    transform: translateY(0);
+  }
+}
+
+/* Connect (Hậu phương) block */
+.ccb-landing .ccb-connect-card {
+  transition: transform .2s ease, box-shadow .2s ease;
+}
+.ccb-landing .ccb-connect-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 28px rgba(0,104,255,0.12), 0 2px 8px rgba(0,0,0,0.05);
+}
+
+/* Ticker fade between messages */
+.ccb-landing .ccb-ticker-text {
+  transition: opacity .25s ease;
+}
 
 /* Body min font 18px throughout the senior landing — already mostly done inline,
    but enforce as a safety net for any inherited content */

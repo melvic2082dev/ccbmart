@@ -18,6 +18,8 @@ import {
   SeniorFooter,
   type FooterData,
 } from './SeniorSections';
+import { ConnectListingsSection } from './ConnectListings';
+import { StickyFundBanner, SocialProofTicker } from './LandingExtras';
 import {
   CATEGORIES, PRODUCTS,
   mergeWithDb, mergeCategoriesWithDb,
@@ -88,6 +90,21 @@ export function LandingPage() {
     return [...fromFeatured, ...extra].slice(0, 3);
   })();
 
+  // Sticky fund banner — current-month total from CMS entries
+  const stickyFund = (() => {
+    const entries = content?.fundEntries ?? [];
+    if (entries.length === 0) return null;
+    const newest = new Date(entries[0].occurredAt);
+    const m = newest.getMonth(); const y = newest.getFullYear();
+    const inMonth = entries.filter((e) => {
+      const d = new Date(e.occurredAt);
+      return d.getMonth() === m && d.getFullYear() === y;
+    });
+    const total = inMonth.filter((e) => e.type === 'in').reduce((s, e) => s + e.amount, 0);
+    if (total <= 0) return null;
+    return { amount: total, monthLabel: `T${String(m + 1).padStart(2, '0')}/${y}` };
+  })();
+
   return (
     <div className="ccb-landing">
       <Header cartCount={0} categories={allCategories} header={content?.header} />
@@ -120,11 +137,19 @@ export function LandingPage() {
         bg="var(--paper-1)"
       />
 
-      {/* 5. Hoạt động gần đây */}
-      <JourneyGallerySection photos={content?.communityPhotos} />
+      {/* 5. Nhu yếu phẩm — Hậu phương · CCB Mart kết nối, KHÔNG bán trực tiếp */}
+      <ConnectListingsSection />
 
-      {/* 6. Footer */}
+      {/* 6. Hoạt động gần đây + ticker social proof */}
+      <JourneyGallerySection photos={content?.communityPhotos}>
+        <SocialProofTicker />
+      </JourneyGallerySection>
+
+      {/* 7. Footer */}
       <SeniorFooter data={content?.footer} />
+
+      {/* Sticky shrunk fund banner — appears after scrolling past Quỹ section */}
+      {stickyFund && <StickyFundBanner amount={stickyFund.amount} monthLabel={stickyFund.monthLabel} />}
     </div>
   );
 }

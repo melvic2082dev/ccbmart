@@ -200,6 +200,36 @@ function DignifiedPortraitFallback() {
 }
 
 // =========================================================================
+// Wax-seal certification badge — military-stamp aesthetic for verified products
+// =========================================================================
+function WaxSeal() {
+  return (
+    <div aria-hidden style={{
+      position: 'absolute', top: 8, right: 8,
+      width: 76, height: 76,
+      display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+      textAlign: 'center',
+      color: '#FFE9C2',
+      fontFamily: 'var(--font-display)', fontWeight: 800,
+      fontSize: 9, lineHeight: 1.15, letterSpacing: '0.04em',
+      textTransform: 'uppercase',
+      background: 'radial-gradient(circle at 30% 30%, #B22222 0%, #8B0000 50%, #5C0000 100%)',
+      borderRadius: '50%',
+      boxShadow: 'inset 0 -3px 8px rgba(0,0,0,0.40), inset 2px 4px 6px rgba(255,255,255,0.18), 0 4px 10px rgba(91,11,11,0.45)',
+      transform: 'rotate(-8deg)',
+      padding: 8,
+      zIndex: 2,
+    }}>
+      <span style={{ position: 'absolute', inset: 6, border: '1px dashed rgba(255,233,194,0.55)', borderRadius: '50%' }} />
+      <div>
+        <div style={{ color: 'var(--ccb-gold)', fontSize: 13, lineHeight: 1, marginBottom: 2 }}>★</div>
+        Đã kiểm định<br />bởi Hội CCB
+      </div>
+    </div>
+  );
+}
+
+// =========================================================================
 // 3. SẢN PHẨM CHỌN LỌC — large horizontal cards (reusable: interleave with fund)
 // =========================================================================
 export function SeniorProductGrid({
@@ -255,12 +285,13 @@ export function SeniorProductGrid({
 
 function BigProductCard({ product }: { product: ProductDetail }) {
   const {
-    slug, name, art, tone, price, was, imageUrl,
-    producerName, producerHometown, producerUnit, producerContribution, producerPhotoUrl,
+    slug, name, art, tone, price, was, imageUrl, verified, producerHometown: hometown,
+    producerName, producerUnit, producerContribution, producerPhotoUrl,
   } = product;
   const href = slug ? `/product/${slug}` : '#';
   const contribution = producerContribution ?? Math.max(1000, Math.round(price * 0.01));
   const initial = (producerName ?? 'CCB').split(' ').pop()?.[0]?.toUpperCase() ?? 'C';
+  const certPlace = hometown?.split(',')[0]?.trim() ?? 'địa phương';
 
   return (
     <Link href={href} className="ccb-big-product-card" style={{
@@ -271,7 +302,7 @@ function BigProductCard({ product }: { product: ProductDetail }) {
       transition: 'transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease',
     }}>
       {/* Product image */}
-      <div style={{
+      <div className="ccb-product-photo" style={{
         position: 'relative', width: 180, height: 180,
         borderRadius: 8, overflow: 'hidden', background: 'var(--paper-1)',
         border: '1px solid var(--line)',
@@ -280,6 +311,26 @@ function BigProductCard({ product }: { product: ProductDetail }) {
           <Image src={imageUrl} alt={name} fill sizes="180px" className="object-cover" unoptimized />
         ) : (
           <ProductArt label={art} tone={tone} />
+        )}
+
+        {/* Wax-seal certification badge */}
+        {verified && <WaxSeal />}
+
+        {/* Hover certification overlay */}
+        {verified && (
+          <div className="ccb-cert-overlay" style={{
+            position: 'absolute', left: 0, right: 0, bottom: 0,
+            background: 'linear-gradient(180deg, rgba(31,27,22,0) 0%, rgba(31,27,22,0.95) 100%)',
+            color: '#FFF8E7',
+            padding: '20px 12px 10px',
+            fontFamily: 'var(--font-body)', fontSize: 11, lineHeight: 1.45,
+            textAlign: 'left',
+            transform: 'translateY(100%)', opacity: 0,
+            transition: 'transform 0.25s ease, opacity 0.25s ease',
+            pointerEvents: 'none',
+          }}>
+            ✓ Sản phẩm đã qua kiểm định chất lượng bởi Hội Cựu Chiến Binh {certPlace}.
+          </div>
         )}
       </div>
 
@@ -329,7 +380,7 @@ function BigProductCard({ product }: { product: ProductDetail }) {
                 fontFamily: 'var(--font-body)', fontSize: 16, fontWeight: 700,
                 color: oliveDark, lineHeight: 1.3,
               }}>
-                Từ CCB {producerHometown ? producerHometown.split(',')[0] : 'Việt Nam'}
+                Từ CCB {hometown ? hometown.split(',')[0] : 'Việt Nam'}
               </div>
               {producerUnit && (
                 <div style={{ fontSize: 14, color: 'var(--ink-3)', marginTop: 2 }}>
@@ -509,7 +560,7 @@ const fmtFull = (n: number) => n.toLocaleString('vi-VN');
 // =========================================================================
 // 5. HOẠT ĐỘNG GẦN ĐÂY — image gallery
 // =========================================================================
-export function JourneyGallerySection({ photos }: { photos?: CommunityPhotoData[] }) {
+export function JourneyGallerySection({ photos, children }: { photos?: CommunityPhotoData[]; children?: React.ReactNode }) {
   if (!photos || photos.length === 0) return null;
   const list = photos.slice(0, 3);
   return (
@@ -595,6 +646,8 @@ export function JourneyGallerySection({ photos }: { photos?: CommunityPhotoData[
             Xem tất cả hoạt động <ArrowRight size={20} />
           </Link>
         </div>
+
+        {children}
       </div>
     </section>
   );
