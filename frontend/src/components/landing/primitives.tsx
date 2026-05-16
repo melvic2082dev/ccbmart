@@ -26,7 +26,7 @@ export function Badge({ variant = 'red', children }: { variant?: BadgeVariant; c
         gap: 4,
         fontFamily: 'var(--font-body)',
         fontWeight: 600,
-        fontSize: 11,
+        fontSize: 15,
         padding: '3px 10px',
         borderRadius: 999,
         letterSpacing: '0.04em',
@@ -48,7 +48,7 @@ export function SectionHead({ eyebrow, title, link, linkHref }: { eyebrow?: stri
       <div>
         {eyebrow && (
           <div style={{
-            fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 12,
+            fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 16,
             letterSpacing: '0.08em', textTransform: 'uppercase',
             color: 'var(--ccb-red)', marginBottom: 6,
           }}>{eyebrow}</div>
@@ -60,7 +60,7 @@ export function SectionHead({ eyebrow, title, link, linkHref }: { eyebrow?: stri
       </div>
       {link && (
         <a href={linkHref ?? '#'} style={{
-          fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 14,
+          fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 19,
           color: 'var(--ccb-red)', whiteSpace: 'nowrap',
         }}>{link} →</a>
       )}

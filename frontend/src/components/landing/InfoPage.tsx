@@ -32,7 +32,7 @@ export function InfoPage({
   return (
     <LandingShell>
       <main style={{ maxWidth: 980, margin: '0 auto', padding: '32px 24px 96px' }}>
-        <div style={{ fontSize: 13, color: 'var(--ink-3)', display: 'flex', gap: 8 }}>
+        <div style={{ fontSize: 18, color: 'var(--ink-3)', display: 'flex', gap: 8 }}>
           <Link href="/" style={{ color: 'var(--ccb-red)' }}>Trang chủ</Link>
           <span style={{ color: 'var(--ink-4)' }}>/</span>
           <span>{breadcrumbLabel}</span>
@@ -41,7 +41,7 @@ export function InfoPage({
         <header style={{ marginTop: 24, marginBottom: 40 }}>
           {eyebrow && (
             <div style={{
-              fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 13,
+              fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 18,
               letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--ccb-red)',
               marginBottom: 12,
             }}>
@@ -77,7 +77,7 @@ export function InfoPage({
                 display: 'inline-flex', alignItems: 'center', gap: 8,
                 padding: '14px 32px',
                 background: 'var(--ccb-red)', color: '#FFF8E7',
-                borderRadius: 6, fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 15,
+                borderRadius: 6, fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 20,
                 boxShadow: 'var(--shadow-sm)',
               }}
             >
@@ -145,7 +145,7 @@ function SectionRenderer({ s }: { s: InfoSection }) {
           </div>
         )}
         <div style={{
-          fontFamily: 'var(--font-body)', fontSize: 16, lineHeight: 1.6,
+          fontFamily: 'var(--font-body)', fontSize: 22, lineHeight: 1.6,
           color: 'var(--ink-2)',
         }}>
           {s.body}
@@ -160,7 +160,7 @@ function SectionRenderer({ s }: { s: InfoSection }) {
         padding: '14px 18px',
       }}>
         <summary style={{
-          fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 16,
+          fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 22,
           color: 'var(--ink-1)', cursor: 'pointer', listStyle: 'none',
           display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8,
         }}>
@@ -168,7 +168,7 @@ function SectionRenderer({ s }: { s: InfoSection }) {
           <span style={{ color: 'var(--ccb-red)', fontSize: 18 }}>+</span>
         </summary>
         <div style={{
-          marginTop: 10, fontFamily: 'var(--font-body)', fontSize: 16, lineHeight: 1.65,
+          marginTop: 10, fontFamily: 'var(--font-body)', fontSize: 22, lineHeight: 1.65,
           color: 'var(--ink-2)',
         }}>
           {s.answer}

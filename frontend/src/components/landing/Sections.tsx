@@ -45,8 +45,8 @@ export function TrustBar({ items: cmsItems }: { items?: TrustItemData[] } = {}) 
               color: 'var(--ccb-olive)',
             }}>{it.icon}</div>
             <div>
-              <div style={{ fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 14, color: 'var(--ink-1)' }}>{it.title}</div>
-              <div style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: 'var(--ink-3)', marginTop: 2, lineHeight: 1.4 }}>{it.sub}</div>
+              <div style={{ fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 19, color: 'var(--ink-1)' }}>{it.title}</div>
+              <div style={{ fontFamily: 'var(--font-body)', fontSize: 16, color: 'var(--ink-3)', marginTop: 2, lineHeight: 1.4 }}>{it.sub}</div>
             </div>
           </div>
         ))}
@@ -91,7 +91,7 @@ export function CategoryStrip({ categories }: { categories?: Category[] } = {}) 
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                 }}><Icon size={28} /></div>
                 <div style={{
-                  fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 12,
+                  fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 16,
                   color: 'var(--ink-1)', textAlign: 'center', lineHeight: 1.25,
                 }}>{c.name}</div>
               </Link>
@@ -164,7 +164,7 @@ export function PromoBanner({ data }: { data?: PromoData } = {}) {
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
             <Star size={14} color="var(--ccb-gold)" />
             <span style={{
-              fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 12,
+              fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 16,
               letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--ccb-gold)',
             }}>{eyebrow}</span>
           </div>
@@ -176,19 +176,19 @@ export function PromoBanner({ data }: { data?: PromoData } = {}) {
               </>
             )}
           </h2>
-          <p style={{ fontFamily: 'var(--font-body)', fontSize: 16, lineHeight: 1.6, color: '#F2E8CF', marginTop: 16, maxWidth: 520 }}>
+          <p style={{ fontFamily: 'var(--font-body)', fontSize: 22, lineHeight: 1.6, color: '#F2E8CF', marginTop: 16, maxWidth: 520 }}>
             {subtitle}
           </p>
           <div style={{ display: 'flex', gap: 12, marginTop: 28, flexWrap: 'wrap' }}>
             <a href={primaryCtaHref} style={{
               background: '#FBF7EE', color: 'var(--ccb-red-deep)',
-              fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 16,
+              fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 22,
               padding: '14px 26px', borderRadius: 4,
             }}>{primaryCtaText}</a>
             {secondaryCtaText && secondaryCtaHref && (
               <Link href={secondaryCtaHref} style={{
                 background: 'transparent', color: 'var(--ccb-gold)',
-                fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 16,
+                fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 22,
                 padding: '14px 26px', borderRadius: 4,
                 border: '1px solid var(--ccb-gold)',
               }}>{secondaryCtaText}</Link>
@@ -229,7 +229,7 @@ function CountdownBlocks({ countdown }: { countdown: { d: string; h: string; m: 
           border: '1px solid rgba(255,248,231,0.1)',
         }}>
           <div style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 40, lineHeight: 1, color: 'var(--ccb-gold)', fontVariantNumeric: 'tabular-nums' }}>{n}</div>
-          <div style={{ fontFamily: 'var(--font-body)', fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', marginTop: 6, color: '#F2E8CF' }}>{l}</div>
+          <div style={{ fontFamily: 'var(--font-body)', fontSize: 15, letterSpacing: '0.08em', textTransform: 'uppercase', marginTop: 6, color: '#F2E8CF' }}>{l}</div>
         </div>
       ))}
     </div>
@@ -257,13 +257,13 @@ export function RegionStrip() {
               display: 'flex', flexDirection: 'column', minHeight: 200,
             }}>
               <div style={{
-                fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 11,
+                fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 15,
                 letterSpacing: '0.08em', textTransform: 'uppercase',
                 color: i === 1 ? 'var(--ccb-gold)' : 'var(--ccb-red)',
               }}>{r.count}</div>
               <div style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 36, lineHeight: 1.1, marginTop: 8 }}>{r.name}</div>
-              <div style={{ fontFamily: 'var(--font-body)', fontSize: 13, marginTop: 12, opacity: 0.85, flex: 1 }}>{r.cities}</div>
-              <div style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 13, marginTop: 16,
+              <div style={{ fontFamily: 'var(--font-body)', fontSize: 18, marginTop: 12, opacity: 0.85, flex: 1 }}>{r.cities}</div>
+              <div style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 18, marginTop: 16,
                 display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                 <MapPin size={14} /> Khám phá đặc sản →
               </div>
@@ -312,11 +312,11 @@ export function CommunityVoices() {
                 <div style={{
                   width: 40, height: 40, borderRadius: '50%', background: 'var(--ccb-olive)', color: '#FBF7EE',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 16,
+                  fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 22,
                 }}>{q.name.split(' ').pop()![0]}</div>
                 <div>
-                  <div style={{ fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 13, color: 'var(--ink-1)' }}>{q.name}</div>
-                  <div style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: 'var(--ink-3)', marginTop: 2 }}>{q.role}</div>
+                  <div style={{ fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 18, color: 'var(--ink-1)' }}>{q.name}</div>
+                  <div style={{ fontFamily: 'var(--font-body)', fontSize: 16, color: 'var(--ink-3)', marginTop: 2 }}>{q.role}</div>
                 </div>
               </figcaption>
             </figure>
@@ -365,19 +365,19 @@ export function Footer() {
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src="/ccb-mart-logo.png" alt="CCB Mart" style={{ height: 36, width: 'auto', display: 'block' }} />
             </div>
-            <p style={{ fontFamily: 'var(--font-body)', fontSize: 13, lineHeight: 1.6, marginTop: 16, color: '#D4CFBE' }}>
+            <p style={{ fontFamily: 'var(--font-body)', fontSize: 18, lineHeight: 1.6, marginTop: 16, color: '#D4CFBE' }}>
               Một dự án của Ban liên lạc Trung đoàn E29 — đồng hành cùng người lính làm kinh tế trên khắp mọi miền Tổ quốc.
             </p>
           </div>
           {cols.map((c) => (
             <div key={c.h}>
               <div style={{
-                fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 13,
+                fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 18,
                 letterSpacing: '0.04em', textTransform: 'uppercase', color: '#FBF7EE', marginBottom: 14,
               }}>{c.h}</div>
               <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {c.items.map((it) => (
-                  <li key={it.label}><Link href={it.href} style={{ color: '#D4CFBE', fontSize: 13, fontFamily: 'var(--font-body)' }}>{it.label}</Link></li>
+                  <li key={it.label}><Link href={it.href} style={{ color: '#D4CFBE', fontSize: 18, fontFamily: 'var(--font-body)' }}>{it.label}</Link></li>
                 ))}
               </ul>
             </div>
@@ -389,10 +389,10 @@ export function Footer() {
           display: 'flex', justifyContent: 'space-between', alignItems: 'center',
           flexWrap: 'wrap', gap: 12,
         }}>
-          <div style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: '#B8B3A2' }}>
+          <div style={{ fontFamily: 'var(--font-body)', fontSize: 16, color: '#B8B3A2' }}>
             © {new Date().getFullYear()} CCB Mart · Hệ thống bán lẻ Cựu Chiến Binh Việt Nam.
           </div>
-          <div style={{ display: 'flex', gap: 18, fontFamily: 'var(--font-body)', fontSize: 12, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: 18, fontFamily: 'var(--font-body)', fontSize: 16, flexWrap: 'wrap' }}>
             <Link href="/terms" style={{ color: '#B8B3A2' }}>Điều khoản sử dụng</Link>
             <Link href="/privacy" style={{ color: '#B8B3A2' }}>Chính sách bảo mật</Link>
           </div>

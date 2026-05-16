@@ -87,7 +87,7 @@ export function ProductCard({ product }: { product: Product }) {
               display: 'inline-flex', alignItems: 'center', gap: 3,
               background: 'var(--ccb-red)', color: '#FFFFFF',
               padding: '3px 8px', borderRadius: 4,
-              fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 10,
+              fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 14,
               letterSpacing: '0.02em',
             }}>
               <BadgeCheck size={10} /> Từ CCB {producerHometown.split(',')[0]}
@@ -103,7 +103,7 @@ export function ProductCard({ product }: { product: Product }) {
       </div>
       <div style={{ padding: '12px 14px 14px', display: 'flex', flexDirection: 'column', flex: 1 }}>
         <div style={{
-          fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 14,
+          fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 19,
           color: 'var(--ink-1)', lineHeight: 1.3, minHeight: 36,
         }}>{name}</div>
         {producerName && (
@@ -111,7 +111,7 @@ export function ProductCard({ product }: { product: Product }) {
             display: 'flex', alignItems: 'center', gap: 5, marginTop: 6,
             padding: '5px 8px', background: 'var(--ccb-olive-tint)',
             borderRadius: 4, color: 'var(--ccb-olive-dark)',
-            fontFamily: 'var(--font-body)', fontSize: 11, fontWeight: 600, lineHeight: 1.3,
+            fontFamily: 'var(--font-body)', fontSize: 15, fontWeight: 600, lineHeight: 1.3,
           }}>
             <MapPin size={11} />
             <span style={{ flex: 1, minWidth: 0 }}>
@@ -120,7 +120,7 @@ export function ProductCard({ product }: { product: Product }) {
             </span>
           </div>
         )}
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 11, color: 'var(--ink-3)', marginTop: 6, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 15, color: 'var(--ink-3)', marginTop: 6, flexWrap: 'wrap' }}>
           <span style={{ color: 'var(--ccb-gold-dark)' }}>★ {rating}</span>
           <span>·</span>
           <span>Đã bán {sold}</span>
@@ -130,14 +130,14 @@ export function ProductCard({ product }: { product: Product }) {
           <span style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 20, color: 'var(--ccb-red)' }}>
             {formatVnd(price)}
           </span>
-          {was && <span style={{ fontSize: 12, color: 'var(--ink-4)', textDecoration: 'line-through' }}>{formatVnd(was)}</span>}
+          {was && <span style={{ fontSize: 16, color: 'var(--ink-4)', textDecoration: 'line-through' }}>{formatVnd(was)}</span>}
         </div>
         {/* 1% contribution caption — visible only when there's a real producer (skips fallback hardcoded items) */}
         {producerName && contribution > 0 && (
           <div style={{
             marginTop: 8, padding: '6px 10px',
             background: 'var(--ccb-olive-tint)', borderRadius: 4,
-            fontFamily: 'var(--font-body)', fontSize: 11, color: 'var(--ccb-olive-dark)',
+            fontFamily: 'var(--font-body)', fontSize: 15, color: 'var(--ccb-olive-dark)',
             fontWeight: 600, lineHeight: 1.4,
           }}>
             Mua sản phẩm này → góp <strong>{formatVnd(contribution)}</strong> vào quỹ Vì đồng đội
@@ -149,7 +149,7 @@ export function ProductCard({ product }: { product: Product }) {
           background: 'transparent', color: 'var(--ccb-olive-dark)',
           border: '1px solid var(--ccb-olive)',
           borderRadius: 4, padding: '8px 12px',
-          fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 13,
+          fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 18,
           transition: 'background 0.15s ease, color 0.15s ease',
         }}>
           <ShoppingCart size={14} />

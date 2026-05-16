@@ -243,6 +243,7 @@
   transform: translateY(-2px);
 }
 
-/* Body min font 18px throughout the senior landing — already mostly done inline,
-   but enforce as a safety net for any inherited content */
-.ccb-landing { font-size: 18px; line-height: 1.55; }
+/* Body min font 22px throughout the senior landing — already mostly done inline,
+   but enforce as a safety net for any inherited content. Bumped from 18px on 2026-05-15
+   per user request for larger reading size. */
+.ccb-landing { font-size: 22px; line-height: 1.55; }

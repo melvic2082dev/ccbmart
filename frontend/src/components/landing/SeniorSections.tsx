@@ -170,7 +170,7 @@ function ProducerPortrait({ product }: { product: ProductDetail }) {
       {producerUnit && (
         <div style={{
           marginTop: 6,
-          fontFamily: 'var(--font-body)', fontSize: 16, color: deepRed, fontWeight: 600,
+          fontFamily: 'var(--font-body)', fontSize: 22, color: deepRed, fontWeight: 600,
         }}>
           {producerUnit}{producerHometown ? ` · ${producerHometown}` : ''}
         </div>
@@ -236,7 +236,7 @@ function WaxSeal() {
     }}>
       <span style={{ position: 'absolute', inset: 6, border: '1px dashed rgba(255,233,194,0.55)', borderRadius: '50%' }} />
       <div>
-        <div style={{ color: 'var(--ccb-gold)', fontSize: 13, lineHeight: 1, marginBottom: 2 }}>★</div>
+        <div style={{ color: 'var(--ccb-gold)', fontSize: 18, lineHeight: 1, marginBottom: 2 }}>★</div>
         Đồng đội<br />E29 tin dùng
       </div>
     </div>
@@ -263,7 +263,7 @@ export function SeniorProductGrid({
         <div style={{ textAlign: 'center', marginBottom: 56 }}>
           {eyebrow && (
             <div style={{
-              fontFamily: 'var(--font-body)', fontSize: 14, fontWeight: 700,
+              fontFamily: 'var(--font-body)', fontSize: 19, fontWeight: 700,
               letterSpacing: '0.08em', textTransform: 'uppercase',
               color: deepRed, marginBottom: 12,
             }}>
@@ -391,13 +391,13 @@ function BigProductCard({ product }: { product: ProductDetail }) {
             </div>
             <div style={{ minWidth: 0 }}>
               <div style={{
-                fontFamily: 'var(--font-body)', fontSize: 16, fontWeight: 700,
+                fontFamily: 'var(--font-body)', fontSize: 22, fontWeight: 700,
                 color: oliveDark, lineHeight: 1.3,
               }}>
                 Từ CCB {hometown ? hometown.split(',')[0] : 'Việt Nam'}
               </div>
               {producerUnit && (
-                <div style={{ fontSize: 14, color: 'var(--ink-3)', marginTop: 2 }}>
+                <div style={{ fontSize: 19, color: 'var(--ink-3)', marginTop: 2 }}>
                   {producerName} · {producerUnit}
                 </div>
               )}
@@ -406,7 +406,7 @@ function BigProductCard({ product }: { product: ProductDetail }) {
         )}
 
         <div style={{
-          fontFamily: 'var(--font-body)', fontSize: 16, lineHeight: 1.45,
+          fontFamily: 'var(--font-body)', fontSize: 22, lineHeight: 1.45,
           color: 'var(--ink-2)',
           background: 'var(--ccb-red-tint)', padding: '10px 14px', borderRadius: 8,
           borderLeft: `4px solid ${deepRed}`,
@@ -462,7 +462,7 @@ export function FundHeadlineSection({ entries }: { entries?: FundEntryData[] }) 
     }}>
       <div style={{ maxWidth: 980, margin: '0 auto', textAlign: 'center' }}>
         <div style={{
-          fontFamily: 'var(--font-body)', fontSize: 16, fontWeight: 700,
+          fontFamily: 'var(--font-body)', fontSize: 22, fontWeight: 700,
           letterSpacing: '0.08em', textTransform: 'uppercase',
           color: deepRed, marginBottom: 16,
         }}>
@@ -499,7 +499,7 @@ export function FundHeadlineSection({ entries }: { entries?: FundEntryData[] }) 
             display: 'inline-flex', alignItems: 'center', gap: 10,
             marginTop: 20, padding: '10px 20px',
             background: '#FFFFFF', border: `2px solid ${oliveDark}`, borderRadius: 999,
-            fontFamily: 'var(--font-body)', fontSize: 16, fontWeight: 700,
+            fontFamily: 'var(--font-body)', fontSize: 22, fontWeight: 700,
             color: oliveDark,
           }}>
             ✓ Đã hỗ trợ {beneficiaries} hoàn cảnh CCB trong tháng
@@ -526,7 +526,7 @@ export function FundHeadlineSection({ entries }: { entries?: FundEntryData[] }) 
         </div>
 
         <p style={{
-          marginTop: 40, fontFamily: 'var(--font-body)', fontSize: 16, lineHeight: 1.5,
+          marginTop: 40, fontFamily: 'var(--font-body)', fontSize: 22, lineHeight: 1.5,
           color: 'var(--ink-3)', fontStyle: 'italic',
         }}>
           Sao kê chi tiết được công khai mỗi tháng. Mọi khoản chi đều có biên lai và xác nhận của đồng đội Cựu Chiến Binh tại địa phương — do Ban liên lạc Trung đoàn E29 trực tiếp triển khai.
@@ -547,7 +547,7 @@ function FundLine({ label, body, amount, variant }: {
       boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
     }}>
       <div style={{
-        fontFamily: 'var(--font-body)', fontSize: 14, fontWeight: 700,
+        fontFamily: 'var(--font-body)', fontSize: 19, fontWeight: 700,
         letterSpacing: '0.04em', textTransform: 'uppercase',
         color: 'var(--ink-3)', marginBottom: 8,
       }}>
@@ -560,7 +560,7 @@ function FundLine({ label, body, amount, variant }: {
         {fmtFull(amount)} đ
       </div>
       <div style={{
-        marginTop: 10, fontFamily: 'var(--font-body)', fontSize: 16, lineHeight: 1.4,
+        marginTop: 10, fontFamily: 'var(--font-body)', fontSize: 22, lineHeight: 1.4,
         color: 'var(--ink-2)',
       }}>
         {body}
@@ -638,7 +638,7 @@ export function JourneyGallerySection({ photos, children }: { photos?: Community
                       }}>{p.impactValue}</span>
                     )}
                     {p.impactLabel && (
-                      <span style={{ fontFamily: 'var(--font-body)', fontSize: 15, color: 'var(--ink-3)' }}>
+                      <span style={{ fontFamily: 'var(--font-body)', fontSize: 20, color: 'var(--ink-3)' }}>
                         {p.impactLabel}
                       </span>
                     )}
@@ -716,7 +716,7 @@ export function SeniorFooter({ data }: { data?: FooterData } = {}) {
           {/* Hotline */}
           <div>
             <div style={{
-              fontFamily: 'var(--font-body)', fontSize: 16, fontWeight: 700,
+              fontFamily: 'var(--font-body)', fontSize: 22, fontWeight: 700,
               letterSpacing: '0.06em', textTransform: 'uppercase',
               color: 'var(--ccb-gold)', marginBottom: 12,
             }}>
@@ -740,7 +740,7 @@ export function SeniorFooter({ data }: { data?: FooterData } = {}) {
           {/* Address */}
           <div>
             <div style={{
-              fontFamily: 'var(--font-body)', fontSize: 16, fontWeight: 700,
+              fontFamily: 'var(--font-body)', fontSize: 22, fontWeight: 700,
               letterSpacing: '0.06em', textTransform: 'uppercase',
               color: 'var(--ccb-gold)', marginBottom: 12,
             }}>
@@ -756,7 +756,7 @@ export function SeniorFooter({ data }: { data?: FooterData } = {}) {
           {/* Commitments */}
           <div>
             <div style={{
-              fontFamily: 'var(--font-body)', fontSize: 16, fontWeight: 700,
+              fontFamily: 'var(--font-body)', fontSize: 22, fontWeight: 700,
               letterSpacing: '0.06em', textTransform: 'uppercase',
               color: 'var(--ccb-gold)', marginBottom: 12,
             }}>
@@ -783,7 +783,7 @@ export function SeniorFooter({ data }: { data?: FooterData } = {}) {
         <nav style={{
           marginTop: 56, paddingTop: 32, borderTop: '1px solid rgba(242,235,217,0.2)',
           display: 'flex', flexWrap: 'wrap', gap: '14px 28px',
-          fontFamily: 'var(--font-body)', fontSize: 16, lineHeight: 1.4,
+          fontFamily: 'var(--font-body)', fontSize: 22, lineHeight: 1.4,
         }}>
           {[
             ['/about', 'Về chúng tôi'],
@@ -804,7 +804,7 @@ export function SeniorFooter({ data }: { data?: FooterData } = {}) {
         <div style={{
           marginTop: 32, paddingTop: 20, borderTop: '1px solid rgba(242,235,217,0.15)',
           display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16,
-          fontFamily: 'var(--font-body)', fontSize: 15, color: '#C8BFA8',
+          fontFamily: 'var(--font-body)', fontSize: 20, color: '#C8BFA8',
         }}>
           <span>{copyright}</span>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>

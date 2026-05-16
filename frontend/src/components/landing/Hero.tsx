@@ -46,14 +46,14 @@ export function Hero({ data }: { data?: HeroData } = {}) {
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, marginBottom: 20 }}>
             <Star size={16} />
             <span style={{
-              fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 12,
+              fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 16,
               letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--ccb-red)',
             }}>{eyebrow}</span>
           </div>
 
           <h1 style={{
             fontFamily: 'var(--font-display)', fontWeight: 800,
-            fontSize: 'clamp(36px, 4vw, 52px)', lineHeight: 1.2,
+            fontSize: 'clamp(44px, 5vw, 64px)', lineHeight: 1.2,
             letterSpacing: '-0.02em', color: 'var(--ink-1)', margin: 0,
           }}>
             {titleText ? (
@@ -68,21 +68,21 @@ export function Hero({ data }: { data?: HeroData } = {}) {
           </h1>
 
           <p style={{
-            fontFamily: 'var(--font-body)', fontSize: 18, lineHeight: 1.6,
+            fontFamily: 'var(--font-body)', fontSize: 22, lineHeight: 1.6,
             color: 'var(--ink-2)', marginTop: 32, maxWidth: 520,
           }}>{subtitle}</p>
 
           <div style={{ display: 'flex', gap: 12, marginTop: 32, flexWrap: 'wrap' }}>
             <a href={primaryCtaHref} style={{
               background: 'var(--ccb-red)', color: '#FFF8E7',
-              fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 16,
+              fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 22,
               padding: '14px 26px', borderRadius: 4,
               display: 'inline-flex', alignItems: 'center', gap: 8,
             }}>{primaryCtaText}</a>
             {secondaryCtaText && secondaryCtaHref && (
               <Link href={secondaryCtaHref} style={{
                 background: 'transparent', color: 'var(--ccb-olive)',
-                fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 16,
+                fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 22,
                 padding: '14px 26px', borderRadius: 4,
                 border: '1px solid var(--ccb-olive)',
                 display: 'inline-flex', alignItems: 'center', gap: 8,
@@ -142,7 +142,7 @@ function DefaultHeroVisual() {
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20 }}>
                 <Star size={20} color="var(--ccb-gold)" />
                 <span style={{
-                  fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 12,
+                  fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 16,
                   letterSpacing: '0.08em', textTransform: 'uppercase',
                 }}>Đặc sản tháng 4</span>
               </div>
@@ -150,7 +150,7 @@ function DefaultHeroVisual() {
                 Gạo ST25<br />Sóc Trăng
               </div>
               <div style={{
-                fontFamily: 'var(--font-body)', fontSize: 15, lineHeight: 1.5,
+                fontFamily: 'var(--font-body)', fontSize: 20, lineHeight: 1.5,
                 marginTop: 14, color: '#E8E4D4', maxWidth: 280,
               }}>
                 Gạo thơm ngon đạt giải thế giới, thu hoạch từ vùng canh tác của các đồng chí Cựu Chiến Binh tỉnh Sóc Trăng.
@@ -158,8 +158,8 @@ function DefaultHeroVisual() {
             </div>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 12 }}>
               <span style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 36, color: 'var(--ccb-gold)', whiteSpace: 'nowrap' }}>187.000 ₫</span>
-              <span style={{ fontSize: 14, textDecoration: 'line-through', opacity: 0.7 }}>220.000 ₫</span>
-              <span style={{ marginLeft: 'auto', background: 'var(--ccb-red)', color: '#FFF8E7', padding: '4px 10px', borderRadius: 999, fontSize: 12, fontWeight: 700 }}>−15%</span>
+              <span style={{ fontSize: 19, textDecoration: 'line-through', opacity: 0.7 }}>220.000 ₫</span>
+              <span style={{ marginLeft: 'auto', background: 'var(--ccb-red)', color: '#FFF8E7', padding: '4px 10px', borderRadius: 999, fontSize: 16, fontWeight: 700 }}>−15%</span>
             </div>
           </div>
 
@@ -173,7 +173,7 @@ function DefaultHeroVisual() {
           }}>
             <Star size={20} />
             <div style={{
-              fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 14,
+              fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 19,
               color: 'var(--ccb-red)', marginTop: 2, textAlign: 'center', lineHeight: 1.1,
             }}>CCB<br/>XÁC NHẬN</div>
           </div>
@@ -195,8 +195,8 @@ function DefaultHeroVisual() {
               <Truck size={24} />
             </div>
             <div>
-              <div style={{ fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 14, color: 'var(--ink-1)' }}>Giao hàng tận nhà 24 giờ</div>
-              <div style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: 'var(--ink-3)', marginTop: 2 }}>Hà Nội · TP. Hồ Chí Minh · Đà Nẵng</div>
+              <div style={{ fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 19, color: 'var(--ink-1)' }}>Giao hàng tận nhà 24 giờ</div>
+              <div style={{ fontFamily: 'var(--font-body)', fontSize: 16, color: 'var(--ink-3)', marginTop: 2 }}>Hà Nội · TP. Hồ Chí Minh · Đà Nẵng</div>
             </div>
           </div>
     </>
@@ -207,7 +207,7 @@ function Stat({ n, label }: { n: string; label: string }) {
   return (
     <div>
       <div style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 28, color: 'var(--ccb-olive-dark)', lineHeight: 1 }}>{n}</div>
-      <div style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: 'var(--ink-3)', marginTop: 4, maxWidth: 120 }}>{label}</div>
+      <div style={{ fontFamily: 'var(--font-body)', fontSize: 16, color: 'var(--ink-3)', marginTop: 4, maxWidth: 120 }}>{label}</div>
     </div>
   );
 }

@@ -72,7 +72,7 @@ export function ConnectListingsSection({ listings = DEFAULT_LISTINGS }: { listin
         {/* Section head */}
         <div style={{ textAlign: 'center', marginBottom: 56 }}>
           <div style={{
-            fontFamily: 'var(--font-body)', fontSize: 14, fontWeight: 700,
+            fontFamily: 'var(--font-body)', fontSize: 19, fontWeight: 700,
             letterSpacing: '0.10em', textTransform: 'uppercase',
             color: ZALO_DARK, marginBottom: 12,
           }}>
@@ -97,7 +97,7 @@ export function ConnectListingsSection({ listings = DEFAULT_LISTINGS }: { listin
             border: '1px dashed var(--ink-4)',
             color: 'var(--ink-2)',
             padding: '8px 18px', borderRadius: 999,
-            fontFamily: 'var(--font-body)', fontSize: 14, fontWeight: 600,
+            fontFamily: 'var(--font-body)', fontSize: 19, fontWeight: 600,
             marginTop: 16,
           }}>
             ⚠ CCB Mart không thu phí — không trung gian thanh toán
@@ -153,10 +153,10 @@ function ConnectCard({ listing }: { listing: ConnectListing }) {
       }}>
         {productName}
       </div>
-      <div style={{ fontFamily: 'var(--font-body)', fontSize: 16, color: OLIVE_DARK, fontWeight: 600 }}>
+      <div style={{ fontFamily: 'var(--font-body)', fontSize: 22, color: OLIVE_DARK, fontWeight: 600 }}>
         <span style={{
           display: 'inline-block', background: 'var(--ccb-olive-tint)', color: OLIVE_DARK,
-          padding: '2px 8px', borderRadius: 4, fontSize: 13, fontWeight: 700, marginRight: 6,
+          padding: '2px 8px', borderRadius: 4, fontSize: 18, fontWeight: 700, marginRight: 6,
         }}>CCB</span>
         {veteranName} — {province}
       </div>
@@ -166,7 +166,7 @@ function ConnectCard({ listing }: { listing: ConnectListing }) {
       }}>
         {priceText}
         <small style={{
-          display: 'block', fontSize: 16, fontWeight: 600,
+          display: 'block', fontSize: 22, fontWeight: 600,
           color: 'var(--ink-3)', marginTop: 4,
         }}>{priceNote}</small>
       </div>
@@ -189,14 +189,14 @@ function ConnectCard({ listing }: { listing: ConnectListing }) {
         <span style={{
           width: 28, height: 28, borderRadius: 6,
           background: '#FFFFFF', color: ZALO,
-          fontWeight: 900, fontSize: 14,
+          fontWeight: 900, fontSize: 19,
           display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
         }}>Z</span>
         <Phone size={18} />
         GỌI ZALO {upperName}
       </a>
       <div style={{
-        fontFamily: 'var(--font-body)', fontSize: 14, color: 'var(--ink-2)',
+        fontFamily: 'var(--font-body)', fontSize: 19, color: 'var(--ink-2)',
         fontStyle: 'italic', marginTop: 4,
       }}>
         Bấm để kết nối trực tiếp với <strong style={{ color: OLIVE_DARK, fontStyle: 'normal' }}>{veteranName}</strong> — {callTimes}.

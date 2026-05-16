@@ -29,7 +29,7 @@ export function WhyUsSection({ data }: { data?: WhyUsData } = {}) {
         <div>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
             <Star size={14} />
-            <span style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 12, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--ccb-red)' }}>
+            <span style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 16, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--ccb-red)' }}>
               {eyebrow}
             </span>
           </div>
@@ -42,7 +42,7 @@ export function WhyUsSection({ data }: { data?: WhyUsData } = {}) {
           <div style={{ marginTop: 24, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
             <Link href="/about" style={{
               display: 'inline-flex', alignItems: 'center', gap: 6,
-              fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 15, color: 'var(--ccb-red)',
+              fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 20, color: 'var(--ccb-red)',
             }}>
               Đọc câu chuyện đầy đủ <ArrowRight size={16} />
             </Link>
@@ -98,7 +98,7 @@ export function CoreValuesSection({ items }: { items?: TrustItemData[] } = {}) {
                 <div style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 17, color: 'var(--ink-1)', lineHeight: 1.3 }}>
                   {it.title}
                 </div>
-                <div style={{ fontFamily: 'var(--font-body)', fontSize: 13.5, color: 'var(--ink-3)', lineHeight: 1.55 }}>
+                <div style={{ fontFamily: 'var(--font-body)', fontSize: 18.5, color: 'var(--ink-3)', lineHeight: 1.55 }}>
                   {it.sub}
                 </div>
               </div>
@@ -146,7 +146,7 @@ export function CommunityJourneySection({ photos }: { photos?: CommunityPhotoDat
                 )}
               </div>
               <figcaption style={{ padding: '14px 16px 16px' }}>
-                <div style={{ fontFamily: 'var(--font-body)', fontSize: 13, lineHeight: 1.5, color: 'var(--ink-2)', minHeight: 56 }}>
+                <div style={{ fontFamily: 'var(--font-body)', fontSize: 18, lineHeight: 1.5, color: 'var(--ink-2)', minHeight: 56 }}>
                   {p.caption}
                 </div>
                 {(p.impactValue || p.impactLabel) && (
@@ -160,7 +160,7 @@ export function CommunityJourneySection({ photos }: { photos?: CommunityPhotoDat
                       </span>
                     )}
                     {p.impactLabel && (
-                      <span style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: 'var(--ink-3)' }}>
+                      <span style={{ fontFamily: 'var(--font-body)', fontSize: 16, color: 'var(--ink-3)' }}>
                         {p.impactLabel}
                       </span>
                     )}
@@ -247,7 +247,7 @@ export function TransparencyFundSection({ entries }: { entries?: FundEntryData[]
             Lịch sử giao dịch
           </h3>
           <div style={{ background: '#FFFFFF', border: '1px solid var(--line)', borderRadius: 8, overflow: 'hidden' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 19 }}>
               <thead style={{ background: 'var(--paper-1)' }}>
                 <tr>
                   <th style={tH}>Ngày</th>
@@ -263,7 +263,7 @@ export function TransparencyFundSection({ entries }: { entries?: FundEntryData[]
                     <td style={tD}>{new Date(e.occurredAt).toLocaleDateString('vi-VN')}</td>
                     <td style={tD}>
                       <span style={{
-                        display: 'inline-block', padding: '2px 8px', borderRadius: 999, fontSize: 11, fontWeight: 700,
+                        display: 'inline-block', padding: '2px 8px', borderRadius: 999, fontSize: 15, fontWeight: 700,
                         background: e.type === 'in' ? 'var(--ccb-olive-tint)' : 'var(--ccb-red-tint)',
                         color: e.type === 'in' ? 'var(--ccb-olive-dark)' : 'var(--ccb-red)',
                       }}>{e.type === 'in' ? 'Thu' : 'Chi'}</span>
@@ -281,7 +281,7 @@ export function TransparencyFundSection({ entries }: { entries?: FundEntryData[]
             </table>
           </div>
         </div>
-        <p style={{ marginTop: 16, fontSize: 12.5, color: 'var(--ink-3)', fontStyle: 'italic', textAlign: 'center' }}>
+        <p style={{ marginTop: 16, fontSize: 16.5, color: 'var(--ink-3)', fontStyle: 'italic', textAlign: 'center' }}>
           Sao kê chi tiết công khai mỗi tháng. Mọi khoản chi đều có biên lai và xác nhận của đồng đội Cựu Chiến Binh tại địa phương — Ban liên lạc Trung đoàn E29 trực tiếp triển khai.
         </p>
       </div>
@@ -289,7 +289,7 @@ export function TransparencyFundSection({ entries }: { entries?: FundEntryData[]
   );
 }
 
-const tH: React.CSSProperties = { textAlign: 'left', padding: '12px 16px', fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 12, letterSpacing: '0.04em', textTransform: 'uppercase', color: 'var(--ink-3)' };
+const tH: React.CSSProperties = { textAlign: 'left', padding: '12px 16px', fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 16, letterSpacing: '0.04em', textTransform: 'uppercase', color: 'var(--ink-3)' };
 const tD: React.CSSProperties = { padding: '12px 16px', fontFamily: 'var(--font-body)', color: 'var(--ink-1)' };
 
 function FundKpiCard({ label, value, variant, note }: { label: string; value: string; variant: 'in' | 'out' | 'balance'; note?: string }) {
@@ -303,7 +303,7 @@ function FundKpiCard({ label, value, variant, note }: { label: string; value: st
       boxShadow: 'var(--shadow-sm)',
     }}>
       <div style={{
-        fontFamily: 'var(--font-body)', fontSize: 12, fontWeight: 700,
+        fontFamily: 'var(--font-body)', fontSize: 16, fontWeight: 700,
         letterSpacing: '0.04em', textTransform: 'uppercase',
         color: 'var(--ink-3)',
       }}>
@@ -317,7 +317,7 @@ function FundKpiCard({ label, value, variant, note }: { label: string; value: st
       </div>
       {note && (
         <div style={{
-          fontFamily: 'var(--font-body)', fontSize: 13, color: 'var(--ink-2)',
+          fontFamily: 'var(--font-body)', fontSize: 18, color: 'var(--ink-2)',
           marginTop: 12, paddingTop: 12, borderTop: '1px solid var(--line)',
           lineHeight: 1.45,
         }}>
@@ -373,18 +373,18 @@ export function CCBTestimonialsSection({ items }: { items?: TestimonialData[] } 
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                    <span style={{ fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 13, color: 'var(--ink-1)' }}>{t.name}</span>
+                    <span style={{ fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 18, color: 'var(--ink-1)' }}>{t.name}</span>
                     {t.verified && (
                       <span style={{
                         display: 'inline-flex', alignItems: 'center', gap: 3,
-                        fontSize: 10, fontWeight: 700, color: 'var(--ccb-olive-dark)',
+                        fontSize: 14, fontWeight: 700, color: 'var(--ccb-olive-dark)',
                         background: 'var(--ccb-olive-tint)', padding: '1px 6px', borderRadius: 999,
                       }}>
                         <BadgeCheck size={11} /> Đã xác minh
                       </span>
                     )}
                   </div>
-                  <div style={{ fontFamily: 'var(--font-body)', fontSize: 11, color: 'var(--ink-3)', marginTop: 2 }}>
+                  <div style={{ fontFamily: 'var(--font-body)', fontSize: 15, color: 'var(--ink-3)', marginTop: 2 }}>
                     {[t.unit, t.location].filter(Boolean).join(' · ')}
                   </div>
                 </div>

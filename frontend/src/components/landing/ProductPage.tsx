@@ -39,7 +39,7 @@ export function ProductPage({
                   border: i === activeThumb ? '2px solid var(--ccb-red)' : '2px solid var(--line)',
                   borderRadius: 6, cursor: 'pointer',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 11, fontWeight: 600, color: 'var(--ink-3)', padding: 4,
+                  fontSize: 15, fontWeight: 600, color: 'var(--ink-3)', padding: 4,
                 }}>{t}</button>
               ))}
             </div>
@@ -47,7 +47,7 @@ export function ProductPage({
 
           <div>
             <div style={{
-              fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 12,
+              fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 16,
               letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--ccb-red)', display: 'flex', gap: 12, alignItems: 'center',
             }}>
               <span>Đặc sản {product.region || category.name}</span>
@@ -60,7 +60,7 @@ export function ProductPage({
             <h1 style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 32, lineHeight: 1.15, margin: '8px 0 12px' }}>
               {product.name}
             </h1>
-            <div style={{ display: 'flex', gap: 12, fontSize: 13, color: 'var(--ink-3)', marginBottom: 20, flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: 12, fontSize: 18, color: 'var(--ink-3)', marginBottom: 20, flexWrap: 'wrap' }}>
               <span style={{ color: 'var(--ccb-gold-dark)', fontWeight: 600 }}>★ {product.rating}</span>
               <span>·</span>
               <span>Đã bán {product.sold}</span>
@@ -73,18 +73,18 @@ export function ProductPage({
                 {formatVnd(product.price)}
               </span>
               {product.was && (
-                <span style={{ textDecoration: 'line-through', color: 'var(--ink-4)', fontSize: 16 }}>
+                <span style={{ textDecoration: 'line-through', color: 'var(--ink-4)', fontSize: 22 }}>
                   {formatVnd(product.was)}
                 </span>
               )}
               {product.was && (
-                <span style={{ background: 'var(--ccb-red)', color: '#FFF8E7', padding: '4px 10px', borderRadius: 999, fontSize: 12, fontWeight: 700 }}>
+                <span style={{ background: 'var(--ccb-red)', color: '#FFF8E7', padding: '4px 10px', borderRadius: 999, fontSize: 16, fontWeight: 700 }}>
                   −{Math.round((1 - product.price / product.was) * 100)}%
                 </span>
               )}
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 24, fontSize: 13 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 24, fontSize: 18 }}>
               <div style={{ padding: '10px 12px', border: '1px solid var(--line)', borderRadius: 6, background: '#fff', display: 'flex', alignItems: 'center', gap: 8 }}>
                 <Truck size={16} color="var(--ccb-red)" /> <b>Giao 24h</b> nội thành lớn
               </div>
@@ -96,7 +96,7 @@ export function ProductPage({
             <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
               <Link href="/cart" style={{
                 background: 'var(--ccb-red)', color: '#FFF8E7',
-                fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 16,
+                fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 22,
                 padding: '14px 26px', borderRadius: 4,
                 display: 'inline-flex', alignItems: 'center', gap: 8,
               }}>
@@ -104,7 +104,7 @@ export function ProductPage({
               </Link>
               <Link href="/cart" style={{
                 background: 'var(--ccb-olive)', color: '#FBF7EE',
-                fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 16,
+                fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 22,
                 padding: '14px 26px', borderRadius: 4,
               }}>Mua ngay</Link>
             </div>
@@ -114,10 +114,10 @@ export function ProductPage({
         {/* Description */}
         <div style={{ marginTop: 64, maxWidth: 800 }}>
           <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 24, margin: '0 0 12px' }}>Mô tả sản phẩm</h2>
-          <p style={{ fontSize: 15, lineHeight: 1.7, color: 'var(--ink-2)' }}>{product.description}</p>
+          <p style={{ fontSize: 20, lineHeight: 1.7, color: 'var(--ink-2)' }}>{product.description}</p>
 
           <h3 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 18, margin: '24px 0 12px' }}>Thông tin sản phẩm</h3>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 19 }}>
             <tbody>
               {[
                 ['Thương hiệu', product.brand],
@@ -150,7 +150,7 @@ export function ProductPage({
 
 function Crumbs({ items }: { items: { label: string; href?: string }[] }) {
   return (
-    <div style={{ fontSize: 13, color: 'var(--ink-3)', display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+    <div style={{ fontSize: 18, color: 'var(--ink-3)', display: 'flex', gap: 8, flexWrap: 'wrap' }}>
       {items.map((it, i) => (
         <span key={i} style={{ display: 'inline-flex', gap: 8 }}>
           {i > 0 && <span style={{ color: 'var(--ink-4)' }}>/</span>}

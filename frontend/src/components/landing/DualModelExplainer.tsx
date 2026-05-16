@@ -39,7 +39,7 @@ export function DualModelExplainer() {
         <div style={{ textAlign: 'center', marginBottom: 40 }}>
           <div style={{
             display: 'inline-block',
-            fontFamily: 'var(--font-body)', fontSize: 14, fontWeight: 700,
+            fontFamily: 'var(--font-body)', fontSize: 19, fontWeight: 700,
             letterSpacing: '0.10em', textTransform: 'uppercase', color: DEEP_RED,
             marginBottom: 12,
           }}>
@@ -87,7 +87,7 @@ export function DualModelExplainer() {
               </div>
               <div>
                 <div style={{
-                  fontFamily: 'var(--font-body)', fontSize: 13, fontWeight: 700,
+                  fontFamily: 'var(--font-body)', fontSize: 18, fontWeight: 700,
                   letterSpacing: '0.08em', textTransform: 'uppercase', color: OLIVE_DARK,
                 }}>
                   🟢 Tiền tuyến
@@ -101,7 +101,7 @@ export function DualModelExplainer() {
               </div>
             </div>
             <p style={{
-              fontFamily: 'var(--font-body)', fontSize: 16, lineHeight: 1.5,
+              fontFamily: 'var(--font-body)', fontSize: 22, lineHeight: 1.5,
               color: 'var(--ink-2)', margin: 0, fontStyle: 'italic',
             }}>
               Đặc sản cao cấp — có kho sẵn — chúng tôi vận hành toàn bộ chuỗi.
@@ -129,7 +129,7 @@ export function DualModelExplainer() {
                 display: 'inline-flex', alignItems: 'center', gap: 8,
                 background: OLIVE, color: '#FFFFFF',
                 padding: '14px 24px', borderRadius: 8, minHeight: 52,
-                fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 16,
+                fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 22,
                 boxShadow: '0 4px 12px rgba(85,107,47,0.30)',
                 transition: 'background 0.15s ease, transform 0.15s ease',
               }}
@@ -161,7 +161,7 @@ export function DualModelExplainer() {
               </div>
               <div>
                 <div style={{
-                  fontFamily: 'var(--font-body)', fontSize: 13, fontWeight: 700,
+                  fontFamily: 'var(--font-body)', fontSize: 18, fontWeight: 700,
                   letterSpacing: '0.08em', textTransform: 'uppercase', color: ZALO_DARK,
                 }}>
                   🟡 Hậu phương
@@ -175,7 +175,7 @@ export function DualModelExplainer() {
               </div>
             </div>
             <p style={{
-              fontFamily: 'var(--font-body)', fontSize: 16, lineHeight: 1.5,
+              fontFamily: 'var(--font-body)', fontSize: 22, lineHeight: 1.5,
               color: 'var(--ink-2)', margin: 0, fontStyle: 'italic',
             }}>
               Nhu yếu phẩm — đồng đội tự bán — chúng tôi chỉ đứng giữa giới thiệu.
@@ -203,7 +203,7 @@ export function DualModelExplainer() {
                 display: 'inline-flex', alignItems: 'center', gap: 8,
                 background: ZALO, color: '#FFFFFF',
                 padding: '14px 24px', borderRadius: 8, minHeight: 52,
-                fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 16,
+                fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 22,
                 boxShadow: '0 4px 12px rgba(0,104,255,0.30)',
                 transition: 'background 0.15s ease, transform 0.15s ease',
               }}
@@ -223,7 +223,7 @@ export function DualModelExplainer() {
           borderRadius: 999,
           padding: '12px 22px',
           textAlign: 'center',
-          fontFamily: 'var(--font-body)', fontSize: 14,
+          fontFamily: 'var(--font-body)', fontSize: 19,
           color: 'var(--ink-3)',
           maxWidth: 760, marginLeft: 'auto', marginRight: 'auto',
         }}>
@@ -238,7 +238,7 @@ function Bullet({ icon, children }: { icon: React.ReactNode; children: React.Rea
   return (
     <li style={{
       display: 'flex', alignItems: 'flex-start', gap: 12,
-      fontFamily: 'var(--font-body)', fontSize: 16, lineHeight: 1.5,
+      fontFamily: 'var(--font-body)', fontSize: 22, lineHeight: 1.5,
       color: 'var(--ink-1)',
     }}>
       <span style={{ flex: 'none', marginTop: 1 }}>{icon}</span>

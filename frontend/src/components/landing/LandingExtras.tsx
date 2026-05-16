@@ -55,7 +55,7 @@ export function StickyFundBanner({ amount, monthLabel }: { amount: number; month
       />
       <div>
         <div style={{
-          fontSize: 12, color: 'var(--ink-3)', fontWeight: 600,
+          fontSize: 16, color: 'var(--ink-3)', fontWeight: 600,
           textTransform: 'uppercase', letterSpacing: '0.04em',
         }}>
           Quỹ Vì đồng đội · {monthLabel}
@@ -120,7 +120,7 @@ export function SocialProofTicker() {
         }}
       />
       <span style={{
-        fontSize: 12, fontWeight: 700, letterSpacing: '0.08em',
+        fontSize: 16, fontWeight: 700, letterSpacing: '0.08em',
         textTransform: 'uppercase', color: 'var(--ccb-red)', flex: 'none',
       }}>
         Vừa mới
@@ -128,7 +128,7 @@ export function SocialProofTicker() {
       <span
         className="ccb-ticker-text"
         style={{
-          fontFamily: 'var(--font-body)', fontSize: 16, color: 'var(--ink-1)',
+          fontFamily: 'var(--font-body)', fontSize: 22, color: 'var(--ink-1)',
           fontWeight: 500, opacity,
           overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis',
           flex: 1,

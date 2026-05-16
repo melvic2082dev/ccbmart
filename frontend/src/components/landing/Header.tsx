@@ -77,7 +77,7 @@ export function Header({ cartCount = 0, categories: categoriesProp, header }: { 
     <>
       {/* Top utility bar */}
       {showUtility && (
-        <div style={{ background: 'var(--ccb-olive-dark)', color: '#E8E4D4', fontSize: 12 }}>
+        <div style={{ background: 'var(--ccb-olive-dark)', color: '#E8E4D4', fontSize: 24 }}>
           <div style={{ maxWidth: 1600, margin: '0 auto', padding: '8px 24px',
             display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
             <div style={{ display: 'flex', gap: 20, alignItems: 'center', flexWrap: 'wrap' }}>
@@ -148,7 +148,7 @@ export function Header({ cartCount = 0, categories: categoriesProp, header }: { 
               style={{
                 display: 'inline-flex', alignItems: 'center', gap: 8,
                 background: 'var(--ccb-red)', color: '#FFF8E7',
-                fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 13,
+                fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 26,
                 padding: '10px 16px', borderRadius: 4, border: '1px solid var(--ccb-red)',
                 whiteSpace: 'nowrap',
                 boxShadow: 'var(--shadow-sm)',
@@ -167,8 +167,8 @@ export function Header({ cartCount = 0, categories: categoriesProp, header }: { 
             <button type="button" style={{
               display: 'inline-flex', alignItems: 'center', gap: 8,
               background: 'var(--ccb-red)', color: '#FFF8E7',
-              fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 13,
-              padding: '8px 14px', borderRadius: 4, border: 'none', cursor: 'pointer',
+              fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 'clamp(18px, 1.35vw, 22px)',
+              padding: '6px 12px', borderRadius: 4, border: 'none', cursor: 'pointer',
               marginRight: 8,
             }}>
               <LayoutGrid size={16} />
@@ -182,11 +182,11 @@ export function Header({ cartCount = 0, categories: categoriesProp, header }: { 
                   key={c.slug}
                   href={href}
                   style={{
-                    fontFamily: 'var(--font-body)', fontSize: 13,
+                    fontFamily: 'var(--font-body)', fontSize: 'clamp(18px, 1.35vw, 22px)',
                     fontWeight: active ? 700 : 500,
                     color: active ? 'var(--ccb-red)' : 'var(--ink-2)',
                     background: active ? 'var(--ccb-red-tint)' : 'transparent',
-                    padding: '8px 12px', borderRadius: 4,
+                    padding: '6px 10px', borderRadius: 4,
                   }}
                 >{c.name}</Link>
               );
@@ -207,7 +207,7 @@ function IconNavLink({ href, icon, label, badge = 0, active = false }: {
       padding: '8px 12px', borderRadius: 4, position: 'relative',
       background: active ? 'var(--ccb-red-tint)' : 'transparent',
       color: active ? 'var(--ccb-red)' : 'var(--ink-1)',
-      fontFamily: 'var(--font-body)', fontSize: 13,
+      fontFamily: 'var(--font-body)', fontSize: 26,
       fontWeight: active ? 700 : 500,
     }}>
       <span style={{ position: 'relative', display: 'inline-flex' }}>
@@ -216,7 +216,7 @@ function IconNavLink({ href, icon, label, badge = 0, active = false }: {
           <span style={{
             position: 'absolute', top: -6, right: -8,
             background: 'var(--ccb-red)', color: '#FFF8E7',
-            fontSize: 10, fontWeight: 700, minWidth: 16, height: 16,
+            fontSize: 20, fontWeight: 700, minWidth: 24, height: 24,
             padding: '0 4px', borderRadius: 999,
             display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
           }}>{badge}</span>
