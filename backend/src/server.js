@@ -35,6 +35,8 @@ const monthlyReportRoutes = require('./routes/monthlyReport');
 const auditLogRoutes = require('./routes/auditLogs');
 const healthRoutes = require('./routes/health');
 const landingCmsRoutes = require('./routes/landingCms');
+const productsRoutes = require('./routes/products');
+const leadsRoutes = require('./routes/leads');
 const { subscribeUser, unsubscribeUser } = require('./services/pushNotification');
 const { authenticate: authMw } = require('./middleware/auth');
 const { createMomoPayment, verifyMomoSignature, createZaloPayPayment, verifyZaloPayCallback } = require('./services/payment');
@@ -48,6 +50,9 @@ const { scheduleAutoRankJob } = require('./jobs/autoRankUpdate');
 const { scheduleCashCheckJob } = require('./jobs/checkUnsubmittedCash');
 const { scheduleReferralCapReset } = require('./jobs/resetReferralCap');
 const { scheduleAuditLogCleanup } = require('./jobs/auditLogCleanup');
+const { scheduleLeadJobs } = require('./jobs/leadFollowUpJob');
+const { csrfMiddleware } = require('./middleware/csrf');
+const { initSentry } = require('./observability/sentry');
 const { initCommissionQueue, closeCommissionWorker } = require('./jobs/commissionCalculation');
 const appEvents = require('./services/eventEmitter');
 const jwt = require('jsonwebtoken');
@@ -70,6 +75,9 @@ app.use(cors({
   credentials: true,
 }));
 app.use(express.json({ limit: '1mb' }));
+
+// v3.1: CSRF (opt-in via ENABLE_CSRF=true)
+app.use(csrfMiddleware);
 
 // Block direct access to KYC directory — use authenticated API route instead
 app.use('/uploads/kyc', (req, res) => res.status(403).json({ error: 'Forbidden' }));
@@ -106,6 +114,12 @@ app.use('/api/admin/reports', reportRoutes);
 // Landing-page CMS — must mount BEFORE the catch-all /api routes below (which apply global auth)
 app.use('/api/landing', landingCmsRoutes.publicRouter);
 app.use('/api/admin/landing-cms', landingCmsRoutes.adminRouter);
+
+// v3.1: Product / Variant / Supplier / Inventory (admin)
+app.use('/api/admin', productsRoutes);
+
+// v3.1: Lead / CRM (mixed CTV + admin)
+app.use('/api', leadsRoutes);
 
 // V12.2: eKYC, invoices, tax, monthly report (routers define their own /admin/... /ctv/... paths)
 app.use('/api', kycRoutes);
@@ -305,6 +319,9 @@ app.use(errorHandler);
 // Initialize services and start server
 let server;
 async function start() {
+  // v3.1: Sentry must init before any other module logs errors
+  initSentry();
+
   // Bind port FIRST so healthcheck can respond while background services initialize
   server = app.listen(PORT, () => {
     logger.info(`CCB Mart API running on http://localhost:${PORT}`);
@@ -318,6 +335,7 @@ async function start() {
   scheduleCashCheckJob();
   scheduleReferralCapReset();
   scheduleAuditLogCleanup();
+  scheduleLeadJobs();
 }
 
 const gracefulShutdown = async (signal) => {
