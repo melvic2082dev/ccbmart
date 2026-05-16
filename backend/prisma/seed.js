@@ -960,6 +960,161 @@ async function main() {
     console.log(`Engine ${m}: ${result.partnersProcessed} partners | K=${result.kFactor} | total=${result.totalDisbursed.toLocaleString('vi-VN')} VND`);
   }
 
+  // ===========================================================
+  // v3.1 seed: suppliers + variants + inventory batches + leads
+  // ===========================================================
+  console.log('\n[v3.1] Seeding suppliers, variants, batches, leads...');
+  try {
+    // 1. Suppliers (2 ccb household + 1 external)
+    const allProducts = await prisma.product.findMany();
+    if (allProducts.length === 0) {
+      console.log('[v3.1] No products — skipping variant/batch seed');
+    } else {
+      // Mark first 5 products as having slug for catalog visibility
+      for (const p of allProducts.slice(0, 5)) {
+        await prisma.product.update({
+          where: { id: p.id },
+          data: {
+            slug: p.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 40) + '-' + p.id,
+            brand: 'CCB Mart',
+            origin: 'Việt Nam',
+            description: `${p.name} - sản phẩm chất lượng cao từ hệ sinh thái CCB.`,
+            status: 'ACTIVE',
+          },
+        });
+      }
+
+      const supplier1 = await prisma.supplier.create({
+        data: {
+          name: 'Hộ kinh doanh Nguyễn Văn A (CCB Sơn La)',
+          type: 'ccb_household',
+          taxCode: 'HKD-001-2026',
+          contactPhone: '0912345678',
+          address: 'Mộc Châu, Sơn La',
+          isActive: true,
+          notes: 'Chuyên gạo, ngô đặc sản Tây Bắc',
+        },
+      });
+      const supplier2 = await prisma.supplier.create({
+        data: {
+          name: 'Hộ kinh doanh Trần Văn B (CCB Đồng Tháp)',
+          type: 'ccb_household',
+          taxCode: 'HKD-002-2026',
+          contactPhone: '0987654321',
+          address: 'Cao Lãnh, Đồng Tháp',
+          isActive: true,
+          notes: 'Trái cây, đặc sản miền Tây',
+        },
+      });
+      const supplier3 = await prisma.supplier.create({
+        data: {
+          name: 'CTY TNHH Phân phối Phương Nam',
+          type: 'external',
+          taxCode: '0301234567',
+          contactPhone: '0281234567',
+          address: 'Quận 1, TP.HCM',
+          isActive: true,
+        },
+      });
+
+      // 2. Variants for first 3 products (skip TPCN combo, choose food/grain types)
+      const variantTargets = allProducts.filter((p) =>
+        p.category === 'NS' || p.category === 'FMCG'
+      ).slice(0, 3);
+
+      let skuCounter = 1;
+      for (const p of variantTargets) {
+        const v1 = await prisma.productVariant.create({
+          data: {
+            productId: p.id,
+            sku: `SKU-${String(skuCounter++).padStart(4, '0')}`,
+            name: `${p.name} — quy cách nhỏ`,
+            unit: p.unit,
+            basePrice: Number(p.price),
+            cogsPct: Number(p.cogsPct),
+            attributes: { size: 'small' },
+            status: 'ACTIVE',
+            sortOrder: 1,
+          },
+        });
+        const v2 = await prisma.productVariant.create({
+          data: {
+            productId: p.id,
+            sku: `SKU-${String(skuCounter++).padStart(4, '0')}`,
+            name: `${p.name} — quy cách lớn`,
+            unit: p.unit,
+            basePrice: Math.round(Number(p.price) * 1.8),
+            cogsPct: Number(p.cogsPct),
+            attributes: { size: 'large' },
+            status: 'ACTIVE',
+            sortOrder: 2,
+          },
+        });
+
+        // 1 batch per variant
+        const cost1 = Math.round(Number(p.price) * Number(p.cogsPct));
+        const cost2 = Math.round(Number(p.price) * 1.8 * Number(p.cogsPct));
+        const supplier = p.category === 'NS' ? supplier1 : supplier3;
+        const expDate = new Date(); expDate.setMonth(expDate.getMonth() + 6);
+
+        await prisma.inventoryBatch.createMany({
+          data: [
+            { variantId: v1.id, supplierId: supplier.id, batchNo: `B-${v1.id}-001`,
+              qtyReceived: 100, qtyAvailable: 100, costPerUnit: cost1, expDate, status: 'ACTIVE' },
+            { variantId: v2.id, supplierId: supplier.id, batchNo: `B-${v2.id}-001`,
+              qtyReceived: 50, qtyAvailable: 50, costPerUnit: cost2, expDate, status: 'ACTIVE' },
+          ],
+        });
+      }
+      console.log(`[v3.1] Seeded 3 suppliers + ${variantTargets.length * 2} variants + batches`);
+
+      // 3. Leads — distribute 30 across stages for 2 CTVs
+      const ctvs = await prisma.user.findMany({ where: { role: 'ctv' }, take: 2 });
+      if (ctvs.length > 0) {
+        const stageDistribution = [
+          ...Array(10).fill('NEW'),
+          ...Array(8).fill('CONTACTED'),
+          ...Array(5).fill('QUALIFIED'),
+          ...Array(3).fill('NEGOTIATING'),
+          ...Array(2).fill('WON'),
+          ...Array(2).fill('LOST'),
+        ];
+        const sources = ['referral', 'zalo', 'fb_ads', 'event', 'walk_in'];
+        for (let i = 0; i < 30; i++) {
+          const ctv = ctvs[i % ctvs.length];
+          const stage = stageDistribution[i];
+          const isClosed = ['WON', 'LOST'].includes(stage);
+          const created = new Date(); created.setDate(created.getDate() - (i * 2));
+          const lastContacted = stage === 'NEW' ? null : new Date(created.getTime() + 86400000);
+          try {
+            await prisma.lead.create({
+              data: {
+                name: `Khách lead ${i + 1}`,
+                phone: `099${String(1000000 + i).padStart(7, '0')}`,
+                source: sources[i % sources.length],
+                interestNote: 'Quan tâm combo TPCN 2 tháng',
+                estimatedValue: 1800000,
+                stage,
+                lostReason: stage === 'LOST' ? 'price' : null,
+                assignedCtvId: ctv.id,
+                createdAt: created,
+                lastContactedAt: lastContacted,
+                closedAt: isClosed ? new Date() : null,
+                nextActionAt: !isClosed && stage !== 'NEW' ? new Date(Date.now() + 86400000) : null,
+                nextActionNote: !isClosed && stage !== 'NEW' ? 'Gọi follow-up' : null,
+              },
+            });
+          } catch (e) {
+            // unique constraint may collide if seed re-runs; ignore
+          }
+        }
+        console.log(`[v3.1] Seeded ~30 leads across ${ctvs.length} CTVs`);
+      }
+    }
+  } catch (e) {
+    console.error('[v3.1] seed error (non-fatal):', e.message);
+  }
+
   console.log('\nSeed complete! (V13.4 — khai trương từ tháng 5/2026)');
   console.log('Login credentials:');
   console.log('   admin@ccbmart.vn / admin123 (super_admin)');

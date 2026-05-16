@@ -2,6 +2,7 @@ const QRCode = require('qrcode');
 const { invalidateCommissionCache } = require('./commission');
 const { invalidateCache } = require('./cache');
 const { createNotification, notifyAdmins } = require('./notification');
+const { allocateBatch, restoreTransactionBatches } = require('./inventory');
 
 const prisma = require('../lib/prisma');
 
@@ -13,6 +14,7 @@ const BANK_ACCOUNT = {
 
 const COMBO_PRICE = parseInt(process.env.COMBO_PRICE || '1800000', 10);
 const COMBO_COGS_PCT = parseFloat(process.env.COMBO_COGS_PCT || '0.50');
+const USE_VARIANT_FLOW = process.env.USE_VARIANT_FLOW === 'true';
 
 /**
  * Generate VietQR-style content for bank transfer
@@ -36,12 +38,13 @@ async function generateQRData(transactionId, amount) {
 /**
  * CTV creates a new transaction (sale)
  */
-async function createCtvTransaction(ctvId, { customerId, customerName, customerPhone, paymentMethod, bankCode }) {
+async function createCtvTransaction(ctvId, { customerId, customerName, customerPhone, paymentMethod, bankCode, items }) {
   // Validate CTV
   const ctv = await prisma.user.findUnique({ where: { id: ctvId } });
   if (!ctv || ctv.role !== 'ctv' || !ctv.isActive) {
     throw new Error('CTV khong hop le hoac da bi khoa');
   }
+  const useVariantFlow = USE_VARIANT_FLOW && Array.isArray(items) && items.length > 0;
 
   // Self-referral guard: CTV không được tự bán cho chính mình
   // Check phone match against CTV's own phone to prevent hoa hồng self-deal
@@ -72,8 +75,54 @@ async function createCtvTransaction(ctvId, { customerId, customerName, customerP
     throw new Error('Can cung cap customerId hoac customerName + customerPhone');
   }
 
-  const totalAmount = COMBO_PRICE;
-  const cogsAmount = totalAmount * COMBO_COGS_PCT;
+  let totalAmount;
+  let cogsAmount;
+  let itemRowsForInsert = [];
+
+  if (useVariantFlow) {
+    // V3.1 item-based flow with FIFO batch allocation
+    const variantIds = items.map((i) => i.variantId);
+    const variants = await prisma.productVariant.findMany({
+      where: { id: { in: variantIds }, status: 'ACTIVE' },
+      include: { product: true },
+    });
+    if (variants.length !== new Set(variantIds).size) {
+      throw new Error('Mot trong cac variant khong ton tai hoac da inactive');
+    }
+
+    totalAmount = 0;
+    cogsAmount = 0;
+    const variantMap = new Map(variants.map((v) => [v.id, v]));
+
+    // Allocate within $transaction for atomicity
+    const allocResult = await prisma.$transaction(async (txClient) => {
+      const out = [];
+      for (const it of items) {
+        if (!it.quantity || it.quantity <= 0) throw new Error(`Invalid quantity for variant ${it.variantId}`);
+        const v = variantMap.get(it.variantId);
+        const allocs = await allocateBatch(txClient, v.id, it.quantity, null);
+        for (const a of allocs) {
+          out.push({
+            productId: v.productId,
+            variantId: v.id,
+            batchId: a.batchId,
+            quantity: a.qty,
+            unitPrice: v.basePrice,
+            unitCogs: a.costPerUnit,
+            totalPrice: Number(v.basePrice) * a.qty,
+          });
+          totalAmount += Number(v.basePrice) * a.qty;
+          cogsAmount += Number(a.costPerUnit) * a.qty;
+        }
+      }
+      return out;
+    });
+    itemRowsForInsert = allocResult;
+  } else {
+    // Legacy combo flow (default; preserve existing behavior bit-identical)
+    totalAmount = COMBO_PRICE;
+    cogsAmount = totalAmount * COMBO_COGS_PCT;
+  }
 
   // Create transaction
   const transaction = await prisma.transaction.create({
@@ -89,6 +138,13 @@ async function createCtvTransaction(ctvId, { customerId, customerName, customerP
       ctvSubmittedAt: new Date(),
     },
   });
+
+  // Insert item rows after transaction id is known (variant flow only)
+  if (itemRowsForInsert.length > 0) {
+    await prisma.transactionItem.createMany({
+      data: itemRowsForInsert.map((r) => ({ ...r, transactionId: transaction.id })),
+    });
+  }
 
   // Generate QR for bank transfer
   let qrCodeData = null;
@@ -202,14 +258,18 @@ async function rejectTransaction(transactionId, adminId, reason) {
   if (!tx) throw new Error('Giao dich khong ton tai');
   if (tx.status !== 'PENDING') throw new Error('Giao dich khong o trang thai PENDING');
 
-  const updated = await prisma.transaction.update({
-    where: { id: transactionId },
-    data: {
-      status: 'REJECTED',
-      rejectedReason: reason,
-      confirmedBy: adminId,
-      confirmedAt: new Date(),
-    },
+  const updated = await prisma.$transaction(async (txClient) => {
+    // Restore batch quantities (no-op if no items / legacy combo)
+    await restoreTransactionBatches(txClient, transactionId);
+    return txClient.transaction.update({
+      where: { id: transactionId },
+      data: {
+        status: 'REJECTED',
+        rejectedReason: reason,
+        confirmedBy: adminId,
+        confirmedAt: new Date(),
+      },
+    });
   });
 
   // Notify CTV
