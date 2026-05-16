@@ -496,6 +496,66 @@ export const api = {
     fetchAPI(`/admin/landing-cms/testimonials/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   adminLandingDeleteTestimonial: (id: number) =>
     fetchAPI(`/admin/landing-cms/testimonials/${id}`, { method: 'DELETE' }),
+
+  // ============================================================
+  // v3.1: Product M0 — Products / Variants / Suppliers / Inventory
+  // ============================================================
+  adminProductsList: (params: Record<string, string | number> = {}) => {
+    const qs = new URLSearchParams(Object.entries(params).map(([k, v]) => [k, String(v)])).toString();
+    return fetchAPI(`/admin/products${qs ? '?' + qs : ''}`);
+  },
+  adminProductGet: (id: number) => fetchAPI(`/admin/products/${id}`),
+  adminProductCreate: (data: Record<string, unknown>) =>
+    fetchAPI('/admin/products', { method: 'POST', body: JSON.stringify(data) }),
+  adminProductUpdate: (id: number, data: Record<string, unknown>) =>
+    fetchAPI(`/admin/products/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  adminVariantCreate: (productId: number, data: Record<string, unknown>) =>
+    fetchAPI(`/admin/products/${productId}/variants`, { method: 'POST', body: JSON.stringify(data) }),
+  adminVariantUpdate: (id: number, data: Record<string, unknown>) =>
+    fetchAPI(`/admin/variants/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  adminBatchReceive: (variantId: number, data: Record<string, unknown>) =>
+    fetchAPI(`/admin/variants/${variantId}/batches`, { method: 'POST', body: JSON.stringify(data) }),
+  adminInventoryList: (params: Record<string, string | number> = {}) => {
+    const qs = new URLSearchParams(Object.entries(params).map(([k, v]) => [k, String(v)])).toString();
+    return fetchAPI(`/admin/inventory${qs ? '?' + qs : ''}`);
+  },
+  adminSuppliersList: (params: Record<string, string | number> = {}) => {
+    const qs = new URLSearchParams(Object.entries(params).map(([k, v]) => [k, String(v)])).toString();
+    return fetchAPI(`/admin/suppliers${qs ? '?' + qs : ''}`);
+  },
+  adminSupplierCreate: (data: Record<string, unknown>) =>
+    fetchAPI('/admin/suppliers', { method: 'POST', body: JSON.stringify(data) }),
+  adminSupplierUpdate: (id: number, data: Record<string, unknown>) =>
+    fetchAPI(`/admin/suppliers/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  adminSupplierDeactivate: (id: number) => fetchAPI(`/admin/suppliers/${id}`, { method: 'DELETE' }),
+
+  // ============================================================
+  // v3.1: CRM Lightweight — Leads + Activities
+  // ============================================================
+  ctvLeadsList: (params: Record<string, string | number> = {}) => {
+    const qs = new URLSearchParams(Object.entries(params).map(([k, v]) => [k, String(v)])).toString();
+    return fetchAPI(`/ctv/leads${qs ? '?' + qs : ''}`);
+  },
+  ctvLeadsToday: () => fetchAPI('/ctv/leads/today'),
+  ctvLeadGet: (id: number) => fetchAPI(`/ctv/leads/${id}`),
+  ctvLeadCreate: (data: Record<string, unknown>) =>
+    fetchAPI('/ctv/leads', { method: 'POST', body: JSON.stringify(data) }),
+  ctvLeadUpdate: (id: number, data: Record<string, unknown>) =>
+    fetchAPI(`/ctv/leads/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  ctvLeadAddActivity: (id: number, data: Record<string, unknown>) =>
+    fetchAPI(`/ctv/leads/${id}/activities`, { method: 'POST', body: JSON.stringify(data) }),
+  ctvLeadChangeStage: (id: number, stage: string, lostReason?: string) =>
+    fetchAPI(`/ctv/leads/${id}/stage`, { method: 'POST', body: JSON.stringify({ stage, lostReason }) }),
+  ctvLeadConvert: (id: number) =>
+    fetchAPI(`/ctv/leads/${id}/convert`, { method: 'POST', body: '{}' }),
+  adminLeadsList: (params: Record<string, string | number> = {}) => {
+    const qs = new URLSearchParams(Object.entries(params).map(([k, v]) => [k, String(v)])).toString();
+    return fetchAPI(`/admin/leads${qs ? '?' + qs : ''}`);
+  },
+  adminLeadsConversionReport: (params: Record<string, string | number> = {}) => {
+    const qs = new URLSearchParams(Object.entries(params).map(([k, v]) => [k, String(v)])).toString();
+    return fetchAPI(`/admin/reports/conversion${qs ? '?' + qs : ''}`);
+  },
 };
 
 export function formatVND(amount: number): string {
