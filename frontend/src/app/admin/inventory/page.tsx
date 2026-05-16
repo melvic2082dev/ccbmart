@@ -32,7 +32,7 @@ export default function AdminInventoryPage() {
 
   useEffect(() => {
     setLoading(true);
-    const params = tab === 'expiring' ? { expiring: 30 } : {};
+    const params: Record<string, string | number> = tab === 'expiring' ? { expiring: 30 } : {};
     api.adminInventoryList(params)
       .then((res) => setItems(res.items || []))
       .finally(() => setLoading(false));
