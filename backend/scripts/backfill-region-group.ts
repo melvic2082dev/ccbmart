@@ -11,9 +11,9 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 // Province → region group. Northern + Northern-mountain → 'bac'.
-// Central + Central coast → 'trung'. Tây Nguyên → 'tay_nguyen'.
+// Central + Central coast + Tây Nguyên → 'trung' (3-region scheme).
 // Southern → 'nam'. Anything not matched → null ("Không thuộc vùng miền nào").
-const PROVINCE_TO_GROUP: Record<string, 'bac' | 'trung' | 'nam' | 'tay_nguyen'> = {
+const PROVINCE_TO_GROUP: Record<string, 'bac' | 'trung' | 'nam'> = {
   // Bắc bộ
   'hà nội': 'bac', 'hanoi': 'bac', 'ha noi': 'bac',
   'hà giang': 'bac', 'cao bằng': 'bac', 'bắc kạn': 'bac',
@@ -30,9 +30,9 @@ const PROVINCE_TO_GROUP: Record<string, 'bac' | 'trung' | 'nam' | 'tay_nguyen'> 
   'đà nẵng': 'trung', 'quảng nam': 'trung', 'quảng ngãi': 'trung',
   'bình định': 'trung', 'phú yên': 'trung', 'khánh hòa': 'trung',
   'ninh thuận': 'trung', 'bình thuận': 'trung',
-  // Tây Nguyên
-  'kon tum': 'tay_nguyen', 'gia lai': 'tay_nguyen', 'đắk lắk': 'tay_nguyen',
-  'đắk nông': 'tay_nguyen', 'lâm đồng': 'tay_nguyen', 'buôn ma thuột': 'tay_nguyen',
+  // Tây Nguyên — gộp vào Trung theo chuẩn 3 miền
+  'kon tum': 'trung', 'gia lai': 'trung', 'đắk lắk': 'trung',
+  'đắk nông': 'trung', 'lâm đồng': 'trung', 'buôn ma thuột': 'trung',
   // Nam bộ
   'tp. hcm': 'nam', 'tp.hcm': 'nam', 'tphcm': 'nam',
   'hồ chí minh': 'nam', 'sài gòn': 'nam',
@@ -45,16 +45,15 @@ const PROVINCE_TO_GROUP: Record<string, 'bac' | 'trung' | 'nam' | 'tay_nguyen'> 
   'cà mau': 'nam', 'phú quốc': 'nam',
 };
 
-function inferGroup(text: string): 'bac' | 'trung' | 'nam' | 'tay_nguyen' | null {
+function inferGroup(text: string): 'bac' | 'trung' | 'nam' | null {
   const lc = text.toLowerCase();
   for (const [province, group] of Object.entries(PROVINCE_TO_GROUP)) {
     if (lc.includes(province)) return group;
   }
   // Generic regional keywords
   if (lc.includes('miền bắc') || lc.includes('tây bắc') || lc.includes('đông bắc')) return 'bac';
-  if (lc.includes('miền trung')) return 'trung';
+  if (lc.includes('miền trung') || lc.includes('tây nguyên')) return 'trung';
   if (lc.includes('miền nam') || lc.includes('miền tây')) return 'nam';
-  if (lc.includes('tây nguyên')) return 'tay_nguyen';
   return null;
 }
 

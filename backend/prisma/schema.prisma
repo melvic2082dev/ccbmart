@@ -1119,7 +1119,10 @@ model LandingProduct {
   sold           String   @default("0")
   region         String   @default("")
   // Coarse-grained region grouping for /category filtering.
-  // Values: 'bac' | 'trung' | 'nam' | 'tay_nguyen' | null (= "Không thuộc vùng miền nào")
+  // Values: 'bac' | 'trung' | 'nam' | null (= "Không thuộc vùng miền nào").
+  // Note: Tây Nguyên (Đắk Lắk, Lâm Đồng, Gia Lai…) is folded into 'trung'
+  // per the standard 3-region scheme. Any legacy 'tay_nguyen' rows should
+  // be migrated to 'trung'.
   regionGroup    String?  @map("region_group")
   verified       Boolean  @default(false)
   badges         Json? // [{ label, variant }]

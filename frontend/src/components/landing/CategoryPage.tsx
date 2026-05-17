@@ -8,14 +8,13 @@ import type { Category, ProductDetail } from './categories';
 
 type PriceBand = 'all' | 'lt50' | 'mid' | 'gt200';
 type SortKey = 'sold' | 'price_asc' | 'price_desc';
-type RegionFilter = 'bac' | 'trung' | 'nam' | 'tay_nguyen' | 'none';
+type RegionFilter = 'bac' | 'trung' | 'nam' | 'none';
 
 const REGION_OPTIONS: { value: RegionFilter; label: string }[] = [
-  { value: 'bac',        label: 'Miền Bắc' },
-  { value: 'trung',      label: 'Miền Trung' },
-  { value: 'tay_nguyen', label: 'Tây Nguyên' },
-  { value: 'nam',        label: 'Miền Nam' },
-  { value: 'none',       label: 'Không thuộc vùng miền nào' },
+  { value: 'bac',   label: 'Miền Bắc' },
+  { value: 'trung', label: 'Miền Trung' },
+  { value: 'nam',   label: 'Miền Nam' },
+  { value: 'none',  label: 'Không thuộc vùng miền nào' },
 ];
 
 const PAGE_SIZE = 12;
@@ -29,7 +28,7 @@ export function CategoryPage({ category, products }: { category: Category; produ
 
   // Compute counts per region group inside this category
   const regionCounts = useMemo(() => {
-    const counts: Record<RegionFilter, number> = { bac: 0, trung: 0, nam: 0, tay_nguyen: 0, none: 0 };
+    const counts: Record<RegionFilter, number> = { bac: 0, trung: 0, nam: 0, none: 0 };
     for (const p of products) {
       const key: RegionFilter = (p.regionGroup ?? 'none') as RegionFilter;
       if (key in counts) counts[key]++;

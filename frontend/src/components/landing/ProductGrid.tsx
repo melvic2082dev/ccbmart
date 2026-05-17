@@ -6,7 +6,7 @@ import { Badge, formatVnd, ProductArt, SectionHead, Star, WaxSeal } from './prim
 type Tone = 'paper' | 'red' | 'olive' | 'gold';
 type BadgeVariant = 'red' | 'olive' | 'gold' | 'soft' | 'oliveSoft';
 
-export type RegionGroup = 'bac' | 'trung' | 'nam' | 'tay_nguyen';
+export type RegionGroup = 'bac' | 'trung' | 'nam';
 
 export type Product = {
   id: string;

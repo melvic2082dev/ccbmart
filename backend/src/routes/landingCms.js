@@ -629,7 +629,7 @@ const PRODUCT_FIELDS = [
   'isActive', 'displayOrder',
 ];
 const VALID_TONES = new Set(['paper', 'red', 'olive', 'gold']);
-const VALID_REGION_GROUPS = new Set(['bac', 'trung', 'nam', 'tay_nguyen']);
+const VALID_REGION_GROUPS = new Set(['bac', 'trung', 'nam']);
 
 function normalizeProductPayload(body) {
   const data = pick(body, PRODUCT_FIELDS);
@@ -648,7 +648,7 @@ function normalizeProductPayload(body) {
     if (data.regionGroup === '' || data.regionGroup === null || data.regionGroup === undefined) {
       data.regionGroup = null;
     } else if (!VALID_REGION_GROUPS.has(data.regionGroup)) {
-      return { error: 'regionGroup must be one of: bac, trung, nam, tay_nguyen (or empty for none)' };
+      return { error: 'regionGroup must be one of: bac, trung, nam (or empty for none)' };
     }
   }
   return { data };

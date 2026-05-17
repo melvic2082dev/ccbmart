@@ -873,7 +873,7 @@ type CatalogProduct = {
   rating: number | string;
   sold: string;
   region: string;
-  regionGroup: 'bac' | 'trung' | 'nam' | 'tay_nguyen' | null;
+  regionGroup: 'bac' | 'trung' | 'nam' | null;
   verified: boolean;
   badges: { label: string; variant: string }[] | null;
   imageUrl: string | null;
@@ -900,7 +900,6 @@ const REGION_GROUP_OPTIONS: { value: string; label: string }[] = [
   { value: '__none', label: 'Không thuộc vùng miền nào' },
   { value: 'bac', label: 'Miền Bắc' },
   { value: 'trung', label: 'Miền Trung' },
-  { value: 'tay_nguyen', label: 'Tây Nguyên' },
   { value: 'nam', label: 'Miền Nam' },
 ];
 const DEFAULT_THUMBS = ['Mặt trước', 'Đóng gói', 'Cận cảnh', 'Vùng nguyên liệu'];

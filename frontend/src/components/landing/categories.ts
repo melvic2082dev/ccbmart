@@ -55,7 +55,7 @@ export const CATEGORIES: Category[] = [
     tone: 'olive',
     description: 'Trà Shan Tuyết cổ thụ, chè Tân Cương, cà phê Buôn Ma Thuột. Mỗi sản phẩm đến từ một vùng nguyên liệu CCB Mart trực tiếp bao tiêu.',
     productCount: 52,
-    filters: { regions: [{ label: 'Miền Bắc', count: 30, checked: true }, { label: 'Miền Trung', count: 8 }, { label: 'Tây Nguyên', count: 14, checked: true }] },
+    filters: { regions: [{ label: 'Miền Bắc', count: 30, checked: true }, { label: 'Miền Trung', count: 22 }, { label: 'Miền Nam', count: 18, checked: true }] },
   },
   {
     slug: 'dac-san-vung-mien',
@@ -139,9 +139,11 @@ function _normVN(s: string): string {
 }
 
 // Map a free-text Vietnamese region (province / district / địa danh) to one of
-// the four coarse-grained region groups used by /category filtering.
+// the three coarse-grained region groups used by /category filtering.
+// Note: Tây Nguyên (Đắk Lắk, Lâm Đồng, Gia Lai…) is folded into 'trung' per
+// the standard 3-region scheme (Bắc / Trung / Nam) used throughout this app.
 // Returns null when nothing matches (UI shows "Không thuộc vùng miền nào").
-const _REGION_GROUP_KEYWORDS: Record<'bac' | 'trung' | 'tay_nguyen' | 'nam', string[]> = {
+const _REGION_GROUP_KEYWORDS: Record<'bac' | 'trung' | 'nam', string[]> = {
   bac: [
     'ha noi', 'hanoi', 'sapa', 'sa pa', 'lao cai', 'ha giang', 'hoang su phi',
     'cao bang', 'bac kan', 'lang son', 'tuyen quang', 'thai nguyen', 'bac giang',
@@ -151,12 +153,12 @@ const _REGION_GROUP_KEYWORDS: Record<'bac' | 'trung' | 'tay_nguyen' | 'nam', str
     'ha long', 'mien bac',
   ],
   trung: [
+    // Bắc Trung Bộ + Duyên hải Nam Trung Bộ
     'thanh hoa', 'nghe an', 'ha tinh', 'quang binh', 'quang tri',
     'thua thien hue', 'hue', 'da nang', 'danang', 'quang nam', 'hoi an',
     'quang ngai', 'binh dinh', 'quy nhon', 'phu yen', 'khanh hoa', 'nha trang',
     'ninh thuan', 'binh thuan', 'phan thiet', 'xu quang', 'mien trung',
-  ],
-  tay_nguyen: [
+    // Tây Nguyên — gộp vào Trung theo chuẩn 3 miền
     'kon tum', 'gia lai', 'pleiku', 'dak lak', 'buon ma thuot', 'buon ho',
     'dak nong', 'lam dong', 'da lat', 'dalat', 'cau dat', 'bao loc', 'tay nguyen',
   ],
@@ -169,11 +171,11 @@ const _REGION_GROUP_KEYWORDS: Record<'bac' | 'trung' | 'tay_nguyen' | 'nam', str
   ],
 };
 
-export function regionGroupOf(regionText: string | undefined | null): 'bac' | 'trung' | 'tay_nguyen' | 'nam' | null {
+export function regionGroupOf(regionText: string | undefined | null): 'bac' | 'trung' | 'nam' | null {
   if (!regionText) return null;
   const n = _normVN(regionText);
   for (const [group, keywords] of Object.entries(_REGION_GROUP_KEYWORDS) as [
-    'bac' | 'trung' | 'tay_nguyen' | 'nam',
+    'bac' | 'trung' | 'nam',
     string[]
   ][]) {
     for (const kw of keywords) {
@@ -290,7 +292,7 @@ export type DbCatalogProduct = {
   rating: number | string;
   sold: string;
   region: string;
-  regionGroup: 'bac' | 'trung' | 'nam' | 'tay_nguyen' | null;
+  regionGroup: 'bac' | 'trung' | 'nam' | null;
   verified: boolean;
   badges: { label: string; variant: string }[] | null;
   imageUrl: string | null;
