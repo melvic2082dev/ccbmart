@@ -543,7 +543,7 @@ export function CreateCtvModal({
   onSuccess: () => void;
 }) {
   const [form, setForm] = useState({
-    name: '', email: '', phone: '', rank: 'CTV', parentId: '', password: 'sales1234',
+    name: '', email: '', phone: '', rank: 'CTV', parentId: '', password: 'CCB2026',
     bio: '', birthYear: '',
   });
   const [submitting, setSubmitting] = useState(false);
@@ -551,7 +551,7 @@ export function CreateCtvModal({
 
   useEffect(() => {
     if (open) {
-      setForm({ name: '', email: '', phone: '', rank: 'CTV', parentId: '', password: 'sales1234', bio: '', birthYear: '' });
+      setForm({ name: '', email: '', phone: '', rank: 'CTV', parentId: '', password: 'CCB2026', bio: '', birthYear: '' });
       setError(null);
     }
   }, [open]);
@@ -561,7 +561,7 @@ export function CreateCtvModal({
       setError('Họ tên và email là bắt buộc');
       return;
     }
-    if (form.password.length < 8) { setError('Mật khẩu phải ≥ 8 ký tự'); return; }
+    if (form.password.length < 6) { setError('Mật khẩu phải ≥ 6 ký tự'); return; }
     setSubmitting(true);
     setError(null);
     try {

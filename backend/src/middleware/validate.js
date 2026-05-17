@@ -26,7 +26,9 @@ function validate(schema, source = 'body') {
 const schemas = {
   login: Joi.object({
     email: Joi.string().email().required(),
-    password: Joi.string().min(8).max(100).required(),
+    // Min 6 to support short legacy/brand passwords (CCB2026, ctv123, etc.).
+    // Public /auth/register keeps its stronger 8+UPPER+digit rule below.
+    password: Joi.string().min(6).max(100).required(),
   }),
 
   reassignCtv: Joi.object({
@@ -95,7 +97,7 @@ const schemas = {
 
   createCtv: Joi.object({
     email: Joi.string().email().required(),
-    password: Joi.string().min(8).max(100).required(),
+    password: Joi.string().min(6).max(100).required(),
     name: Joi.string().min(2).max(100).required(),
     phone: Joi.string().min(9).max(15).required(),
     parentId: Joi.number().integer().allow(null).optional(),

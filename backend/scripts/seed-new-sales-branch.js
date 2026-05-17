@@ -19,7 +19,7 @@ const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcryptjs');
 const prisma = new PrismaClient();
 
-const DEFAULT_PASSWORD = 'sales1234';
+const DEFAULT_PASSWORD = 'CCB2026';
 
 function emailFor(name) {
   // Strip diacritics + lowercase + dot-separate
