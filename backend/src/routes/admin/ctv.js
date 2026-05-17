@@ -1,5 +1,8 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
 const { getCachedOrCompute, invalidateCache } = require('../../services/cache');
 const { invalidateCommissionCache } = require('../../services/commission');
 const { validateReassignment } = require('../../services/treeValidator');
@@ -10,6 +13,25 @@ const { asyncHandler, AppError } = require('../../middleware/errorHandler');
 
 const router = express.Router();
 const prisma = require('../../lib/prisma');
+
+// ---------- Avatar upload (multer disk storage) ----------
+const AVATAR_DIR = path.join(__dirname, '..', '..', '..', 'uploads', 'avatars');
+try { fs.mkdirSync(AVATAR_DIR, { recursive: true }); } catch {}
+
+const avatarUpload = multer({
+  storage: multer.diskStorage({
+    destination: AVATAR_DIR,
+    filename: (req, file, cb) => {
+      const ext = path.extname(file.originalname).toLowerCase() || '.jpg';
+      cb(null, `ctv-${req.params.id}-${Date.now()}${ext}`);
+    },
+  }),
+  limits: { fileSize: 3 * 1024 * 1024 }, // 3 MB
+  fileFilter: (req, file, cb) => {
+    const ok = /^image\/(jpeg|png|webp|gif)$/i.test(file.mimetype);
+    cb(ok ? null : new Error('Chỉ chấp nhận ảnh JPEG / PNG / WebP / GIF'), ok);
+  },
+});
 
 // GET /ctv/export — export CTV list as JSON (#5)
 router.get('/ctv/export', asyncHandler(async (req, res) => {
@@ -85,6 +107,43 @@ router.post('/ctv', validate(schemas.createCtv), asyncHandler(async (req, res) =
   res.status(201).json(ctv);
 }));
 
+// POST /ctv/:id/avatar — upload avatar image (multipart: avatar)
+router.post('/ctv/:id/avatar', avatarUpload.single('avatar'), asyncHandler(async (req, res) => {
+  const ctvId = parseInt(req.params.id, 10);
+  if (!req.file) throw new AppError('Vui lòng chọn ảnh (field: avatar)', 400, 'NO_FILE');
+  const ctv = await prisma.user.findUnique({ where: { id: ctvId } });
+  if (!ctv) throw new AppError('CTV not found', 404, 'CTV_NOT_FOUND');
+
+  // Best-effort cleanup of previous avatar file
+  if (ctv.avatarUrl && ctv.avatarUrl.startsWith('/uploads/avatars/')) {
+    const prevPath = path.join(__dirname, '..', '..', '..', ctv.avatarUrl);
+    fs.unlink(prevPath, () => {}); // ignore errors
+  }
+
+  const url = `/uploads/avatars/${req.file.filename}`;
+  const updated = await prisma.user.update({
+    where: { id: ctvId },
+    data: { avatarUrl: url },
+    select: { id: true, name: true, avatarUrl: true },
+  });
+  await invalidateCache('admin:ctv-list');
+  res.json({ success: true, user: updated, avatarUrl: url });
+}));
+
+// DELETE /ctv/:id/avatar — clear avatar
+router.delete('/ctv/:id/avatar', asyncHandler(async (req, res) => {
+  const ctvId = parseInt(req.params.id, 10);
+  const ctv = await prisma.user.findUnique({ where: { id: ctvId } });
+  if (!ctv) throw new AppError('CTV not found', 404, 'CTV_NOT_FOUND');
+  if (ctv.avatarUrl && ctv.avatarUrl.startsWith('/uploads/avatars/')) {
+    const prevPath = path.join(__dirname, '..', '..', '..', ctv.avatarUrl);
+    fs.unlink(prevPath, () => {});
+  }
+  await prisma.user.update({ where: { id: ctvId }, data: { avatarUrl: null } });
+  await invalidateCache('admin:ctv-list');
+  res.json({ success: true });
+}));
+
 // PUT /ctv/:id — update CTV basic fields (bio, name, phone, birthYear)
 router.put('/ctv/:id', validate(schemas.updateCtv), asyncHandler(async (req, res) => {
   const ctvId = parseInt(req.params.id, 10);
@@ -135,6 +194,7 @@ router.get('/ctvs', asyncHandler(async (req, res) => {
       fixedSalaryStartDate: ctv.fixedSalaryStartDate || null,
       bio: ctv.bio || null,
       birthYear: ctv.birthYear || null,
+      avatarUrl: ctv.avatarUrl || null,
     }));
   });
 

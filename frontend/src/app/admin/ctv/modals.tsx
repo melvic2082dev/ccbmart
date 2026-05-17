@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { api, formatVND } from '@/lib/api';
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
@@ -35,6 +35,7 @@ export interface CtvRow {
   // v3.4: HR profile
   bio?: string | null;
   birthYear?: number | null;
+  avatarUrl?: string | null;
   // Multi-role: CTV kiêm Member
   isMember?: boolean;
   memberWallet?: {
@@ -787,6 +788,10 @@ interface CtvDetailData {
     isActive: boolean; isBusinessHousehold: boolean; kycStatus: string; createdAt: string;
     parent?: { id: number; name: string; rank: string; email: string } | null;
     f1Count: number; transactionCount: number; customerCount: number; totalRevenue: number;
+    // v3.4
+    bio?: string | null;
+    birthYear?: number | null;
+    avatarUrl?: string | null;
   };
   kpiLogs: Array<{ id: number; month: string; selfSales: number; portfolioSize: number; rankBefore?: string; rankAfter?: string }>;
   rankHistory: Array<{ id: number; oldRank: string; newRank: string; reason: string; changedBy: string; changedAt: string }>;
@@ -836,20 +841,16 @@ export function CtvDetailsModal({
 }) {
   const [data, setData] = useState<CtvDetailData | null>(null);
   const [loading, setLoading] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [avatarError, setAvatarError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    if (!open || !ctvId) return;
-    let cancelled = false;
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- data-fetching effect
+  // Extracted so the avatar upload handler can re-fetch after a successful
+  // upload without breaking the load-once effect below.
+  const refetch = (id: number) => {
     setLoading(true);
-    setData(null);
-    api.adminCtvDetails(ctvId)
+    api.adminCtvDetails(id)
       .then((raw) => {
-        if (cancelled) return;
-        // Backend returns the raw user record; reshape to the structured form
-        // this modal expects. Missing fields (managementFees, memberActivity,
-        // trainingSummary, totalRevenue) fall back to empty/zero so the
-        // sub-tabs render an empty-state instead of crashing.
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const u = raw as any;
         const reshaped: CtvDetailData = u && u.profile ? (u as CtvDetailData) : {
@@ -863,16 +864,14 @@ export function CtvDetailsModal({
             isBusinessHousehold: !!u?.isBusinessHousehold,
             kycStatus: u?.kycStatus ?? '—',
             createdAt: u?.createdAt ?? new Date().toISOString(),
-            parent: u?.parent ? {
-              id: u.parent.id,
-              name: u.parent.name,
-              rank: u.parent.rank,
-              email: u.parent.email ?? '',
-            } : null,
+            parent: u?.parent ? { id: u.parent.id, name: u.parent.name, rank: u.parent.rank, email: u.parent.email ?? '' } : null,
             f1Count: Array.isArray(u?.children) ? u.children.length : 0,
             transactionCount: u?._count?.transactions ?? 0,
             customerCount: u?._count?.customers ?? 0,
             totalRevenue: 0,
+            bio: u?.bio ?? null,
+            birthYear: u?.birthYear ?? null,
+            avatarUrl: u?.avatarUrl ?? null,
           },
           kpiLogs: Array.isArray(u?.kpiLogs) ? u.kpiLogs : [],
           rankHistory: Array.isArray(u?.rankHistory) ? u.rankHistory : [],
@@ -882,8 +881,37 @@ export function CtvDetailsModal({
         setData(reshaped);
       })
       .catch((err) => console.error('Failed to fetch details:', err))
-      .finally(() => { if (!cancelled) setLoading(false); });
-    return () => { cancelled = true; };
+      .finally(() => setLoading(false));
+  };
+
+  const onPickAvatar = async (file: File | null) => {
+    if (!file || !ctvId) return;
+    setUploadingAvatar(true);
+    setAvatarError(null);
+    try {
+      await api.adminCtvUploadAvatar(ctvId, file);
+      refetch(ctvId);
+    } catch (e) {
+      setAvatarError((e as Error).message);
+    } finally {
+      setUploadingAvatar(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const onDeleteAvatar = async () => {
+    if (!ctvId) return;
+    if (!window.confirm('Xoá avatar?')) return;
+    try { await api.adminCtvDeleteAvatar(ctvId); refetch(ctvId); }
+    catch (e) { setAvatarError((e as Error).message); }
+  };
+
+  useEffect(() => {
+    if (!open || !ctvId) return;
+    setData(null);
+    setAvatarError(null);
+    refetch(ctvId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, ctvId]);
 
   return (
@@ -899,6 +927,49 @@ export function CtvDetailsModal({
             </DialogDescription>
           )}
         </DialogHeader>
+
+        {data && (
+          <div className="flex items-center gap-4 mt-2 p-3 rounded-md border border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-900/30">
+            {/* Avatar */}
+            <div className="relative">
+              {data.profile.avatarUrl ? (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img
+                  src={api.resolveUploadUrl(data.profile.avatarUrl) || ''}
+                  alt={data.profile.name}
+                  className="w-20 h-20 rounded-full object-cover border-2 border-emerald-300"
+                />
+              ) : (
+                <div className="w-20 h-20 rounded-full bg-gradient-to-br from-emerald-300 to-cyan-400 flex items-center justify-center text-white text-2xl font-bold">
+                  {data.profile.name.charAt(0).toUpperCase()}
+                </div>
+              )}
+              {uploadingAvatar && (
+                <div className="absolute inset-0 rounded-full bg-black/50 flex items-center justify-center text-white text-xs">…</div>
+              )}
+            </div>
+            {/* Upload buttons */}
+            <div className="flex-1 space-y-1">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                hidden
+                onChange={(e) => onPickAvatar(e.target.files?.[0] || null)}
+              />
+              <div className="flex gap-2">
+                <Button size="sm" variant="outline" disabled={uploadingAvatar} onClick={() => fileInputRef.current?.click()}>
+                  {data.profile.avatarUrl ? 'Đổi avatar' : 'Tải ảnh đại diện'}
+                </Button>
+                {data.profile.avatarUrl && (
+                  <Button size="sm" variant="ghost" className="text-red-600" onClick={onDeleteAvatar}>Xoá</Button>
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground">JPG / PNG / WebP / GIF, tối đa 3 MB.</p>
+              {avatarError && <p className="text-xs text-red-600">{avatarError}</p>}
+            </div>
+          </div>
+        )}
 
         {loading || !data ? (
           <div className="py-10 text-center text-sm text-gray-400">Đang tải…</div>
@@ -920,11 +991,24 @@ export function CtvDetailsModal({
                 <Field label="Email" value={data.profile.email} />
                 <Field label="SĐT" value={data.profile.phone || '—'} />
                 <Field label="Rank" value={<Badge className="bg-emerald-100 text-emerald-700 text-xs">{RANK_LABEL[data.profile.rank] ?? data.profile.rank}</Badge>} />
+                <Field
+                  label="Năm sinh"
+                  value={data.profile.birthYear
+                    ? `${data.profile.birthYear} (${new Date().getFullYear() - data.profile.birthYear} tuổi)`
+                    : '—'}
+                />
                 <Field label="Người quản lý" value={data.profile.parent ? `${data.profile.parent.name} (${RANK_LABEL[data.profile.parent.rank] ?? data.profile.parent.rank})` : 'Không có (root)'} />
                 <Field label="Hộ kinh doanh" value={data.profile.isBusinessHousehold ? 'Có' : 'Không'} />
                 <Field label="Ngày tham gia" value={new Date(data.profile.createdAt).toLocaleDateString('vi-VN')} />
                 <Field label="Trạng thái" value={data.profile.isActive ? 'Hoạt động' : 'Dừng'} />
               </div>
+
+              {data.profile.bio && (
+                <div className="mt-2 pt-3 border-t">
+                  <p className="text-xs font-medium uppercase text-muted-foreground mb-1">Mô tả / Kinh nghiệm</p>
+                  <p className="text-sm whitespace-pre-line">{data.profile.bio}</p>
+                </div>
+              )}
 
               <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <Stat label="F1 trực tiếp" value={data.profile.f1Count} />

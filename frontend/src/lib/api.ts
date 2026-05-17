@@ -137,6 +137,21 @@ export const api = {
     fetchAPI('/admin/ctv', { method: 'POST', body: JSON.stringify(data) }),
   adminCtvUpdateProfile: (id: number, data: { name?: string; phone?: string; bio?: string | null; birthYear?: number | null }) =>
     fetchAPI(`/admin/ctv/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  adminCtvUploadAvatar: (id: number, file: File) => {
+    const fd = new FormData();
+    fd.append('avatar', file);
+    return fetchMultipart(`/admin/ctv/${id}/avatar`, fd);
+  },
+  adminCtvDeleteAvatar: (id: number) =>
+    fetchAPI(`/admin/ctv/${id}/avatar`, { method: 'DELETE' }),
+  // Resolve a /uploads/... relative URL to absolute (so <img> can fetch
+  // it directly from the backend).
+  resolveUploadUrl: (url: string | null | undefined): string | null => {
+    if (!url) return null;
+    if (url.startsWith('http')) return url;
+    const base = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api').replace(/\/api\/?$/, '');
+    return base + url;
+  },
   adminCtvExportUrl: () => `${API_BASE}/admin/ctv/export`,
   adminAgencies: () => fetchAPI('/admin/agencies'),
   adminAgencyDetails: (id: number) => fetchAPI(`/admin/agencies/${id}/details`),
