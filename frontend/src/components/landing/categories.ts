@@ -128,13 +128,75 @@ export function getCategory(slug: string): Category | undefined {
 
 // ---- Product database — every category has products, every product has a detail page ----
 
-const M = (over: Partial<ProductDetail>): ProductDetail => ({
-  id: over.slug!, slug: over.slug!, name: '', art: '', tone: 'paper', price: 0,
-  rating: 4.7, sold: '500', region: '', category: '', verified: false,
-  brand: '—', origin: '—', weight: '—', certifications: '—', distributor: '—',
-  description: '', thumbs: ['Mặt trước', 'Đóng gói', 'Cận cảnh', 'Vùng nguyên liệu'],
-  ...over,
-});
+// Strip Vietnamese diacritics + lowercase for keyword matching.
+function _normVN(s: string): string {
+  return s
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .replace(/đ/g, 'd')
+    .replace(/Đ/g, 'd')
+    .toLowerCase();
+}
+
+// Map a free-text Vietnamese region (province / district / địa danh) to one of
+// the four coarse-grained region groups used by /category filtering.
+// Returns null when nothing matches (UI shows "Không thuộc vùng miền nào").
+const _REGION_GROUP_KEYWORDS: Record<'bac' | 'trung' | 'tay_nguyen' | 'nam', string[]> = {
+  bac: [
+    'ha noi', 'hanoi', 'sapa', 'sa pa', 'lao cai', 'ha giang', 'hoang su phi',
+    'cao bang', 'bac kan', 'lang son', 'tuyen quang', 'thai nguyen', 'bac giang',
+    'bac ninh', 'phu tho', 'vinh phuc', 'yen bai', 'muong lo', 'son la',
+    'moc chau', 'lai chau', 'dien bien', 'hoa binh', 'hai phong', 'hai duong',
+    'hung yen', 'thai binh', 'nam dinh', 'ha nam', 'ninh binh', 'quang ninh',
+    'ha long', 'mien bac',
+  ],
+  trung: [
+    'thanh hoa', 'nghe an', 'ha tinh', 'quang binh', 'quang tri',
+    'thua thien hue', 'hue', 'da nang', 'danang', 'quang nam', 'hoi an',
+    'quang ngai', 'binh dinh', 'quy nhon', 'phu yen', 'khanh hoa', 'nha trang',
+    'ninh thuan', 'binh thuan', 'phan thiet', 'xu quang', 'mien trung',
+  ],
+  tay_nguyen: [
+    'kon tum', 'gia lai', 'pleiku', 'dak lak', 'buon ma thuot', 'buon ho',
+    'dak nong', 'lam dong', 'da lat', 'dalat', 'cau dat', 'bao loc', 'tay nguyen',
+  ],
+  nam: [
+    'tp hcm', 'tphcm', 'ho chi minh', 'sai gon', 'saigon', 'dong nai', 'bien hoa',
+    'binh duong', 'vung tau', 'ba ria', 'binh phuoc', 'tay ninh', 'long an',
+    'tien giang', 'ben tre', 'tra vinh', 'vinh long', 'dong thap', 'an giang',
+    'kien giang', 'phu quoc', 'hau giang', 'soc trang', 'bac lieu', 'ca mau',
+    'u minh', 'can tho', 'mien nam',
+  ],
+};
+
+export function regionGroupOf(regionText: string | undefined | null): 'bac' | 'trung' | 'tay_nguyen' | 'nam' | null {
+  if (!regionText) return null;
+  const n = _normVN(regionText);
+  for (const [group, keywords] of Object.entries(_REGION_GROUP_KEYWORDS) as [
+    'bac' | 'trung' | 'tay_nguyen' | 'nam',
+    string[]
+  ][]) {
+    for (const kw of keywords) {
+      if (n.includes(kw)) return group;
+    }
+  }
+  return null;
+}
+
+const M = (over: Partial<ProductDetail>): ProductDetail => {
+  const merged: ProductDetail = {
+    id: over.slug!, slug: over.slug!, name: '', art: '', tone: 'paper', price: 0,
+    rating: 4.7, sold: '500', region: '', category: '', verified: false,
+    brand: '—', origin: '—', weight: '—', certifications: '—', distributor: '—',
+    description: '', thumbs: ['Mặt trước', 'Đóng gói', 'Cận cảnh', 'Vùng nguyên liệu'],
+    ...over,
+  };
+  // Auto-derive regionGroup from `region` (địa danh) if caller didn't set it.
+  if (merged.regionGroup == null && merged.region) {
+    merged.regionGroup = regionGroupOf(merged.region);
+  }
+  return merged;
+};
 
 export const PRODUCTS: ProductDetail[] = [
   // Gạo & Lương thực
