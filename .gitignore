@@ -25,3 +25,7 @@ yarn-debug.log*
 # OS
 .DS_Store
 Thumbs.db
+
+# Runtime user-uploaded files (avatars, signatures…) — re-importable from
+# source folders (photos/) via the seed scripts in backend/scripts/.
+backend/uploads/
