@@ -20,7 +20,17 @@ interface Batch {
   mfgDate: string | null;
   expDate: string | null;
   status: string;
-  variant: { id: number; sku: string; name: string; product: { name: string; category: string } };
+  variant: {
+    id: number;
+    sku: string;
+    name: string;
+    product: {
+      name: string;
+      category: string;
+      region: string | null;
+      warehouse: { id: number; code: string; name: string } | null;
+    };
+  };
   supplier: { id: number; name: string } | null;
 }
 interface ProductLite { id: number; name: string; variants: { id: number; sku: string; name: string; basePrice: number }[] }
@@ -135,6 +145,7 @@ export default function AdminInventoryPage() {
                 <TableRow>
                   <TableHead>Batch</TableHead>
                   <TableHead>Sản phẩm / Variant (SKU)</TableHead>
+                  <TableHead>Kho</TableHead>
                   <TableHead>Tồn / Nhập</TableHead>
                   <TableHead>Cost</TableHead>
                   <TableHead>Hạn SD</TableHead>
@@ -151,6 +162,14 @@ export default function AdminInventoryPage() {
                       <TableCell>
                         <div className="font-medium">{b.variant.product.name}</div>
                         <div className="text-xs text-muted-foreground">{b.variant.name} · <code>{b.variant.sku}</code></div>
+                      </TableCell>
+                      <TableCell className="text-xs">
+                        {b.variant.product.warehouse ? (
+                          <>
+                            <div className="font-medium">{b.variant.product.warehouse.code}</div>
+                            <div className="text-muted-foreground">{b.variant.product.warehouse.name}</div>
+                          </>
+                        ) : <span className="text-muted-foreground">—</span>}
                       </TableCell>
                       <TableCell>
                         <span className={b.qtyAvailable < b.qtyReceived * 0.2 ? 'text-orange-600 font-semibold' : ''}>

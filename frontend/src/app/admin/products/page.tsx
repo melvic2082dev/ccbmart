@@ -11,6 +11,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Plus, Package, Pencil, ListPlus } from 'lucide-react';
 
+interface SupplierLink {
+  id: number;
+  supplierId: number;
+  isPreferred: boolean;
+  costPerUnit: number;
+  supplier: { id: number; name: string; type: string };
+}
 interface Variant {
   id: number;
   sku: string;
@@ -18,6 +25,7 @@ interface Variant {
   basePrice: number;
   status: string;
   unit: string;
+  supplierProducts?: SupplierLink[];
 }
 interface Warehouse { id: number; code: string; name: string; address: string }
 interface Product {
@@ -185,6 +193,7 @@ export default function AdminProductsPage() {
                   <TableHead>Giá</TableHead>
                   <TableHead>ĐV</TableHead>
                   <TableHead>Variants</TableHead>
+                  <TableHead>Nhà cung cấp</TableHead>
                   <TableHead>TT</TableHead>
                   <TableHead className="text-center">Thao tác</TableHead>
                 </TableRow>
@@ -216,6 +225,24 @@ export default function AdminProductsPage() {
                           ))}
                         </div>
                       ) : <span className="text-muted-foreground text-xs">—</span>}
+                    </TableCell>
+                    <TableCell className="text-xs">
+                      {(() => {
+                        // Gom supplier từ tất cả variants, ưu tiên isPreferred
+                        const sps = (p.variants || []).flatMap((v) => v.supplierProducts || []);
+                        if (sps.length === 0) return <span className="text-muted-foreground">—</span>;
+                        const preferred = sps.find((sp) => sp.isPreferred) || sps[0];
+                        const more = new Set(sps.map((sp) => sp.supplier.id)).size - 1;
+                        return (
+                          <div>
+                            <div className="font-medium">{preferred.supplier.name}</div>
+                            <div className="text-muted-foreground">
+                              {preferred.isPreferred ? '★ Ưu tiên' : ''} · {formatVND(Number(preferred.costPerUnit))}/đv
+                              {more > 0 && <span> · +{more} NCC khác</span>}
+                            </div>
+                          </div>
+                        );
+                      })()}
                     </TableCell>
                     <TableCell><Badge variant={p.status === 'ACTIVE' ? 'default' : 'secondary'}>{p.status}</Badge></TableCell>
                     <TableCell className="text-center">

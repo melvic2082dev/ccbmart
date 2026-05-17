@@ -38,7 +38,15 @@ router.get('/products', async (req, res) => {
     prisma.product.findMany({
       where,
       include: {
-        variants: { orderBy: { sortOrder: 'asc' } },
+        variants: {
+          orderBy: { sortOrder: 'asc' },
+          include: {
+            supplierProducts: {
+              include: { supplier: { select: { id: true, name: true, type: true } } },
+              orderBy: [{ isPreferred: 'desc' }, { validFrom: 'desc' }],
+            },
+          },
+        },
         warehouse: { select: { id: true, code: true, name: true, address: true } },
       },
       orderBy: { id: 'desc' },
@@ -163,7 +171,17 @@ router.get('/inventory', async (req, res) => {
   if (agencyId) where.agencyId = parseInt(agencyId, 10);
   const items = await prisma.inventoryBatch.findMany({
     where,
-    include: { variant: { include: { product: true } }, supplier: true, agency: true },
+    include: {
+      variant: {
+        include: {
+          product: {
+            include: { warehouse: { select: { id: true, code: true, name: true } } },
+          },
+        },
+      },
+      supplier: { select: { id: true, name: true } },
+      agency: true,
+    },
     orderBy: [{ expDate: 'asc' }, { receivedAt: 'desc' }],
     take: 500,
   });

@@ -141,7 +141,16 @@ async function expiringBatches(daysAhead = 30) {
       expDate: { lte: cutoff, not: null },
     },
     orderBy: { expDate: 'asc' },
-    include: { variant: { include: { product: true } } },
+    include: {
+      variant: {
+        include: {
+          product: {
+            include: { warehouse: { select: { id: true, code: true, name: true } } },
+          },
+        },
+      },
+      supplier: { select: { id: true, name: true } },
+    },
   });
 }
 
