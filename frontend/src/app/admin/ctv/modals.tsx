@@ -32,6 +32,9 @@ export interface CtvRow {
   // v3.4: per-user "lương cứng" toggle
   fixedSalaryEnabled?: boolean;
   fixedSalaryStartDate?: string | null;
+  // v3.4: HR profile
+  bio?: string | null;
+  birthYear?: number | null;
   // Multi-role: CTV kiêm Member
   isMember?: boolean;
   memberWallet?: {
@@ -539,14 +542,15 @@ export function CreateCtvModal({
   onSuccess: () => void;
 }) {
   const [form, setForm] = useState({
-    name: '', email: '', phone: '', rank: 'CTV', parentId: '', password: 'ctv123',
+    name: '', email: '', phone: '', rank: 'CTV', parentId: '', password: 'sales1234',
+    bio: '', birthYear: '',
   });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (open) {
-      setForm({ name: '', email: '', phone: '', rank: 'CTV', parentId: '', password: 'ctv123' });
+      setForm({ name: '', email: '', phone: '', rank: 'CTV', parentId: '', password: 'sales1234', bio: '', birthYear: '' });
       setError(null);
     }
   }, [open]);
@@ -556,6 +560,7 @@ export function CreateCtvModal({
       setError('Họ tên và email là bắt buộc');
       return;
     }
+    if (form.password.length < 8) { setError('Mật khẩu phải ≥ 8 ký tự'); return; }
     setSubmitting(true);
     setError(null);
     try {
@@ -566,6 +571,8 @@ export function CreateCtvModal({
         rank: form.rank,
         parentId: form.parentId ? Number(form.parentId) : null,
         password: form.password,
+        bio: form.bio.trim() || undefined,
+        birthYear: form.birthYear ? Number(form.birthYear) : undefined,
       });
       onSuccess();
       onOpenChange(false);
@@ -636,11 +643,127 @@ export function CreateCtvModal({
               ))}
             </select>
           </div>
+          <div className="grid grid-cols-3 gap-2">
+            <div className="col-span-2">
+              <Label htmlFor="c-bio">Mô tả / Kinh nghiệm</Label>
+              <textarea
+                id="c-bio"
+                rows={2}
+                value={form.bio}
+                onChange={(e) => setForm({ ...form, bio: e.target.value })}
+                placeholder="Ví dụ: kinh nghiệm sales bảo hiểm 6 năm"
+                className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              />
+            </div>
+            <div>
+              <Label htmlFor="c-year">Năm sinh</Label>
+              <Input id="c-year" type="number" min={1900} max={new Date().getFullYear()}
+                value={form.birthYear} onChange={(e) => setForm({ ...form, birthYear: e.target.value })}
+                placeholder="1988"
+              />
+            </div>
+          </div>
           {error && <p className="text-sm text-red-600">{error}</p>}
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={submitting}>Huỷ</Button>
           <Button onClick={submit} disabled={submitting}>{submitting ? 'Đang tạo…' : 'Tạo CTV'}</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ============================================================
+// Modal: Edit CTV profile (name, phone, bio, birthYear)
+// ============================================================
+export function EditCtvProfileModal({
+  open, onOpenChange, ctv, onSuccess,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  ctv: CtvRow | null;
+  onSuccess: () => void;
+}) {
+  const [form, setForm] = useState({ name: '', phone: '', bio: '', birthYear: '' });
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (ctv) {
+      setForm({
+        name: ctv.name || '',
+        phone: ctv.phone || '',
+        bio: ctv.bio || '',
+        birthYear: ctv.birthYear ? String(ctv.birthYear) : '',
+      });
+      setError(null);
+    }
+  }, [ctv]);
+
+  if (!ctv) return null;
+
+  const submit = async () => {
+    if (!form.name.trim()) { setError('Họ tên không được để trống'); return; }
+    setSubmitting(true);
+    setError(null);
+    try {
+      await api.adminCtvUpdateProfile(ctv.id, {
+        name: form.name.trim(),
+        phone: form.phone.trim() || undefined,
+        bio: form.bio.trim() || null,
+        birthYear: form.birthYear ? Number(form.birthYear) : null,
+      });
+      onSuccess();
+      onOpenChange(false);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Lỗi không xác định');
+    } finally { setSubmitting(false); }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Sửa thông tin nhân sự</DialogTitle>
+          <DialogDescription>
+            {ctv.email} · Rank: <b>{RANK_LABEL[ctv.rank] ?? ctv.rank}</b>
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-3">
+          <div>
+            <Label htmlFor="e-name">Họ tên *</Label>
+            <Input id="e-name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+          </div>
+          <div className="grid grid-cols-3 gap-2">
+            <div className="col-span-2">
+              <Label htmlFor="e-phone">SĐT</Label>
+              <Input id="e-phone" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+            </div>
+            <div>
+              <Label htmlFor="e-year">Năm sinh</Label>
+              <Input id="e-year" type="number" min={1900} max={new Date().getFullYear()}
+                value={form.birthYear} onChange={(e) => setForm({ ...form, birthYear: e.target.value })}
+                placeholder="1988"
+              />
+            </div>
+          </div>
+          <div>
+            <Label htmlFor="e-bio">Mô tả / Kinh nghiệm</Label>
+            <textarea
+              id="e-bio"
+              rows={3}
+              value={form.bio}
+              onChange={(e) => setForm({ ...form, bio: e.target.value })}
+              placeholder="Ví dụ: kinh nghiệm sales bảo hiểm 6 năm"
+              className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+            />
+          </div>
+          {error && <p className="text-sm text-red-600">{error}</p>}
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={submitting}>Huỷ</Button>
+          <Button onClick={submit} disabled={submitting}>{submitting ? 'Đang lưu…' : 'Cập nhật'}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

@@ -135,6 +135,8 @@ export const api = {
     fetchAPI(`/admin/ctv/${id}/toggle-active`, { method: 'POST', body: JSON.stringify({ isActive, reason }) }),
   adminCtvCreate: (data: Record<string, unknown>) =>
     fetchAPI('/admin/ctv', { method: 'POST', body: JSON.stringify(data) }),
+  adminCtvUpdateProfile: (id: number, data: { name?: string; phone?: string; bio?: string | null; birthYear?: number | null }) =>
+    fetchAPI(`/admin/ctv/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   adminCtvExportUrl: () => `${API_BASE}/admin/ctv/export`,
   adminAgencies: () => fetchAPI('/admin/agencies'),
   adminAgencyDetails: (id: number) => fetchAPI(`/admin/agencies/${id}/details`),

@@ -63,7 +63,7 @@ router.post('/ctv/:id/toggle-active', asyncHandler(async (req, res) => {
 
 // POST /ctv — create new CTV (#4)
 router.post('/ctv', validate(schemas.createCtv), asyncHandler(async (req, res) => {
-  const { name, email, phone, password, parentId, rank } = req.body;
+  const { name, email, phone, password, parentId, rank, bio, birthYear } = req.body;
   if (!name || !email || !password) throw new AppError('name, email, password are required', 400, 'MISSING_FIELDS');
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) throw new AppError('Email da ton tai', 409, 'EMAIL_EXISTS');
@@ -76,11 +76,32 @@ router.post('/ctv', validate(schemas.createCtv), asyncHandler(async (req, res) =
       rank: rank || 'CTV',
       parentId: parentId || null,
       isActive: true,
+      bio: bio || null,
+      birthYear: birthYear || null,
     },
-    select: { id: true, name: true, email: true, phone: true, rank: true, isActive: true, createdAt: true },
+    select: { id: true, name: true, email: true, phone: true, rank: true, isActive: true, createdAt: true, bio: true, birthYear: true },
   });
   await invalidateCache('admin:ctv-list');
   res.status(201).json(ctv);
+}));
+
+// PUT /ctv/:id — update CTV basic fields (bio, name, phone, birthYear)
+router.put('/ctv/:id', validate(schemas.updateCtv), asyncHandler(async (req, res) => {
+  const ctvId = parseInt(req.params.id, 10);
+  const ctv = await prisma.user.findUnique({ where: { id: ctvId } });
+  if (!ctv) throw new AppError('CTV not found', 404, 'CTV_NOT_FOUND');
+  const data = {};
+  if (req.body.name !== undefined) data.name = req.body.name;
+  if (req.body.phone !== undefined) data.phone = req.body.phone || null;
+  if (req.body.bio !== undefined) data.bio = req.body.bio || null;
+  if (req.body.birthYear !== undefined) data.birthYear = req.body.birthYear || null;
+  const updated = await prisma.user.update({
+    where: { id: ctvId },
+    data,
+    select: { id: true, name: true, email: true, phone: true, rank: true, bio: true, birthYear: true },
+  });
+  await invalidateCache('admin:ctv-list');
+  res.json({ success: true, user: updated });
 }));
 
 // GET /ctvs — list all CTVs (#existing)
@@ -112,6 +133,8 @@ router.get('/ctvs', asyncHandler(async (req, res) => {
       // v3.4
       fixedSalaryEnabled: ctv.fixedSalaryEnabled !== false,
       fixedSalaryStartDate: ctv.fixedSalaryStartDate || null,
+      bio: ctv.bio || null,
+      birthYear: ctv.birthYear || null,
     }));
   });
 

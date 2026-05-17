@@ -92,6 +92,10 @@ model User {
   fixedSalaryEnabled   Boolean   @default(true) @map("fixed_salary_enabled")
   fixedSalaryStartDate DateTime? @map("fixed_salary_start_date")
 
+  // v3.4: HR profile — short bio (experience etc.) + birth year.
+  bio       String? @db.Text
+  birthYear Int?    @map("birth_year")
+
   @@index([parentId])
   @@index([rank])
   @@index([role])

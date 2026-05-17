@@ -11,11 +11,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
   ChevronRight, ChevronDown, Users, Search, Download, UserPlus,
-  Eye, ArrowUpDown, Shuffle, Power, Bell, GraduationCap, Wallet,
+  Eye, ArrowUpDown, Shuffle, Power, Bell, GraduationCap, Wallet, UserCog,
 } from 'lucide-react';
 import {
   RankChangeModal, ReassignModal, ToggleActiveModal, CreateCtvModal, CtvDetailsModal,
-  BulkNotificationModal, SalaryConfigModal, type CtvRow,
+  BulkNotificationModal, SalaryConfigModal, EditCtvProfileModal, type CtvRow,
 } from './modals';
 
 interface CtvTreeNode {
@@ -158,6 +158,7 @@ export default function AdminCtvPage() {
   const [openReassign, setOpenReassign] = useState(false);
   const [openToggle, setOpenToggle] = useState(false);
   const [openSalary, setOpenSalary] = useState(false);
+  const [openEdit, setOpenEdit] = useState(false);
   const [openDetails, setOpenDetails] = useState(false);
   const [openCreate, setOpenCreate] = useState(false);
   const [openBulkNotify, setOpenBulkNotify] = useState(false);
@@ -235,13 +236,17 @@ export default function AdminCtvPage() {
   // Reset page when filters change
   useEffect(() => { setPage(1); }, [search, rankFilter, managerFilter, statusFilter]);
 
-  const openActionFor = (ctv: CtvRow, action: 'details' | 'rank' | 'reassign' | 'toggle' | 'salary') => {
+  const openActionFor = (
+    ctv: CtvRow,
+    action: 'details' | 'rank' | 'reassign' | 'toggle' | 'salary' | 'edit',
+  ) => {
     setSelectedCtv(ctv);
     if (action === 'details') setOpenDetails(true);
     if (action === 'rank') setOpenRank(true);
     if (action === 'reassign') setOpenReassign(true);
     if (action === 'toggle') setOpenToggle(true);
     if (action === 'salary') setOpenSalary(true);
+    if (action === 'edit') setOpenEdit(true);
   };
 
   // Tree right-click handler
@@ -486,6 +491,13 @@ export default function AdminCtvPage() {
                                 <Button variant="ghost" size="icon-sm" title="Xem chi tiết" onClick={() => openActionFor(ctv, 'details')}>
                                   <Eye className="w-4 h-4 text-blue-600" />
                                 </Button>
+                                <Button
+                                  variant="ghost" size="icon-sm"
+                                  title={ctv.bio ? `Sửa hồ sơ — ${ctv.bio.slice(0, 60)}` : 'Sửa hồ sơ (mô tả, năm sinh, SĐT)'}
+                                  onClick={() => openActionFor(ctv, 'edit')}
+                                >
+                                  <UserCog className="w-4 h-4 text-cyan-600" />
+                                </Button>
                                 <Button variant="ghost" size="icon-sm" title="Đổi rank" onClick={() => openActionFor(ctv, 'rank')}>
                                   <ArrowUpDown className="w-4 h-4 text-emerald-600" />
                                 </Button>
@@ -697,6 +709,10 @@ export default function AdminCtvPage() {
       />
       <SalaryConfigModal
         open={openSalary} onOpenChange={setOpenSalary}
+        ctv={selectedCtv} onSuccess={onActionSuccess}
+      />
+      <EditCtvProfileModal
+        open={openEdit} onOpenChange={setOpenEdit}
         ctv={selectedCtv} onSuccess={onActionSuccess}
       />
       <CreateCtvModal

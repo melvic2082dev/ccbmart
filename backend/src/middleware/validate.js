@@ -100,6 +100,16 @@ const schemas = {
     phone: Joi.string().min(9).max(15).required(),
     parentId: Joi.number().integer().allow(null).optional(),
     rank: Joi.string().valid('CTV', 'PP', 'TP', 'GDV', 'GDKD').default('CTV').optional(),
+    // v3.4 HR profile
+    bio: Joi.string().max(1000).allow('', null).optional(),
+    birthYear: Joi.number().integer().min(1900).max(new Date().getFullYear()).allow(null).optional(),
+  }),
+
+  updateCtv: Joi.object({
+    name: Joi.string().min(2).max(100).optional(),
+    phone: Joi.string().min(9).max(15).optional(),
+    bio: Joi.string().max(1000).allow('', null).optional(),
+    birthYear: Joi.number().integer().min(1900).max(new Date().getFullYear()).allow(null).optional(),
   }),
 
   memberDeposit: Joi.object({
