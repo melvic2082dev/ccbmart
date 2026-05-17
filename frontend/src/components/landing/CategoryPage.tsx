@@ -119,6 +119,22 @@ export function CategoryPage({ category, products }: { category: Category; produ
             <h3 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 18, margin: '0 0 12px' }}>Lọc sản phẩm</h3>
             <div style={{ background: '#fff', border: '1px solid var(--line)', borderRadius: 8, padding: 16 }}>
               <div style={{ fontWeight: 700, fontSize: 18, marginBottom: 8 }}>Vùng miền</div>
+              {/* "Tất cả" — checked when no specific region is selected; click resets all */}
+              <label
+                style={{
+                  display: 'block', fontSize: 18, padding: '4px 0',
+                  cursor: products.length === 0 ? 'not-allowed' : 'pointer',
+                  color: products.length === 0 ? 'var(--ink-4)' : 'var(--ink-2)',
+                }}
+              >
+                <input
+                  type="checkbox"
+                  checked={selectedRegions.length === 0}
+                  disabled={products.length === 0}
+                  onChange={() => { setSelectedRegions([]); setPage(1); }}
+                />{' '}
+                Tất cả <span style={{ color: 'var(--ink-4)' }}>({products.length})</span>
+              </label>
               {REGION_OPTIONS.map(({ value, label }) => {
                 const count = regionCounts[value];
                 const disabled = count === 0 && !selectedRegions.includes(value);
