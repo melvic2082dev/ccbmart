@@ -8,7 +8,7 @@ import {
   PlusCircle, Banknote, ClipboardCheck, Wallet, Award, CreditCard,
   ChevronLeft, ChevronRight, Sun, Moon, Menu, X, FileSpreadsheet,
   GraduationCap, BookOpen, ShieldCheck, Calculator, FileBarChart, Receipt,
-  Coins, Network, UserCog, Layout
+  Coins, Network, UserCog, Layout, Truck, PhoneCall, TrendingUp
 } from 'lucide-react';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { api } from '@/lib/api';
@@ -54,6 +54,15 @@ const adminGroups: NavGroup[] = [
     ],
   },
   {
+    title: 'Hàng hoá & CRM',
+    items: [
+      { label: 'Hàng hoá',     href: '/admin/products',   icon: <Package size={20} />,    accent: 'lime'  },
+      { label: 'Tồn kho',      href: '/admin/inventory',  icon: <Warehouse size={20} />,  accent: 'amber' },
+      { label: 'Nhà cung cấp', href: '/admin/suppliers',  icon: <Truck size={20} />,      accent: 'sky'   },
+      { label: 'Leads',        href: '/admin/leads',      icon: <PhoneCall size={20} />,  accent: 'rose'  },
+    ],
+  },
+  {
     title: 'Nhân sự & đối tác',
     items: [
       { label: 'CTV',      href: '/admin/ctv',                icon: <Users size={20} />,    accent: 'sky'    },
@@ -94,8 +103,9 @@ const adminGroups: NavGroup[] = [
       { label: 'Import',       href: '/admin/import',        icon: <FileSpreadsheet size={20} />,  accent: 'lime'    },
       { label: 'Cấu hình',     href: '/admin/config',        icon: <Settings size={20} />,         accent: 'violet'  },
       { label: 'Trang chủ CMS', href: '/admin/landing-cms',  icon: <Layout size={20} />,           accent: 'green'   },
-      { label: 'Báo cáo',      href: '/admin/reports',       icon: <FileText size={20} />,         accent: 'rose'    },
-      { label: 'Thông báo',    href: '/admin/notifications', icon: <Bell size={20} />, isNotificationLink: true, accent: 'orange' },
+      { label: 'Báo cáo',           href: '/admin/reports',            icon: <FileText size={20} />,    accent: 'rose'   },
+      { label: 'Báo cáo chuyển đổi', href: '/admin/reports/conversion', icon: <TrendingUp size={20} />,  accent: 'blue'   },
+      { label: 'Thông báo',         href: '/admin/notifications',      icon: <Bell size={20} />, isNotificationLink: true, accent: 'orange' },
     ],
   },
   {
@@ -120,6 +130,7 @@ const navByRole: Record<string, NavItem[]> = {
     { label: 'Giao dịch',      href: '/ctv/transactions',     icon: <ShoppingCart size={20} />,   accent: 'indigo'  },
     { label: 'Nộp tiền',       href: '/ctv/cash',             icon: <Banknote size={20} />,       accent: 'amber'   },
     { label: 'Khách hàng',     href: '/ctv/customers',        icon: <Users size={20} />,          accent: 'sky'     },
+    { label: 'Leads',          href: '/ctv/leads',            icon: <PhoneCall size={20} />,      accent: 'rose'    },
     { label: 'Sản phẩm',       href: '/ctv/products',         icon: <Package size={20} />,        accent: 'violet'  },
     { label: 'eKYC',           href: '/ctv/kyc',              icon: <ShieldCheck size={20} />,    accent: 'cyan'    },
     { label: 'Hóa đơn',        href: '/ctv/invoices',         icon: <Receipt size={20} />,        accent: 'teal'    },

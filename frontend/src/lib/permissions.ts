@@ -50,6 +50,11 @@ export function getRoleGroup(role: string): RoleGroup | null {
 export const MENU_ROLE_ACCESS: Record<string, AdminRole[]> = {
   '/admin/dashboard':            [OPS_ADMIN],
   '/admin/reconciliation':       [OPS_ADMIN],
+  '/admin/products':             [PARTNER_ADMIN, OPS_ADMIN],
+  '/admin/inventory':            [PARTNER_ADMIN, OPS_ADMIN],
+  '/admin/suppliers':            [PARTNER_ADMIN, OPS_ADMIN],
+  '/admin/leads':                [PARTNER_ADMIN, OPS_ADMIN],
+  '/admin/reports/conversion':   [OPS_ADMIN, FINANCE_ADMIN],
   '/admin/ctv':                  [PARTNER_ADMIN],
   '/admin/agencies':             [PARTNER_ADMIN],
   '/admin/business-household':   [PARTNER_ADMIN],
