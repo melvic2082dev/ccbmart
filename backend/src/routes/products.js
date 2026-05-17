@@ -14,15 +14,54 @@ const prisma = require('../lib/prisma');
 // All routes require admin
 router.use(authenticate, authorize('admin'));
 
-// ---------- WAREHOUSES (lookup) ----------
+// ---------- WAREHOUSES (CRUD) ----------
 
 router.get('/warehouses', async (req, res) => {
   const items = await prisma.warehouse.findMany({
     where: req.query.onlyActive === 'false' ? {} : { isActive: true },
     orderBy: { id: 'asc' },
-    select: { id: true, code: true, name: true, address: true, isActive: true },
+    include: { _count: { select: { products: true, transactions: true, staff: true } } },
   });
   res.json({ items, total: items.length });
+});
+
+router.post('/warehouses', async (req, res) => {
+  try {
+    const { code, name, address, isActive = true } = req.body || {};
+    if (!code || !name || !address) return res.status(400).json({ error: 'code, name, address are required' });
+    const wh = await prisma.warehouse.create({
+      data: { code: code.trim().toUpperCase(), name: name.trim(), address: address.trim(), isActive },
+    });
+    res.status(201).json(wh);
+  } catch (e) {
+    res.status(e.code === 'P2002' ? 409 : 400).json({ error: e.code === 'P2002' ? 'Code đã tồn tại' : e.message });
+  }
+});
+
+router.put('/warehouses/:id', async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    const data = {};
+    if (req.body.code !== undefined) data.code = String(req.body.code).trim().toUpperCase();
+    if (req.body.name !== undefined) data.name = String(req.body.name).trim();
+    if (req.body.address !== undefined) data.address = String(req.body.address).trim();
+    if (req.body.isActive !== undefined) data.isActive = !!req.body.isActive;
+    const wh = await prisma.warehouse.update({ where: { id }, data });
+    res.json(wh);
+  } catch (e) {
+    res.status(e.code === 'P2002' ? 409 : 400).json({ error: e.code === 'P2002' ? 'Code đã tồn tại' : e.message });
+  }
+});
+
+router.delete('/warehouses/:id', async (req, res) => {
+  // Soft delete: set isActive=false (keeps history intact)
+  try {
+    const id = parseInt(req.params.id, 10);
+    const wh = await prisma.warehouse.update({ where: { id }, data: { isActive: false } });
+    res.json({ ok: true, warehouse: wh });
+  } catch (e) {
+    res.status(400).json({ error: e.message });
+  }
 });
 
 // ---------- PRODUCTS ----------

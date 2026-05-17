@@ -57,10 +57,11 @@ const adminGroups: NavGroup[] = [
   {
     title: 'Hàng hoá & CRM',
     items: [
-      { label: 'Hàng hoá',     href: '/admin/products',   icon: <Package size={20} />,    accent: 'lime'  },
-      { label: 'Tồn kho',      href: '/admin/inventory',  icon: <Warehouse size={20} />,  accent: 'amber' },
-      { label: 'Nhà cung cấp', href: '/admin/suppliers',  icon: <Truck size={20} />,      accent: 'sky'   },
-      { label: 'Leads',        href: '/admin/leads',      icon: <PhoneCall size={20} />,  accent: 'rose'  },
+      { label: 'Hàng hoá',     href: '/admin/products',   icon: <Package size={20} />,    accent: 'lime'    },
+      { label: 'Tồn kho',      href: '/admin/inventory',  icon: <Warehouse size={20} />,  accent: 'amber'   },
+      { label: 'Kho',          href: '/admin/warehouses', icon: <Warehouse size={20} />,  accent: 'teal'    },
+      { label: 'Nhà cung cấp', href: '/admin/suppliers',  icon: <Truck size={20} />,      accent: 'sky'     },
+      { label: 'Leads',        href: '/admin/leads',      icon: <PhoneCall size={20} />,  accent: 'rose'    },
     ],
   },
   {

@@ -53,6 +53,7 @@ export const MENU_ROLE_ACCESS: Record<string, AdminRole[]> = {
   '/admin/reconciliation':       [OPS_ADMIN],
   '/admin/products':             [PARTNER_ADMIN, OPS_ADMIN],
   '/admin/inventory':            [PARTNER_ADMIN, OPS_ADMIN],
+  '/admin/warehouses':           [OPS_ADMIN],
   '/admin/suppliers':            [PARTNER_ADMIN, OPS_ADMIN],
   '/admin/leads':                [PARTNER_ADMIN, OPS_ADMIN],
   '/admin/reports/conversion':   [OPS_ADMIN, FINANCE_ADMIN],
