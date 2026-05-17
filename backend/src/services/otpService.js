@@ -74,8 +74,130 @@ async function verifyOTP(trainingLogId, submittedCode) {
   });
 }
 
+// ============================================================
+// v3.3: Delivery OTP for Transactions
+// ============================================================
+
+const crypto = require('crypto');
+const logger = require('./logger');
+
+const DELIVERY_OTP_TTL_MINUTES = 10;
+const DELIVERY_OTP_MAX_FAIL = 5;
+const DELIVERY_OTP_BLOCK_MINUTES = 30;
+const OTP_SALT = process.env.OTP_SALT || 'ccbmart-dev-salt-please-rotate';
+
+function hashOTP(code) {
+  return crypto.createHash('sha256').update(OTP_SALT + ':' + code).digest('hex');
+}
+
+/**
+ * Generate a 6-digit delivery OTP for a transaction, store its hash, and
+ * (in production) send via SMS/Zalo to the customer phone. In dev we log
+ * the plaintext code so the developer can test the flow.
+ */
+async function generateDeliveryOTP(transactionId) {
+  const tx = await prisma.transaction.findUnique({
+    where: { id: transactionId },
+    include: { customer: { select: { phone: true, name: true } } },
+  });
+  if (!tx) throw new Error('Transaction not found');
+  if (tx.status !== 'DELIVERING') {
+    throw new Error(`Cannot send OTP — transaction status is ${tx.status}, expected DELIVERING`);
+  }
+
+  if (tx.deliveryOtpBlockedUntil && new Date() < tx.deliveryOtpBlockedUntil) {
+    throw new Error('OTP bị khóa do nhập sai quá nhiều lần. Vui lòng thử lại sau.');
+  }
+
+  const code = String(Math.floor(100000 + Math.random() * 900000));
+  const hash = hashOTP(code);
+
+  await prisma.transaction.update({
+    where: { id: transactionId },
+    data: {
+      deliveryOtpHash: hash,
+      deliveryOtpSentAt: new Date(),
+      deliveryOtpAttempts: 0,
+    },
+  });
+
+  // TODO: integrate SMS/Zalo provider (eSMS, Speedsms, Zalo Notification Service).
+  // For now: log to console in dev so the developer/tester can read the code.
+  if (process.env.NODE_ENV !== 'production') {
+    logger.info(
+      `[delivery-otp] tx=${transactionId} customer=${tx.customer?.phone || '?'} code=${code} (expires in ${DELIVERY_OTP_TTL_MINUTES}m)`
+    );
+  }
+
+  return {
+    transactionId,
+    sentTo: tx.customer?.phone || null,
+    expiresAt: new Date(Date.now() + DELIVERY_OTP_TTL_MINUTES * 60 * 1000),
+    // Expose code in dev only (for automated tests / Postman); never in prod.
+    devCode: process.env.NODE_ENV !== 'production' ? code : undefined,
+  };
+}
+
+/**
+ * Verify the delivery OTP submitted by the CTV (entered by the customer
+ * verbally or via SMS). Caller is responsible for promoting the transaction
+ * to DELIVERED on success (typically via orderFlow.applyTransition).
+ */
+async function verifyDeliveryOTP(transactionId, submittedCode) {
+  const tx = await prisma.transaction.findUnique({ where: { id: transactionId } });
+  if (!tx) throw new Error('Transaction not found');
+  if (!tx.deliveryOtpHash) throw new Error('Chưa gửi OTP cho đơn này');
+
+  if (tx.deliveryOtpBlockedUntil && new Date() < tx.deliveryOtpBlockedUntil) {
+    throw new Error('OTP bị khóa do nhập sai quá nhiều lần. Vui lòng thử lại sau.');
+  }
+
+  if (tx.deliveryOtpSentAt) {
+    const expiresAt = new Date(tx.deliveryOtpSentAt.getTime() + DELIVERY_OTP_TTL_MINUTES * 60 * 1000);
+    if (new Date() > expiresAt) {
+      throw new Error('OTP đã hết hạn — vui lòng gửi lại');
+    }
+  }
+
+  const submittedHash = hashOTP(String(submittedCode).trim());
+  if (submittedHash !== tx.deliveryOtpHash) {
+    const newAttempts = (tx.deliveryOtpAttempts || 0) + 1;
+    const blocked = newAttempts >= DELIVERY_OTP_MAX_FAIL;
+    await prisma.transaction.update({
+      where: { id: transactionId },
+      data: {
+        deliveryOtpAttempts: newAttempts,
+        ...(blocked
+          ? { deliveryOtpBlockedUntil: new Date(Date.now() + DELIVERY_OTP_BLOCK_MINUTES * 60 * 1000) }
+          : {}),
+      },
+    });
+    throw new Error(
+      blocked
+        ? `OTP bị khóa ${DELIVERY_OTP_BLOCK_MINUTES} phút do nhập sai quá nhiều lần`
+        : `OTP không chính xác (${DELIVERY_OTP_MAX_FAIL - newAttempts} lần thử còn lại)`
+    );
+  }
+
+  // Success — mark verified. Caller will apply DELIVERING → DELIVERED transition.
+  await prisma.transaction.update({
+    where: { id: transactionId },
+    data: {
+      deliveryOtpVerifiedAt: new Date(),
+      deliveryOtpHash: null, // one-shot use
+    },
+  });
+
+  return { transactionId, verified: true };
+}
+
 module.exports = {
+  // legacy training OTP
   generateOTP,
   verifyOTP,
   OTP_TTL_MINUTES,
+  // v3.3 delivery OTP
+  generateDeliveryOTP,
+  verifyDeliveryOTP,
+  DELIVERY_OTP_TTL_MINUTES,
 };

@@ -22,7 +22,7 @@ const ADMIN_ROLES = [
   FINANCE_ADMIN,
 ];
 
-const SPECIAL_ROLES = ['ctv', 'agency', 'member'];
+const SPECIAL_ROLES = ['ctv', 'agency', 'member', 'warehouse_staff'];
 
 const ALL_ROLES = [...ADMIN_ROLES, ...SPECIAL_ROLES];
 
@@ -36,6 +36,7 @@ const ROLE_LABELS = {
   ctv: 'CTV',
   agency: 'Đại lý',
   member: 'Thành viên',
+  warehouse_staff: 'Thủ kho',
 };
 
 // Menu access matrix — mỗi menu ID liệt kê admin role nào được thấy.

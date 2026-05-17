@@ -17,7 +17,7 @@ export const ADMIN_ROLES = [
   FINANCE_ADMIN,
 ] as const;
 
-export const SPECIAL_ROLES = ['ctv', 'agency', 'member'] as const;
+export const SPECIAL_ROLES = ['ctv', 'agency', 'member', 'warehouse_staff'] as const;
 
 export type AdminRole = typeof ADMIN_ROLES[number];
 export type SpecialRole = typeof SPECIAL_ROLES[number];
@@ -34,6 +34,7 @@ export const ROLE_LABELS: Record<string, string> = {
   ctv: 'CTV',
   agency: 'Đại lý',
   member: 'Thành viên',
+  warehouse_staff: 'Thủ kho',
 };
 
 export function isAdminRole(role: string): role is AdminRole {

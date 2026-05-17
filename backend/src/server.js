@@ -121,6 +121,11 @@ app.use('/api/admin', productsRoutes);
 // v3.1: Lead / CRM (mixed CTV + admin)
 app.use('/api', leadsRoutes);
 
+// v3.3: Order flow — warehouse, CTV orders, payment webhook
+app.use('/api/warehouse', require('./routes/warehouse'));
+app.use('/api/ctv/orders', require('./routes/ctvOrders'));
+app.use('/api/payments', require('./routes/paymentsWebhook'));
+
 // V12.2: eKYC, invoices, tax, monthly report (routers define their own /admin/... /ctv/... paths)
 app.use('/api', kycRoutes);
 app.use('/api', invoiceRoutes);

@@ -81,10 +81,15 @@ model User {
   assignedLeads Lead[]         @relation("AssignedLeads")
   leadActivities LeadActivity[] @relation("CtvActivities")
 
+  // v3.3: warehouse assignment for warehouse_staff role
+  warehouseId Int?       @map("warehouse_id")
+  warehouse   Warehouse? @relation("WarehouseStaff", fields: [warehouseId], references: [id])
+
   @@index([parentId])
   @@index([rank])
   @@index([role])
   @@index([role, isActive])
+  @@index([warehouseId])
   @@map("users")
 }
 
@@ -181,7 +186,9 @@ model Warehouse {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @default(now()) @map("updated_at")
 
-  products  Product[]
+  products     Product[]
+  transactions Transaction[]
+  staff        User[]        @relation("WarehouseStaff")
 
   @@index([isActive])
   @@map("warehouses")
@@ -295,7 +302,13 @@ model Transaction {
   channel         String // ctv, agency, showroom
   totalAmount     Decimal   @map("total_amount") @db.Decimal(15, 0)
   cogsAmount      Decimal   @map("cogs_amount") @db.Decimal(15, 0)
-  status          String    @default("CONFIRMED") // PENDING, CONFIRMED, REJECTED
+  // Status — extended in v3.3. See docs/specs/04_OPERATIONAL_FLOW_V3_3.md §3.
+  // Legacy: PENDING, CONFIRMED, REJECTED (still supported for backward compat)
+  // v3.3:   DRAFT → INVENTORY_PENDING → AWAITING_PAYMENT → PAID → PACKING
+  //         → AWAITING_PICKUP → PICKED_UP → DELIVERING → DELIVERED
+  //         (any pre-PAID step can branch to CANCELLED;
+  //          INVENTORY_PENDING can branch to INVENTORY_REJECTED)
+  status          String    @default("CONFIRMED")
   paymentMethod   String?   @map("payment_method") // bank_transfer, cash
   bankCode        String?   @map("bank_code") // last 4 digits
   qrCodeData      String?   @map("qr_code_data")
@@ -307,12 +320,37 @@ model Transaction {
   cashDepositId   Int?      @map("cash_deposit_id")
   createdAt       DateTime  @default(now()) @map("created_at")
 
-  customer     Customer?         @relation(fields: [customerId], references: [id])
-  ctv          User?             @relation("CtvTransactions", fields: [ctvId], references: [id])
-  agency       Agency?           @relation("AgencyTransactions", fields: [agencyId], references: [id])
+  // v3.3 order-flow timestamps
+  draftedAt                  DateTime? @map("drafted_at")
+  inventoryConfirmedAt       DateTime? @map("inventory_confirmed_at")
+  inventoryConfirmedBy       Int?      @map("inventory_confirmed_by")
+  inventoryRejectedReason    String?   @map("inventory_rejected_reason")
+  paidAt                     DateTime? @map("paid_at")
+  packingStartedAt           DateTime? @map("packing_started_at")
+  packedAt                   DateTime? @map("packed_at")
+  packedBy                   Int?      @map("packed_by")
+  warehouseId                Int?      @map("warehouse_id")
+  pickupCode                 String?   @unique @map("pickup_code")
+  pickedUpAt                 DateTime? @map("picked_up_at")
+  deliveryOtpHash            String?   @map("delivery_otp_hash")
+  deliveryOtpSentAt          DateTime? @map("delivery_otp_sent_at")
+  deliveryOtpVerifiedAt      DateTime? @map("delivery_otp_verified_at")
+  deliveryOtpAttempts        Int       @default(0) @map("delivery_otp_attempts")
+  deliveryOtpBlockedUntil    DateTime? @map("delivery_otp_blocked_until")
+  deliverySignatureUrl       String?   @map("delivery_signature_url")
+  deliveredAt                DateTime? @map("delivered_at")
+  cancelledAt                DateTime? @map("cancelled_at")
+  cancelledBy                Int?      @map("cancelled_by")
+  cancelledReason            String?   @map("cancelled_reason")
+
+  customer     Customer?              @relation(fields: [customerId], references: [id])
+  ctv          User?                  @relation("CtvTransactions", fields: [ctvId], references: [id])
+  agency       Agency?                @relation("AgencyTransactions", fields: [agencyId], references: [id])
+  warehouse    Warehouse?             @relation(fields: [warehouseId], references: [id])
   items        TransactionItem[]
   paymentProof PaymentProof?
-  cashDeposit  CashDeposit?      @relation(fields: [cashDepositId], references: [id])
+  cashDeposit  CashDeposit?           @relation(fields: [cashDepositId], references: [id])
+  statusLogs   TransactionStatusLog[]
 
   @@index([ctvId])
   @@index([agencyId])
@@ -323,7 +361,25 @@ model Transaction {
   @@index([ctvId, createdAt])
   @@index([agencyId, createdAt])
   @@index([channel, createdAt])
+  @@index([warehouseId])
   @@map("transactions")
+}
+
+model TransactionStatusLog {
+  id            Int      @id @default(autoincrement())
+  transactionId Int      @map("transaction_id")
+  fromStatus    String?  @map("from_status")
+  toStatus      String   @map("to_status")
+  actorId       Int?     @map("actor_id")
+  actorRole     String?  @map("actor_role")
+  note          String?
+  at            DateTime @default(now())
+
+  transaction Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+
+  @@index([transactionId])
+  @@index([at])
+  @@map("transaction_status_logs")
 }
 
 model TransactionItem {
