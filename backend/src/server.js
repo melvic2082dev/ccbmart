@@ -81,6 +81,14 @@ app.use(csrfMiddleware);
 
 // Block direct access to KYC directory — use authenticated API route instead
 app.use('/uploads/kyc', (req, res) => res.status(403).json({ error: 'Forbidden' }));
+
+// Allow cross-origin <img> / <object> embedding for the public upload bucket
+// (avatars, signatures). Helmet's default CORP=same-origin would otherwise
+// block the frontend (port 3000) from loading these from the backend (4000).
+app.use('/uploads', (_req, res, next) => {
+  res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+  next();
+});
 // Serve non-sensitive uploaded files (product images, etc.) publicly
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
