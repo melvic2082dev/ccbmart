@@ -14,6 +14,17 @@ const prisma = require('../lib/prisma');
 // All routes require admin
 router.use(authenticate, authorize('admin'));
 
+// ---------- WAREHOUSES (lookup) ----------
+
+router.get('/warehouses', async (req, res) => {
+  const items = await prisma.warehouse.findMany({
+    where: req.query.onlyActive === 'false' ? {} : { isActive: true },
+    orderBy: { id: 'asc' },
+    select: { id: true, code: true, name: true, address: true, isActive: true },
+  });
+  res.json({ items, total: items.length });
+});
+
 // ---------- PRODUCTS ----------
 
 router.get('/products', async (req, res) => {
@@ -50,14 +61,19 @@ router.get('/products/:id', async (req, res) => {
 
 router.post('/products', async (req, res) => {
   try {
-    const { name, slug, category, description, brand, origin, price, cogsPct, unit, status } = req.body;
+    const { name, slug, category, description, brand, origin, region, warehouseId, price, cogsPct, unit, status } = req.body;
     if (!name || !category || price == null || cogsPct == null || !unit) {
       return res.status(400).json({ error: 'Missing required fields' });
+    }
+    if (region && !['BAC', 'TRUNG', 'NAM'].includes(region)) {
+      return res.status(400).json({ error: "region must be 'BAC' | 'TRUNG' | 'NAM'" });
     }
     const product = await prisma.product.create({
       data: {
         name, slug: slug || null, category, description: description || null,
         brand: brand || null, origin: origin || null,
+        region: region || null,
+        warehouseId: warehouseId ? parseInt(warehouseId, 10) : null,
         price, cogsPct, unit, status: status || 'ACTIVE',
       },
     });
@@ -72,7 +88,13 @@ router.put('/products/:id', async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
     const data = { ...req.body };
-    delete data.id; delete data.variants; delete data.createdAt;
+    delete data.id; delete data.variants; delete data.createdAt; delete data.warehouse;
+    if (data.region && !['BAC', 'TRUNG', 'NAM'].includes(data.region)) {
+      return res.status(400).json({ error: "region must be 'BAC' | 'TRUNG' | 'NAM'" });
+    }
+    if (data.warehouseId !== undefined) {
+      data.warehouseId = data.warehouseId ? parseInt(data.warehouseId, 10) : null;
+    }
     const product = await prisma.product.update({ where: { id }, data });
     logAudit({ userId: req.user.id, action: 'PRODUCT_UPDATE', targetType: 'Product', targetId: id, status: 'SUCCESS' });
     res.json(product);

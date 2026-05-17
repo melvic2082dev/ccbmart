@@ -194,6 +194,64 @@ router.post('/ctv/leads/:id/convert', async (req, res) => {
 const adminRouter = express.Router();
 adminRouter.use(authenticate, authorize('admin'));
 
+// ----- Admin CRUD -----
+
+adminRouter.post('/leads', async (req, res) => {
+  try {
+    const { name, phone, source, stage = 'NEW', estimatedValue, assignedCtvId, notes, interestNote } = req.body || {};
+    if (!name || !phone || !assignedCtvId) {
+      return res.status(400).json({ error: 'name, phone, assignedCtvId are required' });
+    }
+    const lead = await prisma.lead.create({
+      data: {
+        name,
+        phone,
+        source: source || 'admin',
+        stage,
+        estimatedValue: estimatedValue ? Number(estimatedValue) : null,
+        assignedCtvId: parseInt(assignedCtvId, 10),
+        // Lead schema field is `interestNote`; accept legacy `notes` alias.
+        interestNote: interestNote || notes || null,
+      },
+    });
+    res.status(201).json(lead);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+adminRouter.put('/leads/:id', async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    const { name, phone, source, stage, estimatedValue, assignedCtvId, notes, interestNote } = req.body || {};
+    const data = {};
+    if (name !== undefined) data.name = name;
+    if (phone !== undefined) data.phone = phone;
+    if (source !== undefined) data.source = source;
+    if (stage !== undefined) data.stage = stage;
+    if (estimatedValue !== undefined) data.estimatedValue = estimatedValue === null || estimatedValue === '' ? null : Number(estimatedValue);
+    if (assignedCtvId !== undefined) data.assignedCtvId = parseInt(assignedCtvId, 10);
+    if (interestNote !== undefined) data.interestNote = interestNote;
+    else if (notes !== undefined) data.interestNote = notes;
+    // closedAt timestamping for terminal stages
+    if (stage === 'WON' || stage === 'LOST') data.closedAt = new Date();
+    const lead = await prisma.lead.update({ where: { id }, data });
+    res.json(lead);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+adminRouter.delete('/leads/:id', async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    await prisma.lead.delete({ where: { id } });
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 adminRouter.get('/leads', async (req, res) => {
   const { stage, source, ctvId, q, limit = 50, offset = 0 } = req.query;
   const where = {};

@@ -556,6 +556,15 @@ export const api = {
     const qs = new URLSearchParams(Object.entries(params).map(([k, v]) => [k, String(v)])).toString();
     return fetchAPI(`/admin/reports/conversion${qs ? '?' + qs : ''}`);
   },
+  // v3.3 CRUD additions
+  adminLeadCreate: (data: Record<string, unknown>) =>
+    fetchAPI('/admin/leads', { method: 'POST', body: JSON.stringify(data) }),
+  adminLeadUpdate: (id: number, data: Record<string, unknown>) =>
+    fetchAPI(`/admin/leads/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  adminLeadDelete: (id: number) =>
+    fetchAPI(`/admin/leads/${id}`, { method: 'DELETE' }),
+  adminWarehousesList: () => fetchAPI('/admin/warehouses'),
+  adminCtvsList: () => fetchAPI('/admin/ctvs'),
 
   // ============================================================
   // v3.3: Order flow — Warehouse + CTV orders
