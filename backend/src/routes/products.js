@@ -26,7 +26,10 @@ router.get('/products', async (req, res) => {
   const [items, total] = await Promise.all([
     prisma.product.findMany({
       where,
-      include: { variants: { orderBy: { sortOrder: 'asc' } } },
+      include: {
+        variants: { orderBy: { sortOrder: 'asc' } },
+        warehouse: { select: { id: true, code: true, name: true, address: true } },
+      },
       orderBy: { id: 'desc' },
       take: Math.min(parseInt(limit, 10) || 50, 200),
       skip: parseInt(offset, 10) || 0,

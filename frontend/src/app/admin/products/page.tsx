@@ -17,6 +17,13 @@ interface Variant {
   status: string;
 }
 
+interface Warehouse {
+  id: number;
+  code: string;
+  name: string;
+  address: string;
+}
+
 interface Product {
   id: number;
   name: string;
@@ -26,8 +33,17 @@ interface Product {
   price: number;
   unit: string;
   status: string;
+  region: 'BAC' | 'TRUNG' | 'NAM' | null;
+  warehouse: Warehouse | null;
   variants: Variant[];
 }
+
+const REGION_LABEL: Record<string, string> = { BAC: 'Bắc', TRUNG: 'Trung', NAM: 'Nam' };
+const REGION_VARIANT: Record<string, 'default' | 'secondary' | 'outline'> = {
+  BAC: 'default',
+  TRUNG: 'secondary',
+  NAM: 'outline',
+};
 
 export default function AdminProductsPage() {
   const [items, setItems] = useState<Product[]>([]);
@@ -70,6 +86,8 @@ export default function AdminProductsPage() {
                   <TableHead>ID</TableHead>
                   <TableHead>Tên</TableHead>
                   <TableHead>Danh mục</TableHead>
+                  <TableHead>Miền</TableHead>
+                  <TableHead>Kho</TableHead>
                   <TableHead>Giá base</TableHead>
                   <TableHead>Đơn vị</TableHead>
                   <TableHead>Variants</TableHead>
@@ -85,6 +103,23 @@ export default function AdminProductsPage() {
                       {p.slug && <div className="text-xs text-muted-foreground">/{p.slug}</div>}
                     </TableCell>
                     <TableCell><Badge variant="outline">{p.category}</Badge></TableCell>
+                    <TableCell>
+                      {p.region ? (
+                        <Badge variant={REGION_VARIANT[p.region]}>{REGION_LABEL[p.region]}</Badge>
+                      ) : (
+                        <span className="text-muted-foreground text-xs">—</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {p.warehouse ? (
+                        <div className="text-xs">
+                          <div className="font-medium">{p.warehouse.code}</div>
+                          <div className="text-muted-foreground">{p.warehouse.name}</div>
+                        </div>
+                      ) : (
+                        <span className="text-muted-foreground text-xs">—</span>
+                      )}
+                    </TableCell>
                     <TableCell>{formatVND(Number(p.price))}</TableCell>
                     <TableCell>{p.unit}</TableCell>
                     <TableCell>
