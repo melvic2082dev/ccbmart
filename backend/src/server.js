@@ -95,6 +95,10 @@ app.use('/api/', globalLimiter);
 
 // Routes
 app.use('/api/auth', authRoutes);
+// v3.3: Order-flow routes must mount BEFORE the catch-all ctvRoutes (which
+// has a router.use(authorize('ctv')) at the top that would 403 admin tokens
+// before ever reaching the more specific path here).
+app.use('/api/ctv/orders', require('./routes/ctvOrders'));
 app.use('/api/ctv', ctvRoutes);
 app.use('/api/ctv/transactions', ctvTransactionRoutes);
 app.use('/api/agency', agencyRoutes);
@@ -121,9 +125,8 @@ app.use('/api/admin', productsRoutes);
 // v3.1: Lead / CRM (mixed CTV + admin)
 app.use('/api', leadsRoutes);
 
-// v3.3: Order flow — warehouse, CTV orders, payment webhook
+// v3.3: Warehouse + payments (ctv/orders is mounted higher to win route priority)
 app.use('/api/warehouse', require('./routes/warehouse'));
-app.use('/api/ctv/orders', require('./routes/ctvOrders'));
 app.use('/api/payments', require('./routes/paymentsWebhook'));
 
 // V12.2: eKYC, invoices, tax, monthly report (routers define their own /admin/... /ctv/... paths)

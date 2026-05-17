@@ -29,7 +29,7 @@ router.get('/orders/pending-inventory', async (req, res) => {
   const items = await prisma.transaction.findMany({
     where: { status: Status.INVENTORY_PENDING, ...warehouseScopeWhere(req) },
     include: {
-      ctv: { select: { id: true, fullName: true, phone: true } },
+      ctv: { select: { id: true, name: true, phone: true } },
       customer: { select: { id: true, name: true, phone: true } },
       items: { include: { product: { select: { name: true, region: true } } } },
     },
@@ -43,7 +43,7 @@ router.get('/orders/awaiting-packing', async (req, res) => {
   const items = await prisma.transaction.findMany({
     where: { status: Status.PAID, ...warehouseScopeWhere(req) },
     include: {
-      ctv: { select: { id: true, fullName: true, phone: true } },
+      ctv: { select: { id: true, name: true, phone: true } },
       customer: { select: { id: true, name: true, phone: true } },
       items: { include: { product: { select: { name: true } } } },
     },
@@ -57,7 +57,7 @@ router.get('/orders/packing', async (req, res) => {
   const items = await prisma.transaction.findMany({
     where: { status: Status.PACKING, ...warehouseScopeWhere(req) },
     include: {
-      ctv: { select: { id: true, fullName: true } },
+      ctv: { select: { id: true, name: true } },
       items: { include: { product: { select: { name: true } } } },
     },
     orderBy: { packingStartedAt: 'asc' },
@@ -70,7 +70,7 @@ router.get('/orders/awaiting-pickup', async (req, res) => {
   const items = await prisma.transaction.findMany({
     where: { status: Status.AWAITING_PICKUP, ...warehouseScopeWhere(req) },
     include: {
-      ctv: { select: { id: true, fullName: true, phone: true } },
+      ctv: { select: { id: true, name: true, phone: true } },
       items: { include: { product: { select: { name: true } } } },
     },
     orderBy: { packedAt: 'asc' },

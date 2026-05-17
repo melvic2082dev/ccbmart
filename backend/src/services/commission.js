@@ -136,7 +136,11 @@ async function calculateCtvCommission(ctvId, month) {
   const revenueRows = await prisma.$queryRaw`
     SELECT "ctv_id" AS "ctvId", COALESCE(SUM("total_amount"), 0)::float8 AS revenue
     FROM "transactions"
-    WHERE channel = 'ctv' AND status = 'CONFIRMED'
+    WHERE channel = 'ctv'
+      AND (
+        status = 'CONFIRMED'
+        OR (status = 'DELIVERED' AND (delivery_otp_verified_at IS NOT NULL OR delivery_signature_url IS NOT NULL))
+      )
       AND "created_at" >= ${startDate} AND "created_at" < ${endDate}
       AND "ctv_id" IS NOT NULL
     GROUP BY "ctv_id"
@@ -238,7 +242,11 @@ async function calculateAllCtvCommissions(month) {
     prisma.$queryRaw`
       SELECT "ctv_id" AS "ctvId", COALESCE(SUM("total_amount"), 0)::float8 AS revenue
       FROM "transactions"
-      WHERE channel = 'ctv' AND status = 'CONFIRMED'
+      WHERE channel = 'ctv'
+        AND (
+          status = 'CONFIRMED'
+          OR (status = 'DELIVERED' AND (delivery_otp_verified_at IS NOT NULL OR delivery_signature_url IS NOT NULL))
+        )
         AND "created_at" >= ${startDate} AND "created_at" < ${endDate}
         AND "ctv_id" IS NOT NULL
       GROUP BY "ctv_id"

@@ -56,6 +56,11 @@ export const MENU_ROLE_ACCESS: Record<string, AdminRole[]> = {
   '/admin/suppliers':            [PARTNER_ADMIN, OPS_ADMIN],
   '/admin/leads':                [PARTNER_ADMIN, OPS_ADMIN],
   '/admin/reports/conversion':   [OPS_ADMIN, FINANCE_ADMIN],
+  // v3.3 Warehouse pages (admin overview — warehouse_staff sees them via navByRole)
+  '/warehouse/dashboard':         [OPS_ADMIN],
+  '/warehouse/pending-inventory': [OPS_ADMIN],
+  '/warehouse/packing':           [OPS_ADMIN],
+  '/warehouse/awaiting-pickup':   [OPS_ADMIN],
   '/admin/ctv':                  [PARTNER_ADMIN],
   '/admin/agencies':             [PARTNER_ADMIN],
   '/admin/business-household':   [PARTNER_ADMIN],

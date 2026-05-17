@@ -55,7 +55,7 @@ router.get('/:id', async (req, res) => {
     where: { id: parseInt(req.params.id, 10) },
     include: {
       customer: { select: { id: true, name: true, phone: true } },
-      ctv:      { select: { id: true, fullName: true, phone: true } },
+      ctv:      { select: { id: true, name: true, phone: true } },
       warehouse: { select: { id: true, code: true, name: true, address: true } },
       items: { include: { product: { select: { name: true, region: true } } } },
       statusLogs: { orderBy: { at: 'asc' } },
@@ -118,7 +118,7 @@ router.post('/draft', async (req, res) => {
               quantity: it.quantity || 1,
               unitPrice: it.unitPrice || 0,
               unitCogs: it.unitCogs || null,
-              subtotal: (it.unitPrice || 0) * (it.quantity || 1),
+              totalPrice: (it.unitPrice || 0) * (it.quantity || 1),
             })),
           },
         },

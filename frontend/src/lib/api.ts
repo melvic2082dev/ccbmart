@@ -556,6 +556,47 @@ export const api = {
     const qs = new URLSearchParams(Object.entries(params).map(([k, v]) => [k, String(v)])).toString();
     return fetchAPI(`/admin/reports/conversion${qs ? '?' + qs : ''}`);
   },
+
+  // ============================================================
+  // v3.3: Order flow — Warehouse + CTV orders
+  // ============================================================
+  warehouseDashboard: () => fetchAPI('/warehouse/dashboard'),
+  warehousePendingInventory: () => fetchAPI('/warehouse/orders/pending-inventory'),
+  warehouseAwaitingPacking:  () => fetchAPI('/warehouse/orders/awaiting-packing'),
+  warehousePacking:          () => fetchAPI('/warehouse/orders/packing'),
+  warehouseAwaitingPickup:   () => fetchAPI('/warehouse/orders/awaiting-pickup'),
+  warehouseConfirmInventory: (id: number, note?: string) =>
+    fetchAPI(`/warehouse/orders/${id}/confirm-inventory`, { method: 'POST', body: JSON.stringify({ note }) }),
+  warehouseRejectInventory: (id: number, reason: string) =>
+    fetchAPI(`/warehouse/orders/${id}/reject-inventory`, { method: 'POST', body: JSON.stringify({ reason }) }),
+  warehouseStartPacking: (id: number) =>
+    fetchAPI(`/warehouse/orders/${id}/start-packing`, { method: 'POST' }),
+  warehouseFinishPacking: (id: number) =>
+    fetchAPI(`/warehouse/orders/${id}/finish-packing`, { method: 'POST' }),
+
+  ctvOrderGet: (id: number) => fetchAPI(`/ctv/orders/${id}`),
+  ctvOrdersList: (status?: string) => fetchAPI(`/ctv/orders${status ? `?status=${status}` : ''}`),
+  ctvOrderDraft: (data: Record<string, unknown>) =>
+    fetchAPI('/ctv/orders/draft', { method: 'POST', body: JSON.stringify(data) }),
+  ctvOrderPickup: (id: number, pickupCode: string) =>
+    fetchAPI(`/ctv/orders/${id}/pickup`, { method: 'POST', body: JSON.stringify({ pickupCode }) }),
+  ctvOrderStartDelivery: (id: number) =>
+    fetchAPI(`/ctv/orders/${id}/start-delivery`, { method: 'POST' }),
+  ctvOrderRequestOtp: (id: number) =>
+    fetchAPI(`/ctv/orders/${id}/request-otp`, { method: 'POST' }),
+  ctvOrderVerifyOtp: (id: number, code: string) =>
+    fetchAPI(`/ctv/orders/${id}/verify-otp`, { method: 'POST', body: JSON.stringify({ code }) }),
+  ctvOrderUploadSignature: (id: number, file: File) => {
+    const fd = new FormData();
+    fd.append('signature', file);
+    return fetchMultipart(`/ctv/orders/${id}/upload-signature`, fd);
+  },
+  ctvOrderCancel: (id: number, reason?: string) =>
+    fetchAPI(`/ctv/orders/${id}/cancel`, { method: 'POST', body: JSON.stringify({ reason }) }),
+
+  // Mock payment webhook trigger (admin/dev only)
+  paymentWebhookDev: (transactionId: number) =>
+    fetchAPI(`/payments/webhook?dev=1`, { method: 'POST', body: JSON.stringify({ transactionId, amount: 0 }) }),
 };
 
 export function formatVND(amount: number): string {

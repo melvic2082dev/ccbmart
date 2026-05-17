@@ -8,7 +8,8 @@ import {
   PlusCircle, Banknote, ClipboardCheck, Wallet, Award, CreditCard,
   ChevronLeft, ChevronRight, Sun, Moon, Menu, X, FileSpreadsheet,
   GraduationCap, BookOpen, ShieldCheck, Calculator, FileBarChart, Receipt,
-  Coins, Network, UserCog, Layout, Truck, PhoneCall, TrendingUp
+  Coins, Network, UserCog, Layout, Truck, PhoneCall, TrendingUp,
+  Boxes, ClipboardList, PackageCheck, QrCode
 } from 'lucide-react';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { api } from '@/lib/api';
@@ -60,6 +61,15 @@ const adminGroups: NavGroup[] = [
       { label: 'Tồn kho',      href: '/admin/inventory',  icon: <Warehouse size={20} />,  accent: 'amber' },
       { label: 'Nhà cung cấp', href: '/admin/suppliers',  icon: <Truck size={20} />,      accent: 'sky'   },
       { label: 'Leads',        href: '/admin/leads',      icon: <PhoneCall size={20} />,  accent: 'rose'  },
+    ],
+  },
+  {
+    title: 'Kho vận (v3.3)',
+    items: [
+      { label: 'Bảng điều khiển kho', href: '/warehouse/dashboard',         icon: <Boxes size={20} />,        accent: 'teal'   },
+      { label: 'Chờ xác nhận tồn',    href: '/warehouse/pending-inventory', icon: <ClipboardList size={20} />, accent: 'orange' },
+      { label: 'Soạn hàng',           href: '/warehouse/packing',           icon: <PackageCheck size={20} />, accent: 'indigo' },
+      { label: 'Chờ CTV lấy',         href: '/warehouse/awaiting-pickup',   icon: <QrCode size={20} />,       accent: 'green'  },
     ],
   },
   {
@@ -144,6 +154,13 @@ const navByRole: Record<string, NavItem[]> = {
     { label: 'Tồn kho',   href: '/agency/inventory',    icon: <Warehouse size={20} />,       accent: 'amber'   },
     { label: 'Giao dịch', href: '/agency/transactions', icon: <ShoppingCart size={20} />,    accent: 'indigo'  },
     { label: 'Cài đặt',   href: '/agency/settings',     icon: <Settings size={20} />,        accent: 'fuchsia' },
+  ],
+  warehouse_staff: [
+    { label: 'Bảng kho',         href: '/warehouse/dashboard',         icon: <Boxes size={20} />,        accent: 'teal'    },
+    { label: 'Chờ xác nhận tồn', href: '/warehouse/pending-inventory', icon: <ClipboardList size={20} />, accent: 'orange' },
+    { label: 'Soạn hàng',        href: '/warehouse/packing',           icon: <PackageCheck size={20} />, accent: 'indigo'  },
+    { label: 'Chờ CTV lấy',      href: '/warehouse/awaiting-pickup',   icon: <QrCode size={20} />,       accent: 'green'   },
+    { label: 'Cài đặt',          href: '/warehouse/settings',          icon: <Settings size={20} />,     accent: 'fuchsia' },
   ],
   // Admin is handled via adminGroups (grouped)
   admin: [],
