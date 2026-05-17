@@ -11,11 +11,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
   ChevronRight, ChevronDown, Users, Search, Download, UserPlus,
-  Eye, ArrowUpDown, Shuffle, Power, Bell, GraduationCap,
+  Eye, ArrowUpDown, Shuffle, Power, Bell, GraduationCap, Wallet,
 } from 'lucide-react';
 import {
   RankChangeModal, ReassignModal, ToggleActiveModal, CreateCtvModal, CtvDetailsModal,
-  BulkNotificationModal, type CtvRow,
+  BulkNotificationModal, SalaryConfigModal, type CtvRow,
 } from './modals';
 
 interface CtvTreeNode {
@@ -157,6 +157,7 @@ export default function AdminCtvPage() {
   const [openRank, setOpenRank] = useState(false);
   const [openReassign, setOpenReassign] = useState(false);
   const [openToggle, setOpenToggle] = useState(false);
+  const [openSalary, setOpenSalary] = useState(false);
   const [openDetails, setOpenDetails] = useState(false);
   const [openCreate, setOpenCreate] = useState(false);
   const [openBulkNotify, setOpenBulkNotify] = useState(false);
@@ -234,12 +235,13 @@ export default function AdminCtvPage() {
   // Reset page when filters change
   useEffect(() => { setPage(1); }, [search, rankFilter, managerFilter, statusFilter]);
 
-  const openActionFor = (ctv: CtvRow, action: 'details' | 'rank' | 'reassign' | 'toggle') => {
+  const openActionFor = (ctv: CtvRow, action: 'details' | 'rank' | 'reassign' | 'toggle' | 'salary') => {
     setSelectedCtv(ctv);
     if (action === 'details') setOpenDetails(true);
     if (action === 'rank') setOpenRank(true);
     if (action === 'reassign') setOpenReassign(true);
     if (action === 'toggle') setOpenToggle(true);
+    if (action === 'salary') setOpenSalary(true);
   };
 
   // Tree right-click handler
@@ -490,6 +492,19 @@ export default function AdminCtvPage() {
                                 <Button variant="ghost" size="icon-sm" title="Chuyển quản lý" onClick={() => openActionFor(ctv, 'reassign')}>
                                   <Shuffle className="w-4 h-4 text-amber-600" />
                                 </Button>
+                                <Button
+                                  variant="ghost" size="icon-sm"
+                                  title={
+                                    ctv.fixedSalaryEnabled === false
+                                      ? 'Lương cứng: TẮT — bật?'
+                                      : ctv.fixedSalaryStartDate
+                                        ? `Lương cứng: từ ${new Date(ctv.fixedSalaryStartDate).toLocaleDateString('vi-VN')}`
+                                        : 'Lương cứng: ON'
+                                  }
+                                  onClick={() => openActionFor(ctv, 'salary')}
+                                >
+                                  <Wallet className={`w-4 h-4 ${ctv.fixedSalaryEnabled === false ? 'text-gray-400' : 'text-purple-600'}`} />
+                                </Button>
                                 <Button variant="ghost" size="icon-sm" title={ctv.isActive ? 'Ngừng' : 'Kích hoạt'} onClick={() => openActionFor(ctv, 'toggle')}>
                                   <Power className={`w-4 h-4 ${ctv.isActive ? 'text-red-500' : 'text-emerald-600'}`} />
                                 </Button>
@@ -678,6 +693,10 @@ export default function AdminCtvPage() {
       />
       <ToggleActiveModal
         open={openToggle} onOpenChange={setOpenToggle}
+        ctv={selectedCtv} onSuccess={onActionSuccess}
+      />
+      <SalaryConfigModal
+        open={openSalary} onOpenChange={setOpenSalary}
         ctv={selectedCtv} onSuccess={onActionSuccess}
       />
       <CreateCtvModal

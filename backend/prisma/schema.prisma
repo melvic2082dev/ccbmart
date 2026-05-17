@@ -85,11 +85,19 @@ model User {
   warehouseId Int?       @map("warehouse_id")
   warehouse   Warehouse? @relation("WarehouseStaff", fields: [warehouseId], references: [id])
 
+  // v3.4: per-user toggle for the rank-default "lương cứng".
+  // When disabled, this user receives 0 fixed salary regardless of rank.
+  // When enabled but `fixedSalaryStartDate` is in the future, the salary
+  // starts counting only from that month (used for "đề bạt trước, lương sau").
+  fixedSalaryEnabled   Boolean   @default(true) @map("fixed_salary_enabled")
+  fixedSalaryStartDate DateTime? @map("fixed_salary_start_date")
+
   @@index([parentId])
   @@index([rank])
   @@index([role])
   @@index([role, isActive])
   @@index([warehouseId])
+  @@index([fixedSalaryEnabled])
   @@map("users")
 }
 

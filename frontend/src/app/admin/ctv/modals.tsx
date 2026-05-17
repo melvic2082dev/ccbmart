@@ -29,6 +29,9 @@ export interface CtvRow {
   isActive: boolean;
   currentMonthTrainingHours?: number;
   requiredTrainingHours?: number;
+  // v3.4: per-user "lương cứng" toggle
+  fixedSalaryEnabled?: boolean;
+  fixedSalaryStartDate?: string | null;
   // Multi-role: CTV kiêm Member
   isMember?: boolean;
   memberWallet?: {
@@ -39,6 +42,16 @@ export interface CtvRow {
     referralCode: string;
   } | null;
 }
+
+// Default rank-based fixed salary for display purposes only — backend is the
+// source of truth. Keep in sync with COMMISSION_RATES in services/commission.js.
+export const RANK_FIXED_SALARY: Record<string, number> = {
+  CTV:  0,
+  PP:   5_000_000,
+  TP:   10_000_000,
+  GDV:  18_000_000,
+  GDKD: 30_000_000,
+};
 
 const RANKS = ['CTV', 'PP', 'TP', 'GDV', 'GDKD'];
 const RANK_LABEL: Record<string, string> = {
@@ -82,6 +95,8 @@ export function RankChangeModal({
   const [newRank, setNewRank] = useState('CTV');
   const [presetReason, setPresetReason] = useState(RANK_CHANGE_REASONS[0]);
   const [customReason, setCustomReason] = useState('');
+  const [salaryEnabled, setSalaryEnabled] = useState(true);
+  const [salaryStartDate, setSalaryStartDate] = useState<string>('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -90,11 +105,17 @@ export function RankChangeModal({
       setNewRank(ctv.rank || 'CTV');
       setPresetReason(RANK_CHANGE_REASONS[0]);
       setCustomReason('');
+      // Default salary state: inherit current user setting
+      setSalaryEnabled(ctv.fixedSalaryEnabled !== false);
+      setSalaryStartDate(ctv.fixedSalaryStartDate ? ctv.fixedSalaryStartDate.slice(0, 10) : '');
       setError(null);
     }
   }, [ctv]);
 
   if (!ctv) return null;
+
+  const rankSalary = RANK_FIXED_SALARY[newRank] || 0;
+  const showSalaryToggle = rankSalary > 0; // CTV không có lương cứng → không cần hiển thị
 
   const submit = async () => {
     if (newRank === ctv.rank) {
@@ -108,7 +129,13 @@ export function RankChangeModal({
     setSubmitting(true);
     setError(null);
     try {
-      await api.adminCtvChangeRank(ctv.id, newRank, composeReason(presetReason, customReason));
+      const salary = showSalaryToggle
+        ? {
+            fixedSalaryEnabled: salaryEnabled,
+            fixedSalaryStartDate: salaryEnabled && salaryStartDate ? salaryStartDate : null,
+          }
+        : undefined;
+      await api.adminCtvChangeRank(ctv.id, newRank, composeReason(presetReason, customReason), salary);
       onSuccess();
       onOpenChange(false);
     } catch (e) {
@@ -161,11 +188,140 @@ export function RankChangeModal({
               className="mt-2 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
             />
           </div>
+          {showSalaryToggle && (
+            <div className="rounded-md border border-amber-200 bg-amber-50 dark:bg-amber-950/20 p-3 space-y-2">
+              <div className="text-sm font-medium">
+                Lương cứng mặc định cho {RANK_LABEL[newRank]}:{' '}
+                <span className="font-bold">{rankSalary.toLocaleString('vi-VN')} đ/tháng</span>
+              </div>
+              <label className="flex items-center gap-2 text-sm cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={salaryEnabled}
+                  onChange={(e) => setSalaryEnabled(e.target.checked)}
+                />
+                <span>Hưởng lương cứng cho vị trí này</span>
+              </label>
+              {!salaryEnabled && (
+                <p className="text-xs text-amber-700">
+                  → Đề bạt trước, chưa hưởng lương. Hoa hồng vẫn tính theo cấp mới.
+                </p>
+              )}
+              {salaryEnabled && (
+                <div>
+                  <Label className="text-xs">Bắt đầu hưởng lương cứng từ</Label>
+                  <input
+                    type="date"
+                    value={salaryStartDate}
+                    onChange={(e) => setSalaryStartDate(e.target.value)}
+                    className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Bỏ trống = áp dụng ngay từ tháng hiện tại.
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
           {error && <p className="text-sm text-red-600">{error}</p>}
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={submitting}>Huỷ</Button>
           <Button onClick={submit} disabled={submitting}>{submitting ? 'Đang lưu…' : 'Xác nhận'}</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ============================================================
+// Modal: Salary config (chỉ chỉnh lương cứng, không đổi rank)
+// ============================================================
+export function SalaryConfigModal({
+  open, onOpenChange, ctv, onSuccess,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  ctv: CtvRow | null;
+  onSuccess: () => void;
+}) {
+  const [enabled, setEnabled] = useState(true);
+  const [startDate, setStartDate] = useState<string>('');
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (ctv) {
+      setEnabled(ctv.fixedSalaryEnabled !== false);
+      setStartDate(ctv.fixedSalaryStartDate ? ctv.fixedSalaryStartDate.slice(0, 10) : '');
+      setError(null);
+    }
+  }, [ctv]);
+
+  if (!ctv) return null;
+  const rankSalary = RANK_FIXED_SALARY[ctv.rank] || 0;
+
+  const submit = async () => {
+    setSubmitting(true);
+    setError(null);
+    try {
+      await api.adminCtvSalaryConfig(ctv.id, {
+        fixedSalaryEnabled: enabled,
+        fixedSalaryStartDate: enabled && startDate ? startDate : null,
+      });
+      onSuccess();
+      onOpenChange(false);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Lỗi không xác định');
+    } finally { setSubmitting(false); }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Tuỳ chọn lương cứng</DialogTitle>
+          <DialogDescription>
+            {ctv.name} · Rank: <b>{RANK_LABEL[ctv.rank] ?? ctv.rank}</b>
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-3">
+          {rankSalary === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              Vị trí <b>{RANK_LABEL[ctv.rank]}</b> không có lương cứng theo cấu hình hiện tại
+              (chỉ hưởng hoa hồng). Tuỳ chọn này chỉ có hiệu lực khi user được thăng cấp.
+            </p>
+          ) : (
+            <div className="text-sm">
+              Lương cứng theo cấp: <b>{rankSalary.toLocaleString('vi-VN')} đ/tháng</b>
+            </div>
+          )}
+          <label className="flex items-center gap-2 text-sm cursor-pointer">
+            <input type="checkbox" checked={enabled} onChange={(e) => setEnabled(e.target.checked)} />
+            <span>Hưởng lương cứng</span>
+          </label>
+          {enabled && (
+            <div>
+              <Label className="text-xs">Bắt đầu hưởng từ</Label>
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              />
+              <p className="text-xs text-muted-foreground mt-1">Bỏ trống = áp dụng từ tháng hiện tại.</p>
+            </div>
+          )}
+          {!enabled && (
+            <p className="text-xs text-amber-700">
+              Đã tắt — user không nhận lương cứng dù rank có. Hoa hồng vẫn tính bình thường.
+            </p>
+          )}
+          {error && <p className="text-sm text-red-600">{error}</p>}
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={submitting}>Huỷ</Button>
+          <Button onClick={submit} disabled={submitting}>{submitting ? 'Đang lưu…' : 'Cập nhật'}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

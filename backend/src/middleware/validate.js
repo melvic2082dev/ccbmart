@@ -37,6 +37,16 @@ const schemas = {
   changeRank: Joi.object({
     newRank: Joi.string().valid('CTV', 'PP', 'TP', 'GDV', 'GDKD').required(),
     reason: Joi.string().max(500).optional(),
+    // v3.4: optionally apply salary config in the same call so admin can
+    // "đề bạt trước, lương sau" without a follow-up request.
+    fixedSalaryEnabled: Joi.boolean().optional(),
+    fixedSalaryStartDate: Joi.string().isoDate().allow(null, '').optional(),
+  }),
+
+  salaryConfig: Joi.object({
+    fixedSalaryEnabled: Joi.boolean().required(),
+    fixedSalaryStartDate: Joi.string().isoDate().allow(null, '').optional(),
+    reason: Joi.string().max(500).optional(),
   }),
 
   updateCommission: Joi.object({

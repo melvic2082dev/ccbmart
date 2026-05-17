@@ -18,6 +18,36 @@ const AGENCY_COMMISSION = {
   C: { commission: 0.20, bonus: 0.05 },
 };
 
+/**
+ * v3.4: compute the effective fixed salary for a user in a given month.
+ * Honours per-user opt-out (`fixedSalaryEnabled`) and a start-date gate
+ * (`fixedSalaryStartDate`). Used to support "đề bạt trước, lương sau".
+ *
+ *   - If enabled flag is false → 0
+ *   - If startDate is set and the queried month is BEFORE the month
+ *     containing startDate → 0
+ *   - Otherwise → rates.fixedSalary (rank default)
+ *
+ * @param {{ fixedSalaryEnabled?: boolean, fixedSalaryStartDate?: Date|null }} user
+ * @param {{ fixedSalary: number }} rates
+ * @param {string} month  "YYYY-MM"
+ */
+function effectiveFixedSalary(user, rates, month) {
+  if (!rates) return 0;
+  // Treat `undefined` (legacy rows / partial selects) as enabled=true for
+  // backward compat — existing behavior preserved.
+  if (user && user.fixedSalaryEnabled === false) return 0;
+  if (user && user.fixedSalaryStartDate) {
+    const start = new Date(user.fixedSalaryStartDate);
+    // Compare month-level: include the month containing startDate.
+    const queryMonthEnd = new Date(`${month}-01T00:00:00.000Z`);
+    queryMonthEnd.setUTCMonth(queryMonthEnd.getUTCMonth() + 1);
+    queryMonthEnd.setUTCMilliseconds(-1);
+    if (start > queryMonthEnd) return 0;
+  }
+  return rates.fixedSalary || 0;
+}
+
 // LRU Cache for commission results (max 1000 entries)
 class LRUCache {
   constructor(maxSize = 1000) {
@@ -152,7 +182,7 @@ async function calculateCtvCommission(ctvId, month) {
   do {
     const batch = await prisma.user.findMany({
       where: { role: 'ctv', isActive: true },
-      select: { id: true, parentId: true, rank: true, name: true },
+      select: { id: true, parentId: true, rank: true, name: true, fixedSalaryEnabled: true, fixedSalaryStartDate: true },
       take: 100,
       orderBy: { id: 'asc' },
       ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
@@ -208,6 +238,7 @@ async function calculateCtvCommission(ctvId, month) {
     }
   }
 
+  const fixedSalary = effectiveFixedSalary(user, rates, month);
   const result = {
     ctvId,
     rank,
@@ -217,8 +248,10 @@ async function calculateCtvCommission(ctvId, month) {
     directCommission,
     indirect2Commission,
     indirect3Commission,
-    fixedSalary: rates.fixedSalary,
-    totalIncome: selfCommission + directCommission + indirect2Commission + indirect3Commission + rates.fixedSalary,
+    fixedSalary,
+    fixedSalaryEnabled: user.fixedSalaryEnabled !== false,
+    fixedSalaryStartDate: user.fixedSalaryStartDate || null,
+    totalIncome: selfCommission + directCommission + indirect2Commission + indirect3Commission + fixedSalary,
   };
 
   commissionCache.set(cacheKey, result);
@@ -260,7 +293,7 @@ async function calculateAllCtvCommissions(month) {
   do {
     const batch = await prisma.user.findMany({
       where: { role: 'ctv', isActive: true },
-      select: { id: true, parentId: true, rank: true, name: true },
+      select: { id: true, parentId: true, rank: true, name: true, fixedSalaryEnabled: true, fixedSalaryStartDate: true },
       take: 100,
       orderBy: { id: 'asc' },
       ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
@@ -310,6 +343,7 @@ async function calculateAllCtvCommissions(month) {
       }
     }
 
+    const fixedSalary = effectiveFixedSalary(ctv, rates, month);
     results.set(ctv.id, {
       ctvId: ctv.id,
       name: ctv.name,
@@ -320,8 +354,10 @@ async function calculateAllCtvCommissions(month) {
       directCommission,
       indirect2Commission,
       indirect3Commission,
-      fixedSalary: rates.fixedSalary,
-      totalIncome: selfCommission + directCommission + indirect2Commission + indirect3Commission + rates.fixedSalary,
+      fixedSalary,
+      fixedSalaryEnabled: ctv.fixedSalaryEnabled !== false,
+      fixedSalaryStartDate: ctv.fixedSalaryStartDate || null,
+      totalIncome: selfCommission + directCommission + indirect2Commission + indirect3Commission + fixedSalary,
     });
   }
 
@@ -351,7 +387,7 @@ async function calculateSalaryFundStatus(month) {
           isActive: true,
           rank: { in: ['PP', 'TP', 'GDV', 'GDKD'] },
         },
-        select: { id: true, name: true, rank: true },
+        select: { id: true, name: true, rank: true, fixedSalaryEnabled: true, fixedSalaryStartDate: true },
       }),
       getCommissionRates(),
     ]);
@@ -361,7 +397,7 @@ async function calculateSalaryFundStatus(month) {
 
     let totalFixedSalary = 0;
     for (const m of managers) {
-      totalFixedSalary += allRates[m.rank]?.fixedSalary || 0;
+      totalFixedSalary += effectiveFixedSalary(m, allRates[m.rank], month);
     }
 
     const usagePercent = salaryFundCap > 0 ? (totalFixedSalary / salaryFundCap) * 100 : 0;
@@ -377,7 +413,9 @@ async function calculateSalaryFundStatus(month) {
         id: m.id,
         name: m.name,
         rank: m.rank,
-        salary: allRates[m.rank]?.fixedSalary || 0,
+        salary: effectiveFixedSalary(m, allRates[m.rank], month),
+        fixedSalaryEnabled: m.fixedSalaryEnabled !== false,
+        fixedSalaryStartDate: m.fixedSalaryStartDate || null,
       })),
     };
   });
@@ -421,7 +459,7 @@ async function calculateSalaryFundStatusBatch(months) {
           isActive: true,
           rank: { in: ['PP', 'TP', 'GDV', 'GDKD'] },
         },
-        select: { id: true, name: true, rank: true },
+        select: { id: true, name: true, rank: true, fixedSalaryEnabled: true, fixedSalaryStartDate: true },
       }),
       getCommissionRates(),
       ...months.map((month) => {
@@ -439,21 +477,27 @@ async function calculateSalaryFundStatusBatch(months) {
       }),
     ]);
 
-    let totalFixedSalary = 0;
-    for (const m of managers) totalFixedSalary += allRates[m.rank]?.fixedSalary || 0;
-    const managersMapped = managers.map((m) => ({
-      id: m.id,
-      name: m.name,
-      rank: m.rank,
-      salary: allRates[m.rank]?.fixedSalary || 0,
-    }));
-
     for (let i = 0; i < months.length; i++) {
+      const month = months[i];
+      // Recompute totalFixedSalary per month — `effectiveFixedSalary` is
+      // month-aware (start-date gate). Cost stays O(managers); managers
+      // are pre-fetched once for the batch.
+      let totalFixedSalary = 0;
+      for (const m of managers) totalFixedSalary += effectiveFixedSalary(m, allRates[m.rank], month);
+      const managersMapped = managers.map((m) => ({
+        id: m.id,
+        name: m.name,
+        rank: m.rank,
+        salary: effectiveFixedSalary(m, allRates[m.rank], month),
+        fixedSalaryEnabled: m.fixedSalaryEnabled !== false,
+        fixedSalaryStartDate: m.fixedSalaryStartDate || null,
+      }));
+
       const ctvRevenue = Number(revenueResults[i]._sum.totalAmount) || 0;
       const salaryFundCap = ctvRevenue * 0.05;
       const usagePercent = salaryFundCap > 0 ? (totalFixedSalary / salaryFundCap) * 100 : 0;
-      precomputed.set(months[i], {
-        month: months[i],
+      precomputed.set(month, {
+        month,
         ctvRevenue,
         salaryFundCap,
         totalFixedSalary,

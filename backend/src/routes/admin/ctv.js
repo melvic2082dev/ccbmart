@@ -109,6 +109,9 @@ router.get('/ctvs', asyncHandler(async (req, res) => {
       transactions: ctv._count.transactions,
       customers: ctv._count.customers,
       createdAt: ctv.createdAt,
+      // v3.4
+      fixedSalaryEnabled: ctv.fixedSalaryEnabled !== false,
+      fixedSalaryStartDate: ctv.fixedSalaryStartDate || null,
     }));
   });
 
@@ -179,18 +182,22 @@ router.post('/ctv/:id/reassign', validate(schemas.reassignCtv), asyncHandler(asy
 }));
 
 router.post('/ctv/:id/rank', validate(schemas.changeRank), asyncHandler(async (req, res) => {
-  const { newRank, reason } = req.body;
+  const { newRank, reason, fixedSalaryEnabled, fixedSalaryStartDate } = req.body;
   const ctvId = parseInt(req.params.id);
   const ctv = await prisma.user.findUnique({ where: { id: ctvId } });
   if (!ctv) throw new AppError('CTV not found', 404, 'CTV_NOT_FOUND');
 
   const oldRank = ctv.rank || 'CTV';
 
+  // Build user update payload — only apply salary fields if explicitly sent
+  const userData = { rank: newRank };
+  if (fixedSalaryEnabled !== undefined) userData.fixedSalaryEnabled = fixedSalaryEnabled;
+  if (fixedSalaryStartDate !== undefined) {
+    userData.fixedSalaryStartDate = fixedSalaryStartDate ? new Date(fixedSalaryStartDate) : null;
+  }
+
   await prisma.$transaction([
-    prisma.user.update({
-      where: { id: ctvId },
-      data: { rank: newRank },
-    }),
+    prisma.user.update({ where: { id: ctvId }, data: userData }),
     prisma.rankHistory.create({
       data: {
         ctvId,
@@ -207,6 +214,28 @@ router.post('/ctv/:id/rank', validate(schemas.changeRank), asyncHandler(async (r
   await invalidateCache('admin:ctv-list');
 
   res.json({ success: true });
+}));
+
+// v3.4: standalone toggle for "lương cứng" without changing rank.
+// Body: { fixedSalaryEnabled: boolean, fixedSalaryStartDate?: ISO string | null }
+router.put('/ctv/:id/salary-config', validate(schemas.salaryConfig), asyncHandler(async (req, res) => {
+  const ctvId = parseInt(req.params.id);
+  const { fixedSalaryEnabled, fixedSalaryStartDate } = req.body;
+  const ctv = await prisma.user.findUnique({ where: { id: ctvId } });
+  if (!ctv) throw new AppError('CTV not found', 404, 'CTV_NOT_FOUND');
+
+  const updated = await prisma.user.update({
+    where: { id: ctvId },
+    data: {
+      fixedSalaryEnabled,
+      fixedSalaryStartDate: fixedSalaryStartDate ? new Date(fixedSalaryStartDate) : null,
+    },
+    select: { id: true, name: true, rank: true, fixedSalaryEnabled: true, fixedSalaryStartDate: true },
+  });
+
+  invalidateCommissionCache(ctvId);
+  await invalidateCache('admin:ctv-list');
+  res.json({ success: true, user: updated });
 }));
 
 router.get('/agencies', asyncHandler(async (req, res) => {

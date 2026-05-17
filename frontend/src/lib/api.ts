@@ -113,8 +113,24 @@ export const api = {
     fetchAPI(`/admin/ctv/${id}/reassign`, { method: 'POST', body: JSON.stringify({ newParentId, reason }) }),
   adminBulkNotify: (data: { userIds: number[]; title: string; content: string; type?: string }) =>
     fetchAPI('/admin/notifications/bulk', { method: 'POST', body: JSON.stringify(data) }),
-  adminCtvChangeRank: (id: number, newRank: string, reason?: string) =>
-    fetchAPI(`/admin/ctv/${id}/rank`, { method: 'POST', body: JSON.stringify({ newRank, reason }) }),
+  adminCtvChangeRank: (
+    id: number,
+    newRank: string,
+    reason?: string,
+    salary?: { fixedSalaryEnabled?: boolean; fixedSalaryStartDate?: string | null },
+  ) =>
+    fetchAPI(`/admin/ctv/${id}/rank`, {
+      method: 'POST',
+      body: JSON.stringify({ newRank, reason, ...(salary || {}) }),
+    }),
+  adminCtvSalaryConfig: (
+    id: number,
+    payload: { fixedSalaryEnabled: boolean; fixedSalaryStartDate?: string | null; reason?: string },
+  ) =>
+    fetchAPI(`/admin/ctv/${id}/salary-config`, {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    }),
   adminCtvToggleActive: (id: number, isActive: boolean, reason?: string) =>
     fetchAPI(`/admin/ctv/${id}/toggle-active`, { method: 'POST', body: JSON.stringify({ isActive, reason }) }),
   adminCtvCreate: (data: Record<string, unknown>) =>
